@@ -335,7 +335,7 @@ main(int ac, char **av)
 			fprintf(stderr, "setcmp: requires directory path\n");
 			usage(1);
 		} else {
-			printf("Will set compression on directory %s\n", sel_path);
+			printf("Will set compression on directory %s\n", av[1]);
 			
 			/* Do something here. */
 		}
