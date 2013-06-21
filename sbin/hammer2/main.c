@@ -336,6 +336,7 @@ main(int ac, char **av)
 			usage(1);
 		} else {
 			printf("Will set compression on directory %s\n", sel_path);
+			
 			/* Do something here. */
 		}
 	} else {
