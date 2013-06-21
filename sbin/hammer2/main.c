@@ -330,6 +330,14 @@ main(int ac, char **av)
 		} else {
 			cmd_show(av[1], 1);
 		}
+	} else if (strcmp(av[0], "setcmp") == 0) {
+		if (ac != 2) {
+			fprintf(stderr, "setcmp: requires directory path\n");
+			usage(1);
+		} else {
+			printf("Will set compression on directory %s\n", sel_path);
+			/* Do something here. */
+		}
 	} else {
 		fprintf(stderr, "Unrecognized command: %s\n", av[0]);
 		usage(1);
@@ -376,6 +384,7 @@ usage(int code)
 		"    rsainit            Initialize rsa fields\n"
 		"    show devpath       Raw hammer2 media dump\n"
 		"    freemap devpath    Raw hammer2 media dump\n"
+		"    setcmp directory   Sets compression mode on a directory\n"
 	);
 	exit(code);
 }
