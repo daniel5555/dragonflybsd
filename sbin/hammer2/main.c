@@ -336,8 +336,28 @@ main(int ac, char **av)
 			usage(1);
 		} else {
 			printf("Will set compression on directory %s\n", av[1]);
-			int fd = hammer2_ioctl_handle(NULL);
-			printf("got inode with fd = &d\n", fd);
+			int fd = hammer2_ioctl_handle(av[1]);
+			printf("got inode with fd = %d\n", fd);
+			hammer2_inode_data_t inode;
+			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
+			printf("Got res = %d\n", res);
+			printf("Printing inode data.\n");
+			printf("version = %d\n", inode.version);
+			printf("uflags = %d\n", inode.uflags);
+			printf("rmajor = %d\n", inode.rmajor);
+			printf("rminor = %d\n", inode.rminor);
+			printf("ctime = %u !\n", (unsigned int)inode.ctime);
+			printf("mtime = %u !\n", (unsigned int)inode.mtime);
+			printf("type = %d\n", inode.type);
+			printf("op_flags = %d\n", inode.op_flags);
+			printf("cap_flags = %d\n", inode.cap_flags);
+			printf("mode = %d\n", inode.mode);
+			printf("inum = %u !\n", (unsigned int)inode.inum);
+			printf("size = %u !\n", (unsigned int)inode.size),
+			printf("name_key = %u !\n", (unsigned int)inode.name_key);
+			printf("name_len = %d\n", inode.name_len);
+			printf("ncopies = %d\n", inode.ncopies);
+			printf("comp_algo = %d\n", inode.comp_algo);
 			/* Do something here. */
 		}
 	} else {
