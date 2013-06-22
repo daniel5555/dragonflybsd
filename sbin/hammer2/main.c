@@ -336,7 +336,8 @@ main(int ac, char **av)
 			usage(1);
 		} else {
 			printf("Will set compression on directory %s\n", av[1]);
-			
+			int fd = hammer2_ioctl_handle(NULL);
+			printf("got inode with fd = &d\n", fd);
 			/* Do something here. */
 		}
 	} else {
