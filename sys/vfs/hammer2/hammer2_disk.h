@@ -437,6 +437,7 @@ typedef struct hammer2_blockref hammer2_blockref_t;
 
 #define HAMMER2_COMP_NONE		0
 #define HAMMER2_COMP_AUTOZERO		1
+#define HAMMER2_COMP_LZ4		2
 
 
 /*

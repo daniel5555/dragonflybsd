@@ -332,10 +332,29 @@ main(int ac, char **av)
 		}
 	} else if (strcmp(av[0], "setcmp") == 0) {
 		if (ac != 2) {
-			fprintf(stderr, "setcmp: requires directory path\n");
+			fprintf(stderr, "setcmp: requires directory/file path\n");
 			usage(1);
 		} else {
-			printf("Will set compression on directory %s\n", av[1]);
+			printf("Will set compression on directory/file %s\n", av[1]);
+			int fd = hammer2_ioctl_handle(av[1]);
+			printf("got inode with fd = %d\n", fd);
+			hammer2_ioc_inode_t inode;
+			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
+			if (res < 0) {
+				fprintf(stderr, "%s: %s\n", av[i], strerror(errno));
+				exit(3);
+			}
+			inode_data = inode.ip_data;
+			inode.ip_data.comp_algo = HAMMER2_COMP_AUTOZERO;
+			printf("Compression mode set.\n");			
+			/* Do something here. */
+		}
+	} else if (strcmp(av[0], "printinode") == 0) {
+		if (ac != 2) {
+			fprintf(stderr, "printinode: requires directory/file path\n");
+			usage(1);
+		} else {
+			printf("Printing the inode's contents of directory/file %s\n", av[1]);
 			int fd = hammer2_ioctl_handle(av[1]);
 			printf("got inode with fd = %d\n", fd);
 			hammer2_ioc_inode_t inode;
@@ -360,14 +379,7 @@ main(int ac, char **av)
 			printf("name_len = %d\n", inode_data.name_len);
 			printf("ncopies = %d\n", inode_data.ncopies);
 			printf("comp_algo = %d\n", inode_data.comp_algo);
-			char *data;
-			printf("Printing the contents of kdata...\n");
-			data = inode.kdata;
-			int i;
-			for (i = 0; i < 64; ++i) //may provoke segmentation fault, I'm aware of that...
-				printf("%c", data[i]);
-			printf("Finished printing the contents.\n");
-			//if (inode.u.size() == 
+			
 			/* Do something here. */
 		}
 	} else {
