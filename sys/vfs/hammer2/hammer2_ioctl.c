@@ -559,7 +559,7 @@ hammer2_ioctl_inode_get(hammer2_inode_t *ip, void *data)
 	ino->kdata = ip;
 	hammer2_inode_unlock_sh(ip, parent);
 
-	return (0);
+	return (1); //change this back to 0!!!
 }
 
 static int
