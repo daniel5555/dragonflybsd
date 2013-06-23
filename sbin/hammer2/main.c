@@ -340,7 +340,6 @@ main(int ac, char **av)
 			printf("got inode with fd = %d\n", fd);
 			hammer2_ioc_inode_t inode;
 			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
-			hammer2_ioc_inode_t
 			hammer2_inode_data_t inode_data;
 			inode_data = inode.ip_data;
 			printf("Got res = %d\n", res);
