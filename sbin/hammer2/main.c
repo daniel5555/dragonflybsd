@@ -338,26 +338,30 @@ main(int ac, char **av)
 			printf("Will set compression on directory %s\n", av[1]);
 			int fd = hammer2_ioctl_handle(av[1]);
 			printf("got inode with fd = %d\n", fd);
-			hammer2_inode_data_t inode;
+			hammer2_ioc_inode_t inode;
 			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
+			hammer2_ioc_inode_t
+			hammer2_inode_data_t inode_data;
+			inode_data = inode.ip_data;
 			printf("Got res = %d\n", res);
 			printf("Printing inode data.\n");
-			printf("version = %d\n", inode.version);
-			printf("uflags = %d\n", inode.uflags);
-			printf("rmajor = %d\n", inode.rmajor);
-			printf("rminor = %d\n", inode.rminor);
-			printf("ctime = %u !\n", (unsigned int)inode.ctime);
-			printf("mtime = %u !\n", (unsigned int)inode.mtime);
-			printf("type = %d\n", inode.type);
-			printf("op_flags = %d\n", inode.op_flags);
-			printf("cap_flags = %d\n", inode.cap_flags);
-			printf("mode = %d\n", inode.mode);
-			printf("inum = %u !\n", (unsigned int)inode.inum);
-			printf("size = %u !\n", (unsigned int)inode.size),
-			printf("name_key = %u !\n", (unsigned int)inode.name_key);
-			printf("name_len = %d\n", inode.name_len);
-			printf("ncopies = %d\n", inode.ncopies);
-			printf("comp_algo = %d\n", inode.comp_algo);
+			printf("version = %d\n", inode_data.version);
+			printf("uflags = %d\n", inode_data.uflags);
+			printf("rmajor = %d\n", inode_data.rmajor);
+			printf("rminor = %d\n", inode_data.rminor);
+			printf("ctime = %u !\n", (unsigned int)inode_data.ctime);
+			printf("mtime = %u !\n", (unsigned int)inode_data.mtime);
+			printf("type = %d\n", inode_data.type);
+			printf("op_flags = %d\n", inode_data.op_flags);
+			printf("cap_flags = %d\n", inode_data.cap_flags);
+			printf("mode = %d\n", inode_data.mode);
+			printf("inum = %u !\n", (unsigned int)inode_data.inum);
+			printf("size = %u !\n", (unsigned int)inode_data.size),
+			printf("name_key = %u !\n", (unsigned int)inode_data.name_key);
+			printf("name_len = %d\n", inode_data.name_len);
+			printf("ncopies = %d\n", inode_data.ncopies);
+			printf("comp_algo = %d\n", inode_data.comp_algo);
+			//if (inode.u.size() == 
 			/* Do something here. */
 		}
 	} else {
