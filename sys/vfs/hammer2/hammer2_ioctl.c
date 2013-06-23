@@ -554,12 +554,14 @@ hammer2_ioctl_inode_get(hammer2_inode_t *ip, void *data)
 	hammer2_ioc_inode_t *ino = data;
 	hammer2_chain_t *parent;
 
+	printf("Entered in ioctl_inode_get.\n");
+
 	parent = hammer2_inode_lock_sh(ip);
 	ino->ip_data = ip->chain->data->ipdata;
 	ino->kdata = ip;
 	hammer2_inode_unlock_sh(ip, parent);
 
-	return (1); //change this back to 0!!!
+	return (0);
 }
 
 static int

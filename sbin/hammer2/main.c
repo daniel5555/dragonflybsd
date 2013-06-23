@@ -340,8 +340,6 @@ main(int ac, char **av)
 			printf("got inode with fd = %d\n", fd);
 			hammer2_ioc_inode_t inode;
 			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
-			if (res == 1)
-				printf("Change effective.\n");
 			if (res < 0) {
 				fprintf(stderr, "ERROR before setting the mode: %s\n", strerror(errno));
 				exit(3);
