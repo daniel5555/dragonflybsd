@@ -360,6 +360,13 @@ main(int ac, char **av)
 			printf("name_len = %d\n", inode_data.name_len);
 			printf("ncopies = %d\n", inode_data.ncopies);
 			printf("comp_algo = %d\n", inode_data.comp_algo);
+			char data;
+			printf("Printing the contents of kdata...\n");
+			data = inode.kdata;
+			int i;
+			for (i = 0; i < 64; ++i) //may provoke segmentation fault, I'm aware of that...
+				printf("%c", data[i]);
+			printf("Finished printing the contents.\n");
 			//if (inode.u.size() == 
 			/* Do something here. */
 		}
