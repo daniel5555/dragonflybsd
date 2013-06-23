@@ -341,10 +341,15 @@ main(int ac, char **av)
 			hammer2_ioc_inode_t inode;
 			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
 			if (res < 0) {
-				fprintf(stderr, "ERROR: %s\n", strerror(errno));
+				fprintf(stderr, "ERROR before setting the mode: %s\n", strerror(errno));
 				exit(3);
 			}
 			inode.ip_data.comp_algo = HAMMER2_COMP_AUTOZERO;
+			res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
+			if (res < 0) {
+				fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
+				exit(3);
+			}
 			printf("Compression mode set.\n");			
 			/* Do something here. */
 		}
