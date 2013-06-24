@@ -567,8 +567,10 @@ hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 {
 	hammer2_ioc_inode_t *ino = data;
 	hammer2_chain_t *parent;
+	hammer2_trans_t trans;
 	int error = EINVAL;
 
+	hammer2_trans_init(&trans, ip->pmp, 0);
 	parent = hammer2_inode_lock_ex(ip);
 	hammer2_chain_lock(parent, HAMMER2_RESOLVE_ALWAYS);
 	ip->chain->data->ipdata = ino->ip_data;
@@ -583,6 +585,7 @@ hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 	}
 	hammer2_chain_unlock(parent);
 	hammer2_inode_unlock_ex(ip, parent);
+	hammer2_trans_done(&trans);
 
 	return (error);
 }
