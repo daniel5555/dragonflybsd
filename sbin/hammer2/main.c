@@ -348,7 +348,7 @@ main(int ac, char **av)
 			res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 			if (res < 0) {
 				fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
-				exit(3);
+				//exit(3);
 			}
 			printf("Compression mode set.\n");			
 			/* Do something here. */

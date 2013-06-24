@@ -570,6 +570,10 @@ hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 	int error = EINVAL;
 
 	parent = hammer2_inode_lock_ex(ip);
+	ip->chain->data->ipdata = ino->ip_data;
+	ino->kdata = ip;
+	
+	/*Ignore those flags for now...*/
 	if (ino->flags & HAMMER2IOC_INODE_FLAG_IQUOTA) {
 	}
 	if (ino->flags & HAMMER2IOC_INODE_FLAG_DQUOTA) {
