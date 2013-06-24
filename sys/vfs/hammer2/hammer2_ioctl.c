@@ -570,8 +570,10 @@ hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 	hammer2_trans_t trans;
 	int error = EINVAL;
 
-	parent = hammer2_inode_lock_ex(ip);
 	hammer2_trans_init(&trans, ip->pmp, 0);
+	parent = hammer2_inode_lock_ex(ip);
+	nipdata = hammer2_chain_modify_ip(&trans, ip, &parent,
+						  HAMMER2_MODIFY_ASSERTNOCOPY);
 	ip->chain->data->ipdata = ino->ip_data;
 	ino->kdata = ip;
 	
