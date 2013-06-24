@@ -342,7 +342,7 @@ main(int ac, char **av)
 			} else if (strcmp(av[1], "1")) {
 				printf("Will set zero-checking compression on directory/file %s.\n", av[2]);
 				comp_method = HAMMER2_COMP_AUTOZERO;
-			} else if (strcmp(av[2], "2")) {
+			} else if (strcmp(av[1], "2")) {
 				printf("Will set LZ4 compression on directory/file %s.\n", av[2]);
 				comp_method = HAMMER2_COMP_LZ4;
 			} else {
