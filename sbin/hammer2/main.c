@@ -331,12 +331,25 @@ main(int ac, char **av)
 			cmd_show(av[1], 1);
 		}
 	} else if (strcmp(av[0], "setcmp") == 0) {
-		if (ac != 2) {
-			fprintf(stderr, "setcmp: requires directory/file path\n");
+		if (ac != 3) {
+			fprintf(stderr, "setcmp: requires compression method and directory/file path\n");
 			usage(1);
 		} else {
-			printf("Will set compression on directory/file %s\n", av[1]);
-			int fd = hammer2_ioctl_handle(av[1]);
+			int comp_method;
+			if (strcmp(av[1], "0") {
+				printf("Will turn off compression on directory/file %s\n", av[2]);
+				comp_method = HAMMER2_COMP_NONE;
+			} else if (strcmp([av[1], "1") {
+				printf("Will set zero-checking compression on directory/file %s.\n", av[2]);
+				comp_method = HAMMER2_COMP_AUTOZERO;
+			} else if (strcmp(av[2], "2") {
+				printf("Will set LZ4 compression on directory/file %s.\n", av[2]);
+				comp_method = HAMMER2_COMP_LZ4;
+			} else {
+				printf("Unknown compression method.\n");
+				exit(1);
+			}
+			int fd = hammer2_ioctl_handle(av[2]);
 			printf("got inode with fd = %d\n", fd);
 			hammer2_ioc_inode_t inode;
 			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
@@ -344,36 +357,13 @@ main(int ac, char **av)
 				fprintf(stderr, "ERROR before setting the mode: %s\n", strerror(errno));
 				exit(3);
 			}
-			inode.ip_data.comp_algo = HAMMER2_COMP_AUTOZERO;
+			inode.ip_data.comp_algo = comp_method;
 			res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 			if (res < 0) {
 				fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
 				//exit(3);
 			}
 			printf("Compression mode set.\n");			
-			/* Do something here. */
-		}
-	} else if (strcmp(av[0], "turnoffcmp") == 0) {
-		if (ac != 2) {
-			fprintf(stderr, "turnoffcmp: requires directory/file path\n");
-			usage(1);
-		} else {
-			printf("Will turn off compression on directory/file %s\n", av[1]);
-			int fd = hammer2_ioctl_handle(av[1]);
-			printf("got inode with fd = %d\n", fd);
-			hammer2_ioc_inode_t inode;
-			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
-			if (res < 0) {
-				fprintf(stderr, "ERROR before turning off the mode: %s\n", strerror(errno));
-				exit(3);
-			}
-			inode.ip_data.comp_algo = HAMMER2_COMP_NONE;
-			res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
-			if (res < 0) {
-				fprintf(stderr, "ERROR after trying to turn off the mode: %s\n", strerror(errno));
-				//exit(3);
-			}
-			printf("Compression mode turned off.\n");			
 			/* Do something here. */
 		}
 	} else if (strcmp(av[0], "printinode") == 0) {
