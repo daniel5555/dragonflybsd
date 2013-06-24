@@ -353,6 +353,29 @@ main(int ac, char **av)
 			printf("Compression mode set.\n");			
 			/* Do something here. */
 		}
+	} else if (strcmp(av[0], "turnoffcmp") == 0) {
+		if (ac != 2) {
+			fprintf(stderr, "turnoffcmp: requires directory/file path\n");
+			usage(1);
+		} else {
+			printf("Will turn off compression on directory/file %s\n", av[1]);
+			int fd = hammer2_ioctl_handle(av[1]);
+			printf("got inode with fd = %d\n", fd);
+			hammer2_ioc_inode_t inode;
+			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
+			if (res < 0) {
+				fprintf(stderr, "ERROR before turning off the mode: %s\n", strerror(errno));
+				exit(3);
+			}
+			inode.ip_data.comp_algo = HAMMER2_COMP_NONE;
+			res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
+			if (res < 0) {
+				fprintf(stderr, "ERROR after trying to turn off the mode: %s\n", strerror(errno));
+				//exit(3);
+			}
+			printf("Compression mode turned off.\n");			
+			/* Do something here. */
+		}
 	} else if (strcmp(av[0], "printinode") == 0) {
 		if (ac != 2) {
 			fprintf(stderr, "printinode: requires directory/file path\n");
