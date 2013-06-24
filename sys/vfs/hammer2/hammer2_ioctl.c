@@ -565,6 +565,7 @@ hammer2_ioctl_inode_get(hammer2_inode_t *ip, void *data)
 static int
 hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 {
+	hammer2_inode_data_t *ipdata;
 	hammer2_ioc_inode_t *ino = data;
 	hammer2_chain_t *parent;
 	hammer2_trans_t trans;
@@ -572,7 +573,7 @@ hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 
 	hammer2_trans_init(&trans, ip->pmp, 0);
 	parent = hammer2_inode_lock_ex(ip);
-	nipdata = hammer2_chain_modify_ip(&trans, ip, &parent,
+	ipdata = hammer2_chain_modify_ip(&trans, ip, &parent,
 						  HAMMER2_MODIFY_ASSERTNOCOPY);
 	ip->chain->data->ipdata = ino->ip_data;
 	ino->kdata = ip;
