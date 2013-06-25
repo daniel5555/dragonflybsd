@@ -682,9 +682,9 @@ retry:
 		int temp;
 		for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
 			if (nipdata->blockref[i] != NULL) {
-				temp = HAMMER2_DEC_CHECK(nipdata->blockref[i].methods);
-				nipdata->blockref[i].methods = HAMMER2_ENC_COMP(dipdata->comp_algo);
-				nipdata->blockref[i].methods = HAMMER2_ENC_CHECK(temp);
+				temp = HAMMER2_DEC_CHECK(nipdata->blockset.blockref[i].methods);
+				nipdata->blockset.blockref[i].methods = HAMMER2_ENC_COMP(dipdata->comp_algo);
+				nipdata->blockset.blockref[i].methods = HAMMER2_ENC_CHECK(temp);
 			}
 		}
 	}				
