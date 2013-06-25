@@ -675,6 +675,19 @@ retry:
 	    nipdata->type == HAMMER2_OBJTYPE_SOFTLINK) {
 		nipdata->op_flags |= HAMMER2_OPFLAG_DIRECTDATA;
 	}
+	
+	//ATTETION: NEEDS TESTING
+	if (nipdata->op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
+		int i;
+		int temp;
+		for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
+			if (nipdata->blockref[i] != NULL) {
+				temp = HAMMER2_DEC_CHECK(nipdata->blockref[i].methods);
+				nipdata->blockref[i].methods = HAMMER2_ENC_COMP(dipdata->comp_algo);
+				nipdata->blockref[i].methods = HAMMER2_ENC_CHECK(temp);
+			}
+		}
+	}				
 
 	KKASSERT(name_len < HAMMER2_INODE_MAXNAME);
 	bcopy(name, nipdata->filename, name_len);
