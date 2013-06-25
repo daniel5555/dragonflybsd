@@ -681,10 +681,10 @@ retry:
 		int i;
 		int temp;
 		for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
-			if (nipdata->blockref[i] != NULL) {
-				temp = HAMMER2_DEC_CHECK(nipdata->blockset.blockref[i].methods);
-				nipdata->blockset.blockref[i].methods = HAMMER2_ENC_COMP(dipdata->comp_algo);
-				nipdata->blockset.blockref[i].methods = HAMMER2_ENC_CHECK(temp);
+			if (nipdata->u.blockset.blockref[i] != NULL) {
+				temp = HAMMER2_DEC_CHECK(nipdata->u.blockset.blockref[i].methods);
+				nipdata->u.blockset.blockref[i].methods = HAMMER2_ENC_COMP(dipdata->comp_algo);
+				nipdata->u.blockset.blockref[i].methods = HAMMER2_ENC_CHECK(temp);
 			}
 		}
 	}				
