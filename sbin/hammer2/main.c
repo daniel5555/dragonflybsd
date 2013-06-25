@@ -378,7 +378,7 @@ main(int ac, char **av)
 			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
 			hammer2_inode_data_t inode_data;
 			inode_data = inode.ip_data;
-			printf("Got res = %d\n", res);
+			/*printf("Got res = %d\n", res);
 			printf("Printing inode data.\n");
 			printf("version = %d\n", inode_data.version);
 			printf("uflags = %d\n", inode_data.uflags);
@@ -394,7 +394,7 @@ main(int ac, char **av)
 			printf("size = %u !\n", (unsigned int)inode_data.size),
 			printf("name_key = %u !\n", (unsigned int)inode_data.name_key);
 			printf("name_len = %d\n", inode_data.name_len);
-			printf("ncopies = %d\n", inode_data.ncopies);
+			printf("ncopies = %d\n", inode_data.ncopies);*/
 			printf("comp_algo = %d\n", inode_data.comp_algo);
 			
 			/* Do something here. */
