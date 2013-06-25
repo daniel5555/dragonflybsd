@@ -378,9 +378,9 @@ main(int ac, char **av)
 			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
 			hammer2_inode_data_t inode_data;
 			inode_data = inode.ip_data;
-			/*printf("Got res = %d\n", res);
+			printf("Got res = %d\n", res);
 			printf("Printing inode data.\n");
-			printf("version = %d\n", inode_data.version);
+			/*printf("version = %d\n", inode_data.version);
 			printf("uflags = %d\n", inode_data.uflags);
 			printf("rmajor = %d\n", inode_data.rmajor);
 			printf("rminor = %d\n", inode_data.rminor);
