@@ -397,7 +397,7 @@ main(int ac, char **av)
 			printf("ncopies = %d\n", inode_data.ncopies);*/
 			printf("comp_algo = %d\n", inode_data.comp_algo);
 			if (inode_data.op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
-				if (inode_data.u.blockset.blockref[i].type =! HAMMER2_BREF_TYPE_EMPTY)
+				if (inode_data.u.blockset.blockref[0].type =! HAMMER2_BREF_TYPE_EMPTY)
 					printf("blockrefs methods = %d\n", inode_data.u.blockset.blockref[0].methods);
 			}
 			else {
