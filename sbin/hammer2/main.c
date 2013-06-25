@@ -385,10 +385,10 @@ main(int ac, char **av)
 			printf("rmajor = %d\n", inode_data.rmajor);
 			printf("rminor = %d\n", inode_data.rminor);
 			printf("ctime = %u !\n", (unsigned int)inode_data.ctime);
-			printf("mtime = %u !\n", (unsigned int)inode_data.mtime);
+			printf("mtime = %u !\n", (unsigned int)inode_data.mtime);*/
 			printf("type = %d\n", inode_data.type);
 			printf("op_flags = %d\n", inode_data.op_flags);
-			printf("cap_flags = %d\n", inode_data.cap_flags);
+			/*printf("cap_flags = %d\n", inode_data.cap_flags);
 			printf("mode = %d\n", inode_data.mode);
 			printf("inum = %u !\n", (unsigned int)inode_data.inum);
 			printf("size = %u !\n", (unsigned int)inode_data.size),
@@ -396,6 +396,13 @@ main(int ac, char **av)
 			printf("name_len = %d\n", inode_data.name_len);
 			printf("ncopies = %d\n", inode_data.ncopies);*/
 			printf("comp_algo = %d\n", inode_data.comp_algo);
+			if (inode_data.op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
+				if (inode_data.u.blockset.blockref[i].type =! HAMMER2_BREF_TYPE_EMPTY)
+					printf("blockrefs methods = %d\n", inode_data.u.blockset.blockref[0].methods);
+			}
+			else {
+				printf("This inode has data instead of blockrefs.\n");
+			}
 			
 			/* Do something here. */
 		}
