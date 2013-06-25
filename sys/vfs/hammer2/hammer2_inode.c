@@ -630,6 +630,10 @@ retry:
 		nipdata->type = HAMMER2_OBJTYPE_DIRECTORY;
 		nipdata->inum = 1;
 	}
+	
+	/* Inherit parent's inode compression mode. */
+	nipdata->comp_algo = dipdata->comp_algo;
+	
 	nipdata->version = HAMMER2_INODE_VERSION_ONE;
 	hammer2_update_time(&nipdata->ctime);
 	nipdata->mtime = nipdata->ctime;
