@@ -401,8 +401,9 @@ main(int ac, char **av)
 				for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
 					if (inode_data.u.blockset.blockref[i].type != HAMMER2_BREF_TYPE_EMPTY)
 						printf("blockrefs %d methods = %d\n", i, inode_data.u.blockset.blockref[i].methods);
-				else
-					printf("blockrefs %d is empty.\n", i);
+					else
+						printf("blockrefs %d is empty.\n", i);
+				}
 			}
 			else {
 				printf("This inode has data instead of blockrefs.\n");
