@@ -677,7 +677,7 @@ retry:
 	}
 	
 	//ATTETION: NEEDS TESTING
-	if (nipdata->op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
+	if (true) {
 		int i;
 		int temp;
 		for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
