@@ -640,7 +640,7 @@ retry:
 	for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
 		if (nipdata->u.blockset.blockref[i].type != HAMMER2_BREF_TYPE_EMPTY) {
 			temp = HAMMER2_DEC_CHECK(nipdata->u.blockset.blockref[i].methods);
-			nipdata->u.blockset.blockref[i].methods = 18;//HAMMER2_ENC_COMP(dipdata->comp_algo) + HAMMER2_ENC_CHECK(temp);
+			nipdata->u.blockset.blockref[i].methods = HAMMER2_ENC_COMP(dipdata->comp_algo) + HAMMER2_ENC_CHECK(temp);
 		}
 	}
 	
