@@ -584,10 +584,13 @@ retry:
 		++lhc;
 	}
 	if (error == 0) {
+		int temp = parent->bref.methods;
+		parent->bref.methods = HAMMER2_ENC_COMP(dipdata->comp_algo) + HAMMER2_ENC_CHECK(temp);
 		error = hammer2_chain_create(trans, &parent, &chain, //sets chain's brefs to parent's brefs
 					     lhc, 0,
 					     HAMMER2_BREF_TYPE_INODE,
 					     HAMMER2_INODE_BYTES);
+		parent->bref.methods = temp;
 	}
 
 	/*
@@ -634,16 +637,6 @@ retry:
 	/* Inherit parent's inode compression mode. */
 	nipdata->comp_algo = dipdata->comp_algo;
 	
-	/* Inherit parent's inode compression mode not from brefs, but from inode. - MAY NOT BE CORRECT*/
-	int i;
-	int temp;
-	for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
-		if (nipdata->u.blockset.blockref[i].type != HAMMER2_BREF_TYPE_EMPTY) {
-			temp = HAMMER2_DEC_CHECK(nipdata->u.blockset.blockref[i].methods);
-			nipdata->u.blockset.blockref[i].methods = HAMMER2_ENC_COMP(dipdata->comp_algo) + HAMMER2_ENC_CHECK(temp);
-		}
-	}
-	
 	nipdata->version = HAMMER2_INODE_VERSION_ONE;
 	hammer2_update_time(&nipdata->ctime);
 	nipdata->mtime = nipdata->ctime;
@@ -685,10 +678,9 @@ retry:
 	    nipdata->type == HAMMER2_OBJTYPE_SOFTLINK) {
 		nipdata->op_flags |= HAMMER2_OPFLAG_DIRECTDATA;
 	}
-	
-	/*MARKED FOR DELETION
+
 	//ATTETION: NEEDS TESTING
-	if (true) {
+	/*if (nipdata->op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
 		int i;
 		int temp;
 		for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
@@ -697,7 +689,7 @@ retry:
 				nipdata->u.blockset.blockref[i].methods = 18;//HAMMER2_ENC_COMP(dipdata->comp_algo) + HAMMER2_ENC_CHECK(temp);
 			}
 		}
-	}*/				
+	}*/
 
 	KKASSERT(name_len < HAMMER2_INODE_MAXNAME);
 	bcopy(name, nipdata->filename, name_len);
