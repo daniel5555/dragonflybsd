@@ -566,7 +566,6 @@ static int
 hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 {
 	hammer2_ioc_inode_t *ino = data;
-	hammer2_chain_t *parent;
 	int error = EINVAL;
 
 	if (ino->flags & HAMMER2IOC_INODE_FLAG_IQUOTA) {
@@ -580,7 +579,7 @@ hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 }
 
 static int
-hammer2_ioctl_comp_set(hammer2_inote_t *ip, void *data)
+hammer2_ioctl_comp_set(hammer2_inode_t *ip, void *data)
 {
 	hammer2_inode_data_t *ipdata;
 	hammer2_ioc_inode_t *ino = data;
