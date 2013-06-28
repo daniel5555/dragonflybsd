@@ -400,7 +400,10 @@ main(int ac, char **av)
 				int i;
 				for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
 					if (inode_data.u.blockset.blockref[i].type != HAMMER2_BREF_TYPE_EMPTY)
+						printf("blockrefs %d type = %d\n", i, inode_data.u.blockset.blockref[i].type);
 						printf("blockrefs %d methods = %d\n", i, inode_data.u.blockset.blockref[i].methods);
+						printf("blockrefs %d copyid = %d\n", i, inode_data.u.blockset.blockref[i].copyid);
+						printf("blockrefs %d flags = %d\n", i, inode_data.u.blockset.blockref[i].flags);
 					else
 						printf("blockrefs %d is empty.\n", i);
 				}
