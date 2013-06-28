@@ -77,7 +77,7 @@ set_comp_mode_recursive(char *directory, int comp_method)
 			inode.ip_data.comp_algo = comp_method;
 			res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 			if (res < 0) {
-				if (res != EINVAL) {
+				if (errno != EINVAL) {
 					fprintf(stderr, "ERROR during recursion after trying to set the mode: %s\n", strerror(errno));
 					exit(3);
 				}
