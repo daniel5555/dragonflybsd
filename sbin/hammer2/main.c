@@ -54,11 +54,13 @@ set_comp_mode_recursive(char *directory, int comp_method)
     int lenght = strlen(directory);
     char name[HAMMER2_INODE_MAXNAME];
     strcpy(name, directory);
-    name[lenght++] = "/";
+    name[lenght] = "/";
+    ++lenght;
     errno = 0;
     dent = readdir(dir);
     while (dent != NULL) {
-		if (dent->d_name != "." && dint->d_name != "..") {
+		if ((strcmp(dent->d_name, ".") != 0) &&
+		 (strcmp(dint->d_name, "..") != 0)) {
 			strncpy(name + lenght, dent->d_name, HAMMER2_INODE_MAXNAME - lenght);
 			int fd = hammer2_ioctl_handle(name);
 			//printf("got inode with fd = %d\n", fd);
