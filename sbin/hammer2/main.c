@@ -358,7 +358,7 @@ main(int ac, char **av)
 				exit(3);
 			}
 			inode.ip_data.comp_algo = comp_method;
-			res = ioctl(fd, HAMMER2IOC_INODE_COMP_SET, &inode);
+			res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 			if (res < 0) {
 				fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
 				//exit(3);
