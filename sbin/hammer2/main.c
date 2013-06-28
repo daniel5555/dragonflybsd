@@ -415,6 +415,7 @@ main(int ac, char **av)
 							printf("blockrefs %d methods = %d\n", i, inode_data.u.blockset.blockref[i].methods);
 							printf("blockrefs %d copyid = %d\n", i, inode_data.u.blockset.blockref[i].copyid);
 							printf("blockrefs %d flags = %d\n", i, inode_data.u.blockset.blockref[i].flags);
+							printf("blockrefs %d key = %u !\n", i, (unsigned int)inode_data.u.blockset.blockref[i].key);
 						}
 						else
 							printf("blockrefs %d is empty.\n", i);
