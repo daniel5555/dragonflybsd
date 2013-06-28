@@ -57,9 +57,9 @@ static int hammer2_ioctl_pfs_snapshot(hammer2_inode_t *ip, void *data);
 static int hammer2_ioctl_pfs_delete(hammer2_inode_t *ip, void *data);
 static int hammer2_ioctl_inode_get(hammer2_inode_t *ip, void *data);
 static int hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data);
-static int hammer2_ioctl_inode_comp_set(hammer2_inode_t *ip, void *data);
-static int hammer2_ioctl_inode_comp_rec_set(hammer2_inode_t *ip, void *data);
-static int hammer2_ioctl_inode_comp_rec_set2(hammer2_inode_t *ip, void *data);
+//static int hammer2_ioctl_inode_comp_set(hammer2_inode_t *ip, void *data);
+//static int hammer2_ioctl_inode_comp_rec_set(hammer2_inode_t *ip, void *data);
+//static int hammer2_ioctl_inode_comp_rec_set2(hammer2_inode_t *ip, void *data);
 
 int
 hammer2_ioctl(hammer2_inode_t *ip, u_long com, void *data, int fflag,
