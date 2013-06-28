@@ -415,7 +415,6 @@ main(int ac, char **av)
 				}
 			}
 			else {
-				printf("That file doesn't exist or some error occured.\n");
 				exit(0);
 			}
 			/* Do something here. */
