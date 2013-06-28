@@ -428,7 +428,7 @@ main(int ac, char **av)
 						printf("Unknown compression method.\n");
 						exit(1);
 					}
-					int fd = hammer2_ioctl_handle(av[2]);
+					int fd = hammer2_ioctl_handle(av[3]);
 					printf("got inode with fd = %d\n", fd);
 					hammer2_ioc_inode_t inode;
 					int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
