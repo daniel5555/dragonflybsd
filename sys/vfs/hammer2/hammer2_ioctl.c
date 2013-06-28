@@ -129,9 +129,9 @@ hammer2_ioctl(hammer2_inode_t *ip, u_long com, void *data, int fflag,
 		if (error == 0)
 			error = hammer2_ioctl_inode_set(ip, data);
 		break;
-	case HAMMER2IOC_INODE_COMP_SET:
+	/*case HAMMER2IOC_INODE_COMP_SET:
 		error = hammer2_ioctl_inode_comp_set(ip, data);
-		break;
+		break;*/
 	default:
 		error = EOPNOTSUPP;
 		break;
