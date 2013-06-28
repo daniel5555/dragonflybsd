@@ -57,6 +57,7 @@ static int hammer2_ioctl_pfs_snapshot(hammer2_inode_t *ip, void *data);
 static int hammer2_ioctl_pfs_delete(hammer2_inode_t *ip, void *data);
 static int hammer2_ioctl_inode_get(hammer2_inode_t *ip, void *data);
 static int hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data);
+static int hammer2_ioctl_inode_comp_set(hammer2_inode_t *ip, void *data);
 
 int
 hammer2_ioctl(hammer2_inode_t *ip, u_long com, void *data, int fflag,
@@ -129,9 +130,17 @@ hammer2_ioctl(hammer2_inode_t *ip, u_long com, void *data, int fflag,
 		if (error == 0)
 			error = hammer2_ioctl_inode_set(ip, data);
 		break;
-	/*case HAMMER2IOC_INODE_COMP_SET:
+	//recompile kernel to use what's below
+	case HAMMER2IOC_INODE_COMP_SET:
 		error = hammer2_ioctl_inode_comp_set(ip, data);
-		break;*/
+		break;
+	/*case HAMMER2IOC_INODE_COMP_REC_SET:
+	 	error = hammer2_ioctl_inode_comp_rec_set(ip, data);
+	 	break;
+	case HAMMER2IOC_INODE_COMP_REC_SET2:
+		error = hammer2_ioctl_inode_comp_rec_set2(ip, data);
+		break;
+	*/
 	default:
 		error = EOPNOTSUPP;
 		break;
@@ -568,6 +577,12 @@ hammer2_ioctl_inode_get(hammer2_inode_t *ip, void *data)
 static int
 hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 {
+	
+
+//original
+/*static int
+hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
+{
 	hammer2_ioc_inode_t *ino = data;
 	int error = EINVAL;
 
@@ -579,8 +594,39 @@ hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 	}
 
 	return (error);
+}*/
+
+//use this set function instead of dedicated ioctl for some time
+static int
+hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
+{
+	hammer2_inode_data_t *ipdata;
+	hammer2_ioc_inode_t *ino = data;
+	hammer2_chain_t *parent;
+	hammer2_trans_t trans;
+	int error = EINVAL;
+
+	hammer2_trans_init(&trans, ip->pmp, 0);
+	parent = hammer2_inode_lock_ex(ip);
+	ipdata = hammer2_chain_modify_ip(&trans, ip, &parent,
+						  HAMMER2_MODIFY_ASSERTNOCOPY);
+	ip->chain->data->ipdata = ino->ip_data;
+	ino->kdata = ip;
+	
+	/*Ignore those flags for now...*/
+	if (ino->flags & HAMMER2IOC_INODE_FLAG_IQUOTA) {
+	}
+	if (ino->flags & HAMMER2IOC_INODE_FLAG_DQUOTA) {
+	}
+	if (ino->flags & HAMMER2IOC_INODE_FLAG_COPIES) {
+	}
+	hammer2_trans_done(&trans);
+	hammer2_inode_unlock_ex(ip, parent);
+
+	return (error);
 }
 
+//need to recompile the kernel to use this
 static int
 hammer2_ioctl_comp_set(hammer2_inode_t *ip, void *data)
 {
@@ -599,5 +645,19 @@ hammer2_ioctl_comp_set(hammer2_inode_t *ip, void *data)
 	hammer2_trans_done(&trans);
 	hammer2_inode_unlock_ex(ip, parent);
 
+	return (0);
+}
+
+//future recursive ioctl
+static int
+hammer2_ioctl_comp_rec_set(hammer2_inode_t *ip, void *data)
+{
+	return (0);
+}
+
+//future recursive ioctl with files
+static int
+hammer2_ioctl_comp_rec_set2(hammer2_inode_t *ip, void *data)
+{
 	return (0);
 }
