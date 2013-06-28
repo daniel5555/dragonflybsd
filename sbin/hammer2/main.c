@@ -373,46 +373,51 @@ main(int ac, char **av)
 		} else {
 			printf("Printing the inode's contents of directory/file %s\n", av[1]);
 			int fd = hammer2_ioctl_handle(av[1]);
-			printf("got inode with fd = %d\n", fd);
-			hammer2_ioc_inode_t inode;
-			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
-			hammer2_inode_data_t inode_data;
-			inode_data = inode.ip_data;
-			printf("Got res = %d\n", res);
-			printf("Printing inode data.\n");
-			/*printf("version = %d\n", inode_data.version);
-			printf("uflags = %d\n", inode_data.uflags);
-			printf("rmajor = %d\n", inode_data.rmajor);
-			printf("rminor = %d\n", inode_data.rminor);
-			printf("ctime = %u !\n", (unsigned int)inode_data.ctime);
-			printf("mtime = %u !\n", (unsigned int)inode_data.mtime);*/
-			printf("type = %d\n", inode_data.type);
-			printf("op_flags = %d\n", inode_data.op_flags);
-			/*printf("cap_flags = %d\n", inode_data.cap_flags);
-			printf("mode = %d\n", inode_data.mode);
-			printf("inum = %u !\n", (unsigned int)inode_data.inum);
-			printf("size = %u !\n", (unsigned int)inode_data.size),
-			printf("name_key = %u !\n", (unsigned int)inode_data.name_key);
-			printf("name_len = %d\n", inode_data.name_len);
-			printf("ncopies = %d\n", inode_data.ncopies);*/
-			printf("comp_algo = %d\n", inode_data.comp_algo);
-			if (inode_data.op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
-				int i;
-				for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
-					if (inode_data.u.blockset.blockref[i].type != HAMMER2_BREF_TYPE_EMPTY) {
-						printf("blockrefs %d type = %d\n", i, inode_data.u.blockset.blockref[i].type);
-						printf("blockrefs %d methods = %d\n", i, inode_data.u.blockset.blockref[i].methods);
-						printf("blockrefs %d copyid = %d\n", i, inode_data.u.blockset.blockref[i].copyid);
-						printf("blockrefs %d flags = %d\n", i, inode_data.u.blockset.blockref[i].flags);
+			if (fd != -1) {
+				printf("got inode with fd = %d\n", fd);
+				hammer2_ioc_inode_t inode;
+				int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
+				hammer2_inode_data_t inode_data;
+				inode_data = inode.ip_data;
+				printf("Got res = %d\n", res);
+				printf("Printing inode data.\n");
+				/*printf("version = %d\n", inode_data.version);
+				printf("uflags = %d\n", inode_data.uflags);
+				printf("rmajor = %d\n", inode_data.rmajor);
+				printf("rminor = %d\n", inode_data.rminor);
+				printf("ctime = %u !\n", (unsigned int)inode_data.ctime);
+				printf("mtime = %u !\n", (unsigned int)inode_data.mtime);*/
+				printf("type = %d\n", inode_data.type);
+				printf("op_flags = %d\n", inode_data.op_flags);
+				/*printf("cap_flags = %d\n", inode_data.cap_flags);
+				printf("mode = %d\n", inode_data.mode);
+				printf("inum = %u !\n", (unsigned int)inode_data.inum);
+				printf("size = %u !\n", (unsigned int)inode_data.size),
+				printf("name_key = %u !\n", (unsigned int)inode_data.name_key);
+				printf("name_len = %d\n", inode_data.name_len);
+				printf("ncopies = %d\n", inode_data.ncopies);*/
+				printf("comp_algo = %d\n", inode_data.comp_algo);
+				if (inode_data.op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
+					int i;
+					for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
+						if (inode_data.u.blockset.blockref[i].type != HAMMER2_BREF_TYPE_EMPTY) {
+							printf("blockrefs %d type = %d\n", i, inode_data.u.blockset.blockref[i].type);
+							printf("blockrefs %d methods = %d\n", i, inode_data.u.blockset.blockref[i].methods);
+							printf("blockrefs %d copyid = %d\n", i, inode_data.u.blockset.blockref[i].copyid);
+							printf("blockrefs %d flags = %d\n", i, inode_data.u.blockset.blockref[i].flags);
+						}
+						else
+							printf("blockrefs %d is empty.\n", i);
 					}
-					else
-						printf("blockrefs %d is empty.\n", i);
+				}
+				else {
+					printf("This inode has data instead of blockrefs.\n");
 				}
 			}
 			else {
-				printf("This inode has data instead of blockrefs.\n");
+				printf("That file doesn't exist or some error occured.\n");
+				exit(0);
 			}
-			
 			/* Do something here. */
 		}
 	} else {
