@@ -45,8 +45,8 @@ int NormalExit = 1;	/* if set to 0 main() has to pthread_exit() */
 void
 set_comp_mode_recursive(char *directory, int comp_method)
 {
-	DIR *directory;
-	if ((directory = opendir (directory)) == NULL) {
+	DIR *dir;
+	if ((dir = opendir (directory)) == NULL) {
         fprintf(stderr, "ERROR while trying to set the mode recursively: %s\n", strerror(errno));
 		exit(3);
     }
@@ -56,7 +56,7 @@ set_comp_mode_recursive(char *directory, int comp_method)
     strcpy(name, directory);
     name[lenght++] = "/";
     errno = 0;
-    dent = readdir(directory);
+    dent = readdir(dir);
     while (dent != NULL) {
 		if (dent->d_name != "." && dint->d_name != "..") {
 			strncpy(name + lenght, dent->d_name, HAMMER2_INODE_MAXNAME - lenght);
@@ -78,7 +78,7 @@ set_comp_mode_recursive(char *directory, int comp_method)
 				exit(3);
 			}
 		}
-		dent = readdir(directory);
+		dent = readdir(dir);
 	}
 	if (errno != 0) {
 		fprintf(stderr, "ERROR during itertione: %s\n", strerror(errno));
