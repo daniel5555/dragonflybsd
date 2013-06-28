@@ -574,11 +574,6 @@ hammer2_ioctl_inode_get(hammer2_inode_t *ip, void *data)
 	return (0);
 }
 
-static int
-hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
-{
-	
-
 //original
 /*static int
 hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
@@ -649,15 +644,15 @@ hammer2_ioctl_comp_set(hammer2_inode_t *ip, void *data)
 }
 
 //future recursive ioctl
-static int
+/*static int
 hammer2_ioctl_comp_rec_set(hammer2_inode_t *ip, void *data)
 {
 	return (0);
-}
+}*/
 
 //future recursive ioctl with files
-static int
+/*static int
 hammer2_ioctl_comp_rec_set2(hammer2_inode_t *ip, void *data)
 {
 	return (0);
-}
+}*/
