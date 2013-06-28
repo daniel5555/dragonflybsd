@@ -140,3 +140,4 @@ uint32_t hammer2_icrc32(const void *buf, size_t size);
 uint32_t hammer2_icrc32c(const void *buf, size_t size, uint32_t crc);
 
 void hammer2_shell_parse(dmsg_msg_t *msg);
+void set_comp_mode_recursive(char *directory, int comp_method);
