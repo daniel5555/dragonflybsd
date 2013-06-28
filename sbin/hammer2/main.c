@@ -83,10 +83,11 @@ set_comp_mode_recursive(char *directory, int comp_method)
 				}
 			}
 		}
+		errno = 0; //readdir is awesome, we always must set errno to 0 before calling to it
 		dent = readdir(dir);
 	}
 	if (errno != 0) {
-		fprintf(stderr, "ERROR during itertione: %s\n", strerror(errno));
+		fprintf(stderr, "ERROR during itertion: %s\n", strerror(errno));
 		exit(3);
     }
 }
