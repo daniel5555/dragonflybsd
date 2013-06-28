@@ -57,9 +57,9 @@ static int hammer2_ioctl_pfs_snapshot(hammer2_inode_t *ip, void *data);
 static int hammer2_ioctl_pfs_delete(hammer2_inode_t *ip, void *data);
 static int hammer2_ioctl_inode_get(hammer2_inode_t *ip, void *data);
 static int hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data);
-//static int hammer2_ioctl_inode_comp_set(hammer2_inode_t *ip, void *data);
-//static int hammer2_ioctl_inode_comp_rec_set(hammer2_inode_t *ip, void *data);
-//static int hammer2_ioctl_inode_comp_rec_set2(hammer2_inode_t *ip, void *data);
+static int hammer2_ioctl_inode_comp_set(hammer2_inode_t *ip, void *data);
+static int hammer2_ioctl_inode_comp_rec_set(hammer2_inode_t *ip, void *data);
+static int hammer2_ioctl_inode_comp_rec_set2(hammer2_inode_t *ip, void *data);
 
 int
 hammer2_ioctl(hammer2_inode_t *ip, u_long com, void *data, int fflag,
@@ -133,7 +133,7 @@ hammer2_ioctl(hammer2_inode_t *ip, u_long com, void *data, int fflag,
 			error = hammer2_ioctl_inode_set(ip, data);
 		break;
 	//recompile kernel to use what's below
-	/*case HAMMER2IOC_INODE_COMP_SET:
+	case HAMMER2IOC_INODE_COMP_SET:
 		error = hammer2_ioctl_inode_comp_set(ip, data);
 		break;
 	case HAMMER2IOC_INODE_COMP_REC_SET:
@@ -142,7 +142,6 @@ hammer2_ioctl(hammer2_inode_t *ip, u_long com, void *data, int fflag,
 	case HAMMER2IOC_INODE_COMP_REC_SET2:
 		error = hammer2_ioctl_inode_comp_rec_set2(ip, data);
 		break;
-	*/
 	default:
 		error = EOPNOTSUPP;
 		break;
@@ -624,7 +623,7 @@ hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 }
 
 //need to recompile the kernel to use this
-/*static int
+static int
 hammer2_ioctl_comp_set(hammer2_inode_t *ip, void *data)
 {
 	hammer2_inode_data_t *ipdata;
@@ -643,18 +642,18 @@ hammer2_ioctl_comp_set(hammer2_inode_t *ip, void *data)
 	hammer2_inode_unlock_ex(ip, parent);
 
 	return (0);
-}*/
+}
 
 //future recursive ioctl
-/*static int
+static int
 hammer2_ioctl_comp_rec_set(hammer2_inode_t *ip, void *data)
 {
 	return (0);
-}*/
+}
 
 //future recursive ioctl with files
-/*static int
+static int
 hammer2_ioctl_comp_rec_set2(hammer2_inode_t *ip, void *data)
 {
 	return (0);
-}*/
+}
