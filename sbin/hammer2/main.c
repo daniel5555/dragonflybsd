@@ -51,10 +51,11 @@ set_comp_mode_recursive(char *directory, int comp_method)
 		exit(3);
     }
     struct dirent *dent;
-    int lenght = strlen(directory);
-    char *name[HAMMER2_INODE_MAXNAME];
+    int lenght;
+    lenght = strlen(directory);
+    char name[HAMMER2_INODE_MAXNAME];
     strcpy(name, directory);
-    name[lenght] = "/";
+    name[lenght] = '/';
     ++lenght;
     errno = 0;
     dent = readdir(dir);
