@@ -331,10 +331,10 @@ main(int ac, char **av)
 			cmd_show(av[1], 1);
 		}
 	} else if (strcmp(av[0], "setcmp") == 0) {
-		if (ac != 3) {
+		if (ac < 3 || ac > 4) {
 			fprintf(stderr, "setcmp: requires compression method and directory/file path\n");
 			usage(1);
-		} else {
+		} else if (ac == 3) {
 			int comp_method;
 			if (strcmp(av[1], "0") == 0) {
 				printf("Will turn off compression on directory/file %s\n", av[2]);
@@ -366,6 +366,16 @@ main(int ac, char **av)
 			printf("Compression mode set.\n");			
 			/* Do something here. */
 		}
+		else if (ac == 4) {
+			//Implement recursivity here
+			if (strcmp(av[1], "-r") == 0) {
+				
+			}
+			else {
+				fprintf(stderr, "setcmp: unrecognized option\n");
+				usage(1);
+			}				
+		}
 	} else if (strcmp(av[0], "printinode") == 0) {
 		if (ac != 2) {
 			fprintf(stderr, "printinode: requires directory/file path\n");
@@ -392,9 +402,9 @@ main(int ac, char **av)
 				/*printf("cap_flags = %d\n", inode_data.cap_flags);
 				printf("mode = %d\n", inode_data.mode);
 				printf("inum = %u !\n", (unsigned int)inode_data.inum);
-				printf("size = %u !\n", (unsigned int)inode_data.size),
+				printf("size = %u !\n", (unsigned int)inode_data.size),*/
 				printf("name_key = %u !\n", (unsigned int)inode_data.name_key);
-				printf("name_len = %d\n", inode_data.name_len);
+				/*printf("name_len = %d\n", inode_data.name_len);
 				printf("ncopies = %d\n", inode_data.ncopies);*/
 				printf("comp_algo = %d\n", inode_data.comp_algo);
 				if (inode_data.op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
