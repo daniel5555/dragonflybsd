@@ -50,6 +50,7 @@
 #include <sys/udev.h>
 #include <sys/diskslice.h>
 #include <dmsg.h>
+#include <dirent.h>
 
 #include <netinet/in.h>
 #include <netinet/tcp.h>
