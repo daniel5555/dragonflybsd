@@ -432,10 +432,8 @@ main(int ac, char **av)
 					set_files = 1;
 				}
 				else {
-					else {
 					printf("setcmp: Unrecognized option.\n");
 					exit(1);
-					}
 				}
 				int comp_method;
 				if (strcmp(av[2], "0") == 0) {
