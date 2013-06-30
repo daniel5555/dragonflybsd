@@ -43,7 +43,7 @@ int QuietOpt;
 int NormalExit = 1;	/* if set to 0 main() has to pthread_exit() */
 
 void
-set_comp_mode_recursive(char *directory, int comp_method)
+set_comp_mode_recursive(char *directory, int comp_method, int set_files)
 {
 	DIR *dir;
 	if ((dir = opendir (directory)) == NULL) {
@@ -73,9 +73,15 @@ set_comp_mode_recursive(char *directory, int comp_method)
 			}
 			if (inode.ip_data.type == HAMMER2_OBJTYPE_DIRECTORY) {
 				set_comp_mode_recursive(name, comp_method);
+				inode.ip_data.comp_algo = comp_method;
+				res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 			}
-			inode.ip_data.comp_algo = comp_method;
-			res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
+			else {
+				if (set_files == 1) {
+					inode.ip_data.comp_algo = comp_method;
+					res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
+				}
+			}
 			if (res < 0) {
 				if (errno != EINVAL) {
 					fprintf(stderr, "ERROR during recursion after trying to set the mode: %s\n", strerror(errno));
@@ -385,7 +391,7 @@ main(int ac, char **av)
 			fprintf(stderr, "setcmp: requires compression method and directory/file path\n");
 			usage(1);
 		} else {
-			if (ac == 3) {
+			if (ac == 3) {//no option specified, no recursion by default
 				int comp_method;
 				if (strcmp(av[1], "0") == 0) {
 					printf("Will turn off compression on directory/file %s\n", av[2]);
@@ -411,54 +417,64 @@ main(int ac, char **av)
 				inode.ip_data.comp_algo = comp_method;
 				res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 				if (res < 0) {
-					fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
-					//exit(3);
+					if (errno != EINVAL) {
+						fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
+						exit(3);
+					}
 				}
 			}
 			else {
+				int set_files;
 				if (strcmp(av[1], "-r") == 0) {
-					int comp_method;
-					if (strcmp(av[2], "0") == 0) {
-						printf("Will turn off compression on directory/file %s\n", av[3]);
-						comp_method = HAMMER2_COMP_NONE;
-					} else if (strcmp(av[2], "1") == 0) {
-						printf("Will set zero-checking compression on directory/file %s.\n", av[3]);
-						comp_method = HAMMER2_COMP_AUTOZERO;
-					} else if (strcmp(av[2], "2") == 0) {
-						printf("Will set LZ4 compression on directory/file %s.\n", av[3]);
-						comp_method = HAMMER2_COMP_LZ4;
-					} else {
-						printf("Unknown compression method.\n");
-						exit(1);
-					}
-					int fd = hammer2_ioctl_handle(av[3]);
-					printf("got inode with fd = %d\n", fd);
-					hammer2_ioc_inode_t inode;
-					int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
-					if (res < 0) {
-						fprintf(stderr, "ERROR before setting the mode: %s\n", strerror(errno));
-						exit(3);
-					}
-					if (inode.ip_data.type != HAMMER2_OBJTYPE_DIRECTORY) {
-						printf("setcmp: the specified object is not a directory, nothing changed.\n");
-						exit(1);
-					}
-					printf("Attention: recursive compression mode setting demanded, this may take a while...\n");
-					set_comp_mode_recursive(av[3], comp_method);
-					inode.ip_data.comp_algo = comp_method;
-					res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
-					if (res < 0) {
-						fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
-						//exit(3);
-					}
+					set_files = 0;
+				}
+				else if (strcmp(av[1], "-rf") == 0) {
+					set_files = 1;
 				}
 				else {
+					else {
 					printf("setcmp: Unrecognized option.\n");
 					exit(1);
-				}	
+					}
+				}
+				int comp_method;
+				if (strcmp(av[2], "0") == 0) {
+					printf("Will turn off compression on directory/file %s\n", av[3]);
+					comp_method = HAMMER2_COMP_NONE;
+				} else if (strcmp(av[2], "1") == 0) {
+					printf("Will set zero-checking compression on directory/file %s.\n", av[3]);
+					comp_method = HAMMER2_COMP_AUTOZERO;
+				} else if (strcmp(av[2], "2") == 0) {
+					printf("Will set LZ4 compression on directory/file %s.\n", av[3]);
+					comp_method = HAMMER2_COMP_LZ4;
+				} else {
+					printf("Unknown compression method.\n");
+					exit(1);
+				}
+				int fd = hammer2_ioctl_handle(av[3]);
+				printf("got inode with fd = %d\n", fd);
+				hammer2_ioc_inode_t inode;
+				int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
+				if (res < 0) {
+					fprintf(stderr, "ERROR before setting the mode: %s\n", strerror(errno));
+					exit(3);
+				}
+				if (inode.ip_data.type != HAMMER2_OBJTYPE_DIRECTORY) {
+					printf("setcmp: the specified object is not a directory, nothing changed.\n");
+					exit(1);
+				}
+				printf("Attention: recursive compression mode setting demanded, this may take a while...\n");
+				set_comp_mode_recursive(av[3], comp_method, set_files);
+				inode.ip_data.comp_algo = comp_method;
+				res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
+				if (res < 0) {
+					if (errno != EINVAL) {
+						fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
+						exit(3);
+					}
+				}
 			}
 			printf("Compression mode set.\n");			
-			/* Do something here. */
 		}
 	} else if (strcmp(av[0], "printinode") == 0) {
 		if (ac != 2) {
@@ -512,7 +528,6 @@ main(int ac, char **av)
 			else {
 				exit(0);
 			}
-			/* Do something here. */
 		}
 	} else {
 		fprintf(stderr, "Unrecognized command: %s\n", av[0]);
