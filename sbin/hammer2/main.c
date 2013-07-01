@@ -77,7 +77,7 @@ set_comp_mode_recursive(char *directory, int comp_method, int set_files)
 				res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 			}
 			else {
-				if (set_files == 1) {
+				if (set_files == 1 && inode.ip_data.type == HAMMER2_OBJTYPE_REGFILE) {
 					inode.ip_data.comp_algo = comp_method;
 					res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 				}
