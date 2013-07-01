@@ -88,6 +88,7 @@ set_comp_mode_recursive(char *directory, int comp_method, int set_files)
 					exit(3);
 				}
 			}
+			close(fd);
 		}
 		errno = 0; //readdir is awesome, we always must set errno to 0 before calling to it
 		dent = readdir(dir);
