@@ -945,7 +945,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		if (ipdata->comp_algo == 0) {
 			kprintf("No compression algorithm set.\n");
 		}
-		else (ipdata->comp_algo == 2) {
+		else if (ipdata->comp_algo == 2) {
 			kprintf("LZ4 compression set.\n");
 		}
 
