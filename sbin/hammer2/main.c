@@ -424,6 +424,7 @@ main(int ac, char **av)
 						exit(3);
 					}
 				}
+				close(fd);
 			}
 			else {
 				int set_files;
@@ -473,6 +474,7 @@ main(int ac, char **av)
 						exit(3);
 					}
 				}
+				close(fd);
 			}
 			printf("Compression mode set.\n");			
 		}
