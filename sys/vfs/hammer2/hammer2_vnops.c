@@ -941,6 +941,13 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			brelse(bp);
 			break;
 		}
+		
+		if (ipdata->comp_algo == 0) {
+			kprintf("No compression algorithm set.\n");
+		}
+		else (ipdata->comp_algo == 2) {
+			kprintf("LZ4 compression set.\n");
+		}
 
 		/*
 		 * Ok, copy the data in
