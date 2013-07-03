@@ -948,7 +948,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		}
 		/* Otherwise proceed as before without taking its value into account. */
 		else {
-			kprpintf("Ignore comp_algo.\n");
+			kprintf("Ignore comp_algo.\n");
 			kprintf("Printing variable values.\n");
 			kprintf("n = %d.\n", n);
 			kprintf("loff = %d.\n", loff);
