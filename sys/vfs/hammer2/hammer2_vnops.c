@@ -852,9 +852,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		hammer2_key_t lbase;
 		hammer2_key_t leof;
 		int trivial;
-		int lblksize;
+		int lblksize; //this indicates the size of resulting block, always power-of-2, from 64KB to 1KB 
 		int loff;
-		int n;
+		int n; //this indicates the actual size to be written
 
 		/*
 		 * Don't allow the buffer build to blow out the buffer
