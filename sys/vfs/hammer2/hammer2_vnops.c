@@ -942,64 +942,63 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			break;
 		}
 		
-		if (ipdata->comp_algo == 0) {
-			kprintf("No compression algorithm set.\n");
-		}
-		else if (ipdata->comp_algo == 1) {
-			kprintf("Zero-checking set.\n");
-		}
-		else if	(ipdata->comp_algo == 2) {
+		/* We'll start by working with comp_algo == 2 case. */
+		if	(ipdata->comp_algo == 2) {
 			kprintf("LZ4 compression set.\n");
 		}
+		/* Otherwise proceed as before without taking its value into account. */
 		else {
-			krpintf("Unknown mode.\n");
+			kprpintf("Ignore comp_algo.\n");
+			kprintf("Printing variable values.\n");
+			kprintf("n = %d.\n", n);
+			kprintf("loff = %d.\n", loff);
+			kprintf("lblksize = %d.\n", lblksize);
+			/*
+			* Ok, copy the data in
+			*/
+			hammer2_inode_unlock_ex(ip, *parentp);
+			error = uiomove(bp->b_data + loff, n, uio);
+			*parentp = hammer2_inode_lock_ex(ip);
+			atomic_set_int(&ip->flags, HAMMER2_INODE_MODIFIED);
+			ipdata = &ip->chain->data->ipdata;	/* reload */
+			kflags |= NOTE_WRITE;
+			modified = 1;
+			if (error) {
+				brelse(bp);
+				break;
+			}
+
+			/*
+			* We have to assign physical storage to the buffer we intend
+			* to dirty or write now to avoid deadlocks in the strategy
+			* code later.
+			*
+			* This can return NOOFFSET for inode-embedded data.  The
+			* strategy code will take care of it in that case.
+			*/
+			chain = hammer2_assign_physical(trans, ip, parentp,
+							lbase, lblksize, &error);
+			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
+
+			if (error) {
+				KKASSERT(chain == NULL);
+				brelse(bp);
+				break;
+			}
+	
+			/* XXX update ip_data.mtime */
+	
+			/*
+			* Once we dirty a buffer any cached offset becomes invalid.
+			*
+			* NOTE: For cluster_write() always use the trailing block
+			*	 size, which is HAMMER2_PBUFSIZE.  lblksize is the
+			*	 eof-straddling blocksize and is incorrect.
+			*/
+			bp->b_flags |= B_AGE;
+			hammer2_write_bp(chain, bp, ioflag);
+			hammer2_chain_unlock(chain);
 		}
-
-		/*
-		 * Ok, copy the data in
-		 */
-		hammer2_inode_unlock_ex(ip, *parentp);
-		error = uiomove(bp->b_data + loff, n, uio);
-		*parentp = hammer2_inode_lock_ex(ip);
-		atomic_set_int(&ip->flags, HAMMER2_INODE_MODIFIED);
-		ipdata = &ip->chain->data->ipdata;	/* reload */
-		kflags |= NOTE_WRITE;
-		modified = 1;
-		if (error) {
-			brelse(bp);
-			break;
-		}
-
-		/*
-		 * We have to assign physical storage to the buffer we intend
-		 * to dirty or write now to avoid deadlocks in the strategy
-		 * code later.
-		 *
-		 * This can return NOOFFSET for inode-embedded data.  The
-		 * strategy code will take care of it in that case.
-		 */
-		chain = hammer2_assign_physical(trans, ip, parentp,
-						lbase, lblksize, &error);
-		ipdata = &ip->chain->data->ipdata;	/* RELOAD */
-
-		if (error) {
-			KKASSERT(chain == NULL);
-			brelse(bp);
-			break;
-		}
-
-		/* XXX update ip_data.mtime */
-
-		/*
-		 * Once we dirty a buffer any cached offset becomes invalid.
-		 *
-		 * NOTE: For cluster_write() always use the trailing block
-		 *	 size, which is HAMMER2_PBUFSIZE.  lblksize is the
-		 *	 eof-straddling blocksize and is incorrect.
-		 */
-		bp->b_flags |= B_AGE;
-		hammer2_write_bp(chain, bp, ioflag);
-		hammer2_chain_unlock(chain);
 	}
 
 	/*
