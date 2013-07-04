@@ -945,6 +945,25 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		/* We'll start by working with comp_algo == 2 case. */
 		if	(ipdata->comp_algo == 2) {
 			kprintf("LZ4 compression set.\n");
+			/* Assume compression always fails. 
+			 * compress();
+			 */
+			// Call hammer2_assign_physical() here.
+			chain = hammer2_assign_physical(trans, ip, parentp,
+							lbase, lblksize, &error);
+			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
+			
+			/* Obtain the related device buffer cache.
+			 * We need to obtain hmp->devvp; of the related device.
+			 */
+			hammer2_pfsmount_t *pmp; //get this from inode
+			hammer2_mount_t *hmp; //get this from hammer2_pfsmount_t
+			pmp = ip->pmp;
+			hmp = MPTOHMP(mp);
+			struct buf *dbp; //create physical buffer
+			dbp = getblk(hmp->devvp, i * HAMMER2_ZONE_BYTES64,
+			    HAMMER2_PBUFSIZE, 0, 0);
+			
 		}
 		/* Otherwise proceed as before without taking its value into account. */
 		else {
