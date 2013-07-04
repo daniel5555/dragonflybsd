@@ -959,10 +959,21 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			hammer2_pfsmount_t *pmp; //get this from inode
 			hammer2_mount_t *hmp; //get this from hammer2_pfsmount_t
 			pmp = ip->pmp;
-			hmp = MPTOHMP(mp);
+			hmp = MPTOHMP(pmp);
 			struct buf *dbp; //create physical buffer
-			dbp = getblk(hmp->devvp, i * HAMMER2_ZONE_BYTES64,
-			    HAMMER2_PBUFSIZE, 0, 0);
+			/* getblk parameters: 1st - device, 2nd - offset,
+			 * 3rd - size of block (from 1KB to 64KB), 4th - ...,
+			 * 6th - ...
+			 */
+			/* Get device offset, hopefully this is correct... */
+			hammer2_off_t offset;
+			hammer2_off_t mask;
+			size_t size;
+			size = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
+			mask = (hammer2_off_t)size - 1;
+			offset = chain->bref.data_off & ~mask;
+			dbp = getblk(hmp->devvp, offset,
+			    HAMMER2_PBUFSIZE, 0, 0); //instead of HAMMER2_PBUFSIZE, use the size that fits compressed info
 			
 		}
 		/* Otherwise proceed as before without taking its value into account. */
