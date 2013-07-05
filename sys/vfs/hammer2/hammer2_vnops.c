@@ -995,7 +995,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			hammer2_inode_unlock_ex(ip, *parentp);
 			kprintf("Starting uiomove.\n");
 			uio->uio_iov->iov_base = compressed_buffer; //set it to address of buffer with compressed info instead of NULL
-			error = uiomove(bp->b_data + loff, compressed_block_size, uio); //instead of n, it must be the size
+			error = uiomove(dbp->b_data + loff, compressed_block_size, uio); //instead of n, it must be the size
 			*parentp = hammer2_inode_lock_ex(ip);
 			uio->uio_iov->iov_base = temp;
 			kprintf("Finished uiomove.\n");
