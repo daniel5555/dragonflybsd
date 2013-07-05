@@ -992,7 +992,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
 			char *block_compressed;
-			block_compress = bp->b_data;
+			block_compressed = (char *)dbp->b_data;
 			for (i = 0; i < n; ++i)
 				block_compressed[i] = compressed_buffer[i];
 			/*void* temp = uio->uio_iov->iov_base;
