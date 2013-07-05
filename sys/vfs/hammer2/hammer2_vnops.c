@@ -945,15 +945,18 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		/* We'll start by working with comp_algo == 2 case. */
 		if	(ipdata->comp_algo == 2) {
 			kprintf("LZ4 compression set.\n");
+			int compressed_size; //the size of resulting compressed info
 			/* For now assume that compression always fails. 
 			 * Declare char buffer[] for compressed data.
 			 * Get the uncompressed data from bp.
 			 * compress();
 			 * The compressed data is in buffer[] and we also have the size.
 			 */
+			compressed_size = n; //if compression fails
+			int size_that_fits; //power-of-2 size where compressed block fits
 			// Call hammer2_assign_physical() here.
 			chain = hammer2_assign_physical(trans, ip, parentp,
-							lbase, lblksize, &error);
+							lbase, size_that_fits/*lblksize*/, &error);
 			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 			
 			/* Obtain the related device buffer cache.
