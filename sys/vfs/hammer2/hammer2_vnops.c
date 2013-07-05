@@ -945,8 +945,11 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		/* We'll start by working with comp_algo == 2 case. */
 		if	(ipdata->comp_algo == 2) {
 			kprintf("LZ4 compression set.\n");
-			/* Assume compression always fails. 
+			/* For now assume that compression always fails. 
+			 * Declare char buffer[] for compressed data.
+			 * Get the uncompressed data from bp.
 			 * compress();
+			 * The compressed data is in buffer[] and we also have the size.
 			 */
 			// Call hammer2_assign_physical() here.
 			chain = hammer2_assign_physical(trans, ip, parentp,
@@ -974,7 +977,21 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			offset = chain->bref.data_off & ~mask;
 			dbp = getblk(hmp->devvp, offset,
 			    HAMMER2_PBUFSIZE, 0, 0); //instead of HAMMER2_PBUFSIZE, use the size that fits compressed info
-			
+			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
+			/* Copy the buffer[] with compressed info into device buffer somehow. */
+			void* temp = uio->uio_iov->iov_base;
+			hammer2_inode_unlock_ex(ip, *parentp);
+			uio->uio_iov->iov_base = NULL; //set it to address of buffer with compressed info instead of NULL
+			error = uiomove(bp->b_data + loff, n, uio); //instead of n, it must be the size
+			*parentp = hammer2_inode_lock_ex(ip);
+			uio->uio_iov->iov_base = temp;
+			/* Now write the related bdp. */
+			bdwrite(dbp);
+			/* Mark the original bp with B_RELBUF. */
+			bp->b_flags |= B_RELBUF;
+			/* Release bp. */
+			brelse(bp);
+			/* That's the writing path, need to actually test it with some buffer. */			
 		}
 		/* Otherwise proceed as before without taking its value into account. */
 		else {
