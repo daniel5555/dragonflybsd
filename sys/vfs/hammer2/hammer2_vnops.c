@@ -1015,6 +1015,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
 				bcopy(compressed_buffer, dbp->b_data, compressed_size);
+				/* Now write the related bdp. */
+				bdwrite(dbp);
 				break;
 			default:
 				panic("hammer2_write_bp: bad chain type %d\n",
@@ -1023,12 +1025,11 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			}
 			
-			/* Now write the related bdp. */
-			bdwrite(dbp);
 			/* Mark the original bp with B_RELBUF. */
 			bp->b_flags |= B_RELBUF;
 			/* Release bp. */
 			brelse(bp);
+			hammer2_chain_unlock(chain);
 			/* That's the writing path, need to actually test it with some buffer. */			
 		}
 		/* Otherwise proceed as before without taking its value into account. */
