@@ -955,7 +955,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			kprintf("Starting copying into the buffer.\n");
 			char compressed_buffer[65536];
 			compressed_size = n; //if compression fails
-			bcopy(bp->data, compressed_buffer, compressed_size);
+			bcopy(bp->b_data, compressed_buffer, compressed_size);
 			kprintf("Finished copying into the buffer.\n");
 			int compressed_block_size; //power-of-2 size where compressed block fits
 			compressed_block_size = lblksize; //if compression doesn't succeed
