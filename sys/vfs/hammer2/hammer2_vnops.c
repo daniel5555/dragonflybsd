@@ -944,14 +944,29 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		
 		/* We'll start by working with comp_algo == 2 case. */
 		if	(ipdata->comp_algo == 2) {
+			/* Perform uiomove for logical buffer. */
 			kprintf("LZ4 compression set.\n");
+			hammer2_inode_unlock_ex(ip, *parentp);
+			error = uiomove(bp->b_data + loff, n, uio);
+			*parentp = hammer2_inode_lock_ex(ip);
+			atomic_set_int(&ip->flags, HAMMER2_INODE_MODIFIED);
+			ipdata = &ip->chain->data->ipdata;	/* reload */
+			kflags |= NOTE_WRITE;
+			modified = 1;
+			if (error) {
+				brelse(bp);
+				break;
+			}
+			
 			int compressed_size; //the size of resulting compressed info
+			
 			/* For now assume that compression always fails. 
 			 * Declare char buffer[] for compressed data.
 			 * Get the uncompressed data from bp.
 			 * compress();
 			 * The compressed data is in buffer[] and we also have the size.
 			 */
+			
 			kprintf("Starting copying into the buffer.\n");
 			char compressed_buffer[65536];
 			compressed_size = n; //if compression fails
@@ -959,6 +974,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			kprintf("Finished copying into the buffer.\n");
 			int compressed_block_size; //power-of-2 size where compressed block fits
 			compressed_block_size = lblksize; //if compression doesn't succeed
+			
 			// Call hammer2_assign_physical() here.
 			chain = hammer2_assign_physical(trans, ip, parentp,
 							lbase, compressed_block_size, &error);
@@ -976,6 +992,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 * 3rd - size of block (from 1KB to 64KB), 4th - ...,
 			 * 6th - ...
 			 */
+			
 			/* Get device offset, hopefully this is correct... */
 			hammer2_off_t offset;
 			hammer2_off_t mask;
@@ -986,16 +1003,26 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			dbp = getblk(hmp->devvp, offset,
 			    compressed_block_size, 0, 0); //instead of HAMMER2_PBUFSIZE, use the size that fits compressed info
 			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
+			
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
-			/*void* temp = uio->uio_iov->iov_base;
-			hammer2_inode_unlock_ex(ip, *parentp);
-			kprintf("Starting uiomove.\n");
-			uio->uio_iov->iov_base = compressed_buffer; //set it to address of buffer with compressed info instead of NULL
-			error = uiomove(dbp->b_data + loff, compressed_block_size, uio); //instead of n, it must be the size
-			*parentp = hammer2_inode_lock_ex(ip);
-			uio->uio_iov->iov_base = temp;
-			kprintf("Finished uiomove.\n");*/
-			bcopy(compressed_buffer, dbp->b_data, compressed_size);
+			switch(chain->bref.type) {
+			case HAMMER2_BREF_TYPE_INODE:
+				KKASSERT(chain->data->ipdata.op_flags &
+					HAMMER2_OPFLAG_DIRECTDATA);
+				KKASSERT(bp->b_loffset == 0);
+				bcopy(compressed_buffer, chain->data->ipdata.u.data,
+					HAMMER2_EMBEDDED_BYTES);
+				break;
+			case HAMMER2_BREF_TYPE_DATA:
+				bcopy(compressed_buffer, dbp->b_data, compressed_size);
+				break;
+			default:
+				panic("hammer2_write_bp: bad chain type %d\n",
+					chain->bref.type);
+			/* NOT REACHED */
+				break;
+			}
+			
 			/* Now write the related bdp. */
 			bdwrite(dbp);
 			/* Mark the original bp with B_RELBUF. */
