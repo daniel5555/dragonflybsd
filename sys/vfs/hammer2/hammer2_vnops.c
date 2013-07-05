@@ -991,14 +991,18 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			    compressed_block_size, 0, 0); //instead of HAMMER2_PBUFSIZE, use the size that fits compressed info
 			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
-			void* temp = uio->uio_iov->iov_base;
+			char *block_compressed;
+			block_compress = bp->b_data;
+			for (i = 0; i < n; ++i)
+				block_compressed[i] = compressed_buffer[i];
+			/*void* temp = uio->uio_iov->iov_base;
 			hammer2_inode_unlock_ex(ip, *parentp);
 			kprintf("Starting uiomove.\n");
 			uio->uio_iov->iov_base = compressed_buffer; //set it to address of buffer with compressed info instead of NULL
 			error = uiomove(dbp->b_data + loff, compressed_block_size, uio); //instead of n, it must be the size
 			*parentp = hammer2_inode_lock_ex(ip);
 			uio->uio_iov->iov_base = temp;
-			kprintf("Finished uiomove.\n");
+			kprintf("Finished uiomove.\n");*/
 			/* Now write the related bdp. */
 			bdwrite(dbp);
 			/* Mark the original bp with B_RELBUF. */
