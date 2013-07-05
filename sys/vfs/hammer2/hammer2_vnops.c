@@ -956,7 +956,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			int size_that_fits; //power-of-2 size where compressed block fits
 			// Call hammer2_assign_physical() here.
 			chain = hammer2_assign_physical(trans, ip, parentp,
-							lbase, size_that_fits/*lblksize*/, &error);
+							lbase, size_that_fits/*lblksize*/, &error); //if compression doesn't succeed, use lblksize
 			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 			
 			/* Obtain the related device buffer cache.
