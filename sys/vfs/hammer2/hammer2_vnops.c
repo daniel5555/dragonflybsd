@@ -953,10 +953,11 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 * The compressed data is in buffer[] and we also have the size.
 			 */
 			compressed_size = n; //if compression fails
-			int size_that_fits; //power-of-2 size where compressed block fits
+			int compressed_block_size; //power-of-2 size where compressed block fits
+			compressed_block_size = lblksize; //if compression doesn't succeed
 			// Call hammer2_assign_physical() here.
 			chain = hammer2_assign_physical(trans, ip, parentp,
-							lbase, size_that_fits/*lblksize*/, &error); //if compression doesn't succeed, use lblksize
+							lbase, compressed_block_size, &error);
 			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 			
 			/* Obtain the related device buffer cache.
@@ -979,7 +980,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			mask = (hammer2_off_t)size - 1;
 			offset = chain->bref.data_off & ~mask;
 			dbp = getblk(hmp->devvp, offset,
-			    HAMMER2_PBUFSIZE, 0, 0); //instead of HAMMER2_PBUFSIZE, use the size that fits compressed info
+			    compressed_block_size, 0, 0); //instead of HAMMER2_PBUFSIZE, use the size that fits compressed info
 			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
 			void* temp = uio->uio_iov->iov_base;
