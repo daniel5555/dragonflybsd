@@ -986,7 +986,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			void* temp = uio->uio_iov->iov_base;
 			hammer2_inode_unlock_ex(ip, *parentp);
 			uio->uio_iov->iov_base = NULL; //set it to address of buffer with compressed info instead of NULL
-			error = uiomove(bp->b_data + loff, n, uio); //instead of n, it must be the size
+			error = uiomove(bp->b_data + loff, compressed_block_size, uio); //instead of n, it must be the size
 			*parentp = hammer2_inode_lock_ex(ip);
 			uio->uio_iov->iov_base = temp;
 			/* Now write the related bdp. */
