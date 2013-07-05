@@ -952,6 +952,13 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 * compress();
 			 * The compressed data is in buffer[] and we also have the size.
 			 */
+			kprintf("Starting copying into the buffer.\n");
+			char compressed_buffer[65536];
+			char *block_original;
+			block_original = (char *) bp->b_data;
+			int i;
+			for (i = 0; i < n; ++i)
+				compressed_buffer[i] = block_original[i];
 			compressed_size = n; //if compression fails
 			int compressed_block_size; //power-of-2 size where compressed block fits
 			compressed_block_size = lblksize; //if compression doesn't succeed
@@ -985,7 +992,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
 			void* temp = uio->uio_iov->iov_base;
 			hammer2_inode_unlock_ex(ip, *parentp);
-			uio->uio_iov->iov_base = NULL; //set it to address of buffer with compressed info instead of NULL
+			uio->uio_iov->iov_base = compressed_buffer; //set it to address of buffer with compressed info instead of NULL
 			error = uiomove(bp->b_data + loff, compressed_block_size, uio); //instead of n, it must be the size
 			*parentp = hammer2_inode_lock_ex(ip);
 			uio->uio_iov->iov_base = temp;
