@@ -1030,6 +1030,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			/* Release bp. */
 			brelse(bp);
 			hammer2_chain_unlock(chain);
+			uio->uio_resid = 0;
 			/* That's the writing path, need to actually test it with some buffer. */			
 		}
 		/* Otherwise proceed as before without taking its value into account. */
