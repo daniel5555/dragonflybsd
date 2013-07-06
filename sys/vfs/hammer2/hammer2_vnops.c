@@ -847,15 +847,14 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	/*
 	 * UIO write loop
 	 */
-	int iteration = 0;
 	while (uio->uio_resid > 0) {
 		hammer2_chain_t *chain;
 		hammer2_key_t lbase;
 		hammer2_key_t leof;
 		int trivial;
-		int lblksize; //this indicates the size of resulting block, always power-of-2, from 64KB to 1KB 
+		int lblksize;
 		int loff;
-		int n; //this indicates the actual size to be written
+		int n;
 
 		/*
 		 * Don't allow the buffer build to blow out the buffer
@@ -942,162 +941,52 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			brelse(bp);
 			break;
 		}
-		
-		/* We'll start by working with comp_algo == 2 case. */
-		if	(ipdata->comp_algo == 2) {
-			/* Perform uiomove for logical buffer. */
-			kprintf("LZ4 compression set.\n");
-			hammer2_inode_unlock_ex(ip, *parentp);
-			error = uiomove(bp->b_data + loff, n, uio);
-			*parentp = hammer2_inode_lock_ex(ip);
-			atomic_set_int(&ip->flags, HAMMER2_INODE_MODIFIED);
-			ipdata = &ip->chain->data->ipdata;	/* reload */
-			kflags |= NOTE_WRITE;
-			modified = 1;
-			if (error) {
-				brelse(bp);
-				break;
-			}
-			
-			
-			int compressed_size; //the size of resulting compressed info
-			
-			/* For now assume that compression always fails. 
-			 * Declare char buffer[] for compressed data.
-			 * Get the uncompressed data from bp.
-			 * compress();
-			 * The compressed data is in buffer[] and we also have the size.
-			 */
-			
-			kprintf("Starting copying into the buffer.\n");
-			char compressed_buffer[65536];
-			compressed_size = n; //if compression fails
-			bcopy(bp->b_data, compressed_buffer, compressed_size);
-			kprintf("Finished copying into the buffer.\n");
-			int compressed_block_size; //power-of-2 size where compressed block fits
-			compressed_block_size = lblksize; //if compression doesn't succeed
-			
-			// Call hammer2_assign_physical() here.
-			chain = hammer2_assign_physical(trans, ip, parentp,
-							lbase, compressed_block_size, &error);
-			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
-			
-			if (error) {
-				KKASSERT(chain == NULL);
-				brelse(bp);
-				break;
-			}
-			
-			/* Obtain the related device buffer cache.
-			 * We need to obtain hmp->devvp; of the related device.
-			 */
-			hammer2_pfsmount_t *pmp; //get this from inode
-			hammer2_mount_t *hmp; //get this from hammer2_pfsmount_t
-			pmp = ip->pmp;
-			hmp = MPTOHMP(pmp);
-			struct buf *dbp; //create physical buffer
-			/* getblk parameters: 1st - device, 2nd - offset,
-			 * 3rd - size of block (from 1KB to 64KB), 4th - ...,
-			 * 6th - ...
-			 */
-			
-			/* Get device offset, hopefully this is correct... */
-			hammer2_off_t offset;
-			hammer2_off_t mask;
-			size_t size;
-			size = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
-			mask = (hammer2_off_t)size - 1;
-			offset = chain->bref.data_off & ~mask;
-			dbp = getblk(hmp->devvp, offset,
-			    size, 0, 0); //use the size that fits compressed info
-			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
-			
-			/* Copy the buffer[] with compressed info into device buffer somehow. */
-			switch(chain->bref.type) {
-			case HAMMER2_BREF_TYPE_INODE:
-				KKASSERT(chain->data->ipdata.op_flags &
-					HAMMER2_OPFLAG_DIRECTDATA);
-				KKASSERT(bp->b_loffset == 0);
-				bcopy(compressed_buffer, chain->data->ipdata.u.data,
-					HAMMER2_EMBEDDED_BYTES);
-				break;
-			case HAMMER2_BREF_TYPE_DATA:
-				bcopy(compressed_buffer, dbp->b_data, compressed_size);
-				/* Now write the related bdp. */
-				bdwrite(dbp);
-				break;
-			default:
-				panic("hammer2_write_bp: bad chain type %d\n",
-					chain->bref.type);
-			/* NOT REACHED */
-				break;
-			}
-			
-			/* Mark the original bp with B_RELBUF. */
-			bp->b_flags |= B_RELBUF;
-			/* Release bp. */
+
+		/*
+		 * Ok, copy the data in
+		 */
+		hammer2_inode_unlock_ex(ip, *parentp);
+		error = uiomove(bp->b_data + loff, n, uio);
+		*parentp = hammer2_inode_lock_ex(ip);
+		atomic_set_int(&ip->flags, HAMMER2_INODE_MODIFIED);
+		ipdata = &ip->chain->data->ipdata;	/* reload */
+		kflags |= NOTE_WRITE;
+		modified = 1;
+		if (error) {
 			brelse(bp);
-			hammer2_chain_unlock(chain);
-			//uio->uio_resid = 0;
-			/* That's the writing path, need to actually test it with some buffer. */			
+			break;
 		}
-		/* Otherwise proceed as before without taking its value into account. */
-		else {
-			kprintf("Ignore comp_algo.\n");
-			kprintf("Iteration %d:\n", iteration);
-			kprintf("Printing variable values.\n");
-			kprintf("n = %d.\n", n);
-			kprintf("loff = %d.\n", loff);
-			kprintf("lbase = %d.\n", lbase);
-			kprintf("lblksize = %d.\n", lblksize);
-			kprintf("uio_resid = %d.\n", uio->uio_resid);
-			/*
-			* Ok, copy the data in
-			*/
-			hammer2_inode_unlock_ex(ip, *parentp);
-			error = uiomove(bp->b_data + loff, n, uio);
-			*parentp = hammer2_inode_lock_ex(ip);
-			atomic_set_int(&ip->flags, HAMMER2_INODE_MODIFIED);
-			ipdata = &ip->chain->data->ipdata;	/* reload */
-			kflags |= NOTE_WRITE;
-			modified = 1;
-			if (error) {
-				brelse(bp);
-				break;
-			}
 
-			/*
-			* We have to assign physical storage to the buffer we intend
-			* to dirty or write now to avoid deadlocks in the strategy
-			* code later.
-			*
-			* This can return NOOFFSET for inode-embedded data.  The
-			* strategy code will take care of it in that case.
-			*/
-			chain = hammer2_assign_physical(trans, ip, parentp,
-							lbase, lblksize, &error);
-			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
+		/*
+		 * We have to assign physical storage to the buffer we intend
+		 * to dirty or write now to avoid deadlocks in the strategy
+		 * code later.
+		 *
+		 * This can return NOOFFSET for inode-embedded data.  The
+		 * strategy code will take care of it in that case.
+		 */
+		chain = hammer2_assign_physical(trans, ip, parentp,
+						lbase, lblksize, &error);
+		ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 
-			if (error) {
-				KKASSERT(chain == NULL);
-				brelse(bp);
-				break;
-			}
-	
-			/* XXX update ip_data.mtime */
-	
-			/*
-			* Once we dirty a buffer any cached offset becomes invalid.
-			*
-			* NOTE: For cluster_write() always use the trailing block
-			*	 size, which is HAMMER2_PBUFSIZE.  lblksize is the
-			*	 eof-straddling blocksize and is incorrect.
-			*/
-			bp->b_flags |= B_AGE;
-			hammer2_write_bp(chain, bp, ioflag);
-			hammer2_chain_unlock(chain);
-			++iteration;
+		if (error) {
+			KKASSERT(chain == NULL);
+			brelse(bp);
+			break;
 		}
+
+		/* XXX update ip_data.mtime */
+
+		/*
+		 * Once we dirty a buffer any cached offset becomes invalid.
+		 *
+		 * NOTE: For cluster_write() always use the trailing block
+		 *	 size, which is HAMMER2_PBUFSIZE.  lblksize is the
+		 *	 eof-straddling blocksize and is incorrect.
+		 */
+		bp->b_flags |= B_AGE;
+		hammer2_write_bp(chain, bp, ioflag);
+		hammer2_chain_unlock(chain);
 	}
 
 	/*
@@ -2565,3 +2454,4 @@ struct vop_ops hammer2_spec_vops = {
 struct vop_ops hammer2_fifo_vops = {
 
 };
+
