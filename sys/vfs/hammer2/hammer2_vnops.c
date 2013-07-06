@@ -981,6 +981,12 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 							lbase, compressed_block_size, &error);
 			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 			
+			if (error) {
+				KKASSERT(chain == NULL);
+				brelse(bp);
+				break;
+			}
+			
 			/* Obtain the related device buffer cache.
 			 * We need to obtain hmp->devvp; of the related device.
 			 */
