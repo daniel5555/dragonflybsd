@@ -847,6 +847,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	/*
 	 * UIO write loop
 	 */
+	int iteration = 0;
 	while (uio->uio_resid > 0) {
 		hammer2_chain_t *chain;
 		hammer2_key_t lbase;
@@ -942,7 +943,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			break;
 		}
 		
-		int iteration = 0;
 		/* We'll start by working with comp_algo == 2 case. */
 		if	(ipdata->comp_algo == 2) {
 			/* Perform uiomove for logical buffer. */
@@ -1043,6 +1043,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			kprintf("loff = %d.\n", loff);
 			kprintf("lbase = %d.\n", lbase);
 			kprintf("lblksize = %d.\n", lblksize);
+			kprintf("uio_resid = %d.\n", uio->resid);
 			/*
 			* Ok, copy the data in
 			*/
