@@ -1002,7 +1002,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			mask = (hammer2_off_t)size - 1;
 			offset = chain->bref.data_off & ~mask;
 			dbp = getblk(hmp->devvp, offset,
-			    compressed_block_size, 0, 0); //use the size that fits compressed info
+			    size, 0, 0); //use the size that fits compressed info
 			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
 			
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
