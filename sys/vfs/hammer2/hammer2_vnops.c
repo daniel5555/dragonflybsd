@@ -959,6 +959,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			}
 			
+			
 			int compressed_size; //the size of resulting compressed info
 			
 			/* For now assume that compression always fails. 
