@@ -994,7 +994,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			hammer2_pfsmount_t *pmp; //get this from inode
 			hammer2_mount_t *hmp; //get this from hammer2_pfsmount_t
 			pmp = ip->pmp;
-			hmp = MPTOHMP(pmp);
+			hmp = pmp->mnt_data->cluster->hmp;
 			struct buf *dbp; //create physical buffer
 			/* getblk parameters: 1st - device, 2nd - offset,
 			 * 3rd - size of block (from 1KB to 64KB), 4th - ...,
