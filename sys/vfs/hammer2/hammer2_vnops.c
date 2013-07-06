@@ -942,6 +942,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			break;
 		}
 		
+		int iteration = 0;
 		/* We'll start by working with comp_algo == 2 case. */
 		if	(ipdata->comp_algo == 2) {
 			/* Perform uiomove for logical buffer. */
@@ -1036,9 +1037,11 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		/* Otherwise proceed as before without taking its value into account. */
 		else {
 			kprintf("Ignore comp_algo.\n");
+			kprintf("Iteration %d:\n", iteration);
 			kprintf("Printing variable values.\n");
 			kprintf("n = %d.\n", n);
 			kprintf("loff = %d.\n", loff);
+			kprintf("lbase = %d.\n", lbase);
 			kprintf("lblksize = %d.\n", lblksize);
 			/*
 			* Ok, copy the data in
@@ -1085,6 +1088,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			bp->b_flags |= B_AGE;
 			hammer2_write_bp(chain, bp, ioflag);
 			hammer2_chain_unlock(chain);
+			++iteration;
 		}
 	}
 
