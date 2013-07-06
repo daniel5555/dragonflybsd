@@ -1043,7 +1043,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			kprintf("loff = %d.\n", loff);
 			kprintf("lbase = %d.\n", lbase);
 			kprintf("lblksize = %d.\n", lblksize);
-			kprintf("uio_resid = %d.\n", uio->resid);
+			kprintf("uio_resid = %d.\n", uio->uio_resid);
 			/*
 			* Ok, copy the data in
 			*/
