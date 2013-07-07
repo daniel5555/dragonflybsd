@@ -855,6 +855,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		int lblksize;
 		int loff;
 		int n;
+		int iteration = 0;
 
 		/*
 		 * Don't allow the buffer build to blow out the buffer
@@ -1092,11 +1093,20 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			* This can return NOOFFSET for inode-embedded data.  The
 			* strategy code will take care of it in that case.
 			*/
+			kprintf("Iteration %d:\n", iteration);
+			kprintf("Printing variable values.\n");
+			kprintf("n = %d.\n", n);
+			kprintf("loff = %d.\n", loff);
+			kprintf("lbase = %d.\n", lbase);
+			kprintf("lblksize = %d.\n", lblksize);
+			kprintf("uio_resid = %d.\n", uio->uio_resid);
+			kprintf("Calling assign_physical.\n");
 			chain = hammer2_assign_physical(trans, ip, parentp,
 							lbase, lblksize, &error);
 			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 
 			if (error) {
+				kprintf("Got an error right after assign_physical.\n");
 				KKASSERT(chain == NULL);
 				brelse(bp);
 				break;
@@ -1112,19 +1122,24 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			*	 eof-straddling blocksize and is incorrect.
 			*/
 			bp->b_flags |= B_AGE;
+			krpintf("Calling write_bp.\n");
 			hammer2_write_bp(chain, bp, ioflag);
 			hammer2_chain_unlock(chain);
 		}
+		++iteration;
 	}
 
 	/*
 	 * Cleanup.  If we extended the file EOF but failed to write through
 	 * the entire write is a failure and we have to back-up.
 	 */
+	kprintf("Loop ended successfully.\n");
 	if (error && ipdata->size != old_eof) {
+		kprintf("Error with EOF.\n");
 		hammer2_truncate_file(trans, ip, parentp, old_eof);
 		ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 	} else if (modified) {
+		krpintf("Modified detected.\n");
 		ipdata = hammer2_chain_modify_ip(trans, ip, parentp, 0);
 		hammer2_update_time(&ipdata->mtime);
 	}
@@ -1151,6 +1166,7 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 
 	switch(chain->bref.type) {
 	case HAMMER2_BREF_TYPE_INODE:
+		kprintf("BREF_TYPE_INODE detected.\n");
 		KKASSERT(chain->data->ipdata.op_flags &
 			 HAMMER2_OPFLAG_DIRECTDATA);
 		KKASSERT(bp->b_loffset == 0);
@@ -1158,11 +1174,18 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 		      HAMMER2_EMBEDDED_BYTES);
 		break;
 	case HAMMER2_BREF_TYPE_DATA:
+		kprintf("BREF_TYPE_DATA detected.\n");
 		psize = hammer2_devblksize(chain->bytes);
 		pmask = (hammer2_off_t)psize - 1;
 		pbase = chain->bref.data_off & ~pmask;
 		boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
 		peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
+		kprintf("Printing values:\n");
+		kprintf("psize = %d\n", psize);
+		kprintf("pmask = %d\n", pmask);
+		kprintf("pbase = %d\n", pbase);
+		kprintf("boff = %d\n", boff);
+		kprintf("peof = %d\n", peof);
 
 		KKASSERT(chain->bytes == psize);
 		dbp = getblk(chain->hmp->devvp, pbase, psize, 0, 0);
@@ -1172,16 +1195,20 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 			/*
 			 * Synchronous I/O requested.
 			 */
+			kprintf("IO_SYNC requested.\n");
 			bwrite(dbp);
 		/*
 		} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
 			bdwrite(dbp);
 		*/
 		} else if (ioflag & IO_ASYNC) {
+			kprintf("IO_ASYNC requested.\n");
 			bawrite(dbp);
 		} else if (hammer2_cluster_enable) {
+			kprintf("Cluster write requested.\n");
 			cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
 		} else {
+			kprintf("Nothing requested.\n");
 			bdwrite(dbp);
 		}
 		break;
@@ -1192,6 +1219,7 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 		break;
 	}
 	bqrelse(bp);
+	kprintf("Arrived to the end of write_bp.\n");
 }
 
 /*
