@@ -1003,13 +1003,20 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			
 			/* Get device offset, hopefully this is correct... */
-			hammer2_off_t offset;
+			hammer2_off_t base;
 			hammer2_off_t mask;
+			hammer2_off_t peof;
+			size_t offset;
 			size_t size;
+			
+			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
+			
 			size = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
 			mask = (hammer2_off_t)size - 1;
-			offset = chain->bref.data_off & ~mask;
-			dbp = getblk(hmp->devvp, offset,
+			base = chain->bref.data_off & ~mask;
+			offset = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
+			eof = (base + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
+			dbp = getblk(hmp->devvp, base,
 			    size, 0, 0); //use the size that fits compressed info
 			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
 			
@@ -1023,7 +1030,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
-				bcopy(compressed_buffer, dbp->b_data, compressed_size);
+				size_t boff;
+				size_t psize;
+				bcopy(compressed_buffer, dbp->b_data + offset, compressed_size);
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
