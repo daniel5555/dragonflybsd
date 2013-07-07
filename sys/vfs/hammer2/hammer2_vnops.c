@@ -71,6 +71,8 @@ static void hammer2_extend_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
+				
+char compressed_buffer[65536];
 
 static __inline
 void
@@ -981,7 +983,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			/* Perform uiomove for logical buffer. */
 			kprintf("LZ4 compression set.\n");
 			
-			char compressed_buffer[65536];
+			//char compressed_buffer[65536];
 
 			int compressed_size; //the size of resulting compressed info
 			
