@@ -977,7 +977,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			}
 		}
 
-		if (0/*ipdata->comp_algo == 2*/) {
+		if (ipdata->comp_algo == 2) {
 			/* Perform uiomove for logical buffer. */
 			kprintf("LZ4 compression set.\n");
 
