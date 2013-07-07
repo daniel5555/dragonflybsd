@@ -956,8 +956,26 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			brelse(bp);
 			break;
 		}
+		
+		/* Testing behavior. */
+		if (ipdata->comp_algo == 2) {
+			kprintf("Compression set 2 detected.\n");
+		}
+		else {
+			if (ipdata->comp_algo == 1) {
+				kprintf("Compression set 1 detected.\n");
+			}
+			else {
+				if (ipdata->comp_algo == 0) {
+					kprintf("Compression set 0 detected.\n");
+				}
+				else {
+					kprintf("Unknown compression set detected.\n");
+				}
+			}
+		}
 
-		if	(ipdata->comp_algo == 2) {
+		if (0/*ipdata->comp_algo == 2*/) {
 			/* Perform uiomove for logical buffer. */
 			kprintf("LZ4 compression set.\n");
 
