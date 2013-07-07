@@ -807,6 +807,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	int kflags;
 	int error;
 	int modified = 0;
+	
+	char compressed_buffer[65536];
 
 	/*
 	 * Setup if append
@@ -991,7 +993,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			
 			kprintf("Starting copying into the buffer.\n");
-			char compressed_buffer[65536];
 			compressed_size = n; //if compression fails
 			bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
 			kprintf("Finished copying into the buffer.\n");
@@ -1084,7 +1085,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			/* Mark the original bp with B_RELBUF. */
 			bp->b_flags |= B_RELBUF;
 			/* Release bp. */
-			bqrelse(bp);
+			brelse(bp);
 			hammer2_chain_unlock(chain);
 			//uio->uio_resid = 0;
 			/* That's the writing path, need to actually test it with some buffer. */			
