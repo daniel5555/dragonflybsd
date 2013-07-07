@@ -1025,7 +1025,22 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			case HAMMER2_BREF_TYPE_DATA:
 				bcopy(compressed_buffer, dbp->b_data, compressed_size);
 				/* Now write the related bdp. */
+				if (ioflag & IO_SYNC) {
+				/*
+				* Synchronous I/O requested.
+				*/
+					bwrite(dbp);
+				/*
+				} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
 				bdwrite(dbp);
+				*/
+				} else if (ioflag & IO_ASYNC) {
+					bawrite(dbp);
+				} else if (hammer2_cluster_enable) {
+					cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
+				} else {
+					bdwrite(dbp);
+				}
 				break;
 			default:
 				panic("hammer2_write_bp: bad chain type %d\n",
