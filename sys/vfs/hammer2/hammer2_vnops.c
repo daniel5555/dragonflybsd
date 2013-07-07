@@ -1139,7 +1139,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		hammer2_truncate_file(trans, ip, parentp, old_eof);
 		ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 	} else if (modified) {
-		krpintf("Modified detected.\n");
+		kprintf("Modified detected.\n");
 		ipdata = hammer2_chain_modify_ip(trans, ip, parentp, 0);
 		hammer2_update_time(&ipdata->mtime);
 	}
