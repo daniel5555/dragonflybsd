@@ -843,6 +843,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		kflags |= NOTE_EXTEND;
 	}
 	KKASSERT(ipdata->type != HAMMER2_OBJTYPE_HARDLINK);
+	
+	int iteration = 0;
 
 	/*
 	 * UIO write loop
@@ -855,7 +857,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		int lblksize;
 		int loff;
 		int n;
-		int iteration = 0;
 
 		/*
 		 * Don't allow the buffer build to blow out the buffer
