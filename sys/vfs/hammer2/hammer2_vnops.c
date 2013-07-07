@@ -1122,7 +1122,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			*	 eof-straddling blocksize and is incorrect.
 			*/
 			bp->b_flags |= B_AGE;
-			krpintf("Calling write_bp.\n");
+			kprintf("Calling write_bp.\n");
 			hammer2_write_bp(chain, bp, ioflag);
 			hammer2_chain_unlock(chain);
 		}
@@ -1166,7 +1166,7 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 
 	switch(chain->bref.type) {
 	case HAMMER2_BREF_TYPE_INODE:
-		//kprintf("BREF_TYPE_INODE detected.\n");
+		kprintf("BREF_TYPE_INODE detected.\n");
 		KKASSERT(chain->data->ipdata.op_flags &
 			 HAMMER2_OPFLAG_DIRECTDATA);
 		KKASSERT(bp->b_loffset == 0);
@@ -1174,18 +1174,18 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 		      HAMMER2_EMBEDDED_BYTES);
 		break;
 	case HAMMER2_BREF_TYPE_DATA:
-		//kprintf("BREF_TYPE_DATA detected.\n");
+		kprintf("BREF_TYPE_DATA detected.\n");
 		psize = hammer2_devblksize(chain->bytes);
 		pmask = (hammer2_off_t)psize - 1;
 		pbase = chain->bref.data_off & ~pmask;
 		boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
 		peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
-		/*kprintf("Printing values:\n");
+		kprintf("Printing values:\n");
 		kprintf("psize = %d\n", psize);
 		kprintf("pmask = %d\n", pmask);
 		kprintf("pbase = %d\n", pbase);
 		kprintf("boff = %d\n", boff);
-		kprintf("peof = %d\n", peof);*/
+		kprintf("peof = %d\n", peof);
 
 		KKASSERT(chain->bytes == psize);
 		dbp = getblk(chain->hmp->devvp, pbase, psize, 0, 0);
@@ -1195,20 +1195,20 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 			/*
 			 * Synchronous I/O requested.
 			 */
-			//kprintf("IO_SYNC requested.\n");
+			kprintf("IO_SYNC requested.\n");
 			bwrite(dbp);
 		/*
 		} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
 			bdwrite(dbp);
 		*/
 		} else if (ioflag & IO_ASYNC) {
-			//kprintf("IO_ASYNC requested.\n");
+			kprintf("IO_ASYNC requested.\n");
 			bawrite(dbp);
 		} else if (hammer2_cluster_enable) {
-			//kprintf("Cluster write requested.\n");
+			kprintf("Cluster write requested.\n");
 			cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
 		} else {
-			//kprintf("Nothing requested.\n");
+			kprintf("Nothing requested.\n");
 			bdwrite(dbp);
 		}
 		break;
@@ -1219,7 +1219,7 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 		break;
 	}
 	bqrelse(bp);
-	//kprintf("Arrived to the end of write_bp.\n");
+	kprintf("Arrived to the end of write_bp.\n");
 }
 
 /*
