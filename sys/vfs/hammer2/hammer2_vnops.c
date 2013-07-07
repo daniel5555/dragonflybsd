@@ -807,8 +807,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	int kflags;
 	int error;
 	int modified = 0;
-	
-	char compressed_buffer[65536];
 
 	/*
 	 * Setup if append
@@ -982,6 +980,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		if (ipdata->comp_algo == 2) {
 			/* Perform uiomove for logical buffer. */
 			kprintf("LZ4 compression set.\n");
+			
+			char compressed_buffer[65536];
 
 			int compressed_size; //the size of resulting compressed info
 			
