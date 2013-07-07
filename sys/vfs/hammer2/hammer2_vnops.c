@@ -1044,7 +1044,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				} else if (ioflag & IO_ASYNC) {
 					bawrite(dbp);
 				} else if (hammer2_cluster_enable) {
-					cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
+					cluster_write(dbp, eof, HAMMER2_PBUFSIZE, 4/*XXX*/);
 				} else {
 					bdwrite(dbp);
 				}
