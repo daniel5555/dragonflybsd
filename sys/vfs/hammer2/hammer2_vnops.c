@@ -993,7 +993,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			kprintf("Starting copying into the buffer.\n");
 			char compressed_buffer[65536];
 			compressed_size = n; //if compression fails
-			bcopy(bp->b_data, compressed_buffer, compressed_size);
+			bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
 			kprintf("Finished copying into the buffer.\n");
 			int compressed_block_size; //power-of-2 size where compressed block fits
 			compressed_block_size = lblksize; //if compression doesn't succeed
@@ -1009,13 +1009,18 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			}
 			
+			bp->b_flags |= B_AGE;
+			
+			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
+			
 			/* Obtain the related device buffer cache.
 			 * We need to obtain hmp->devvp; of the related device.
 			 */
+			/* This may be very erroneous. */
 			hammer2_pfsmount_t *pmp; //get this from inode
 			hammer2_mount_t *hmp; //get this from hammer2_pfsmount_t
 			pmp = ip->pmp;
-			hmp = MPTOHMP(pmp);
+			//hmp = MPTOHMP(pmp);
 			struct buf *dbp; //create physical buffer
 			/* getblk parameters: 1st - device, 2nd - offset,
 			 * 3rd - size of block (from 1KB to 64KB), 4th - ...,
@@ -1023,19 +1028,19 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			
 			/* Get device offset, hopefully this is correct... */
-			hammer2_off_t base;
-			hammer2_off_t mask;
-			hammer2_off_t eof;
-			size_t offset;
-			size_t size;
+			hammer2_off_t pbase;
+			hammer2_off_t pmask;
+			hammer2_off_t peof;
+			size_t boff;
+			size_t psize;
 			
 			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
 			
-			size = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
-			mask = (hammer2_off_t)size - 1;
-			base = chain->bref.data_off & ~mask;
-			offset = chain->bref.data_off & (HAMMER2_OFF_MASK & mask);
-			eof = (base + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
+			psize = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
+			pmask = (hammer2_off_t)psize - 1;
+			pbase = chain->bref.data_off & ~pmask;
+			boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
+			peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
 			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
 			
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
@@ -1048,9 +1053,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
-				dbp = getblk(hmp->devvp, base,
-					size, 0, 0); //use the size that fits compressed info
-				bcopy(compressed_buffer, dbp->b_data + offset, compressed_size);
+				dbp = getblk(chain->hmp->devvp/*hmp->devvp*/, pbase,
+					psize, 0, 0); //use the size that fits compressed info
+				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size);
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
@@ -1064,7 +1069,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				} else if (ioflag & IO_ASYNC) {
 					bawrite(dbp);
 				} else if (hammer2_cluster_enable) {
-					cluster_write(dbp, eof, HAMMER2_PBUFSIZE, 4/*XXX*/);
+					cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
 				} else {
 					bdwrite(dbp);
 				}
