@@ -2396,6 +2396,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 	hammer2_chain_t *parent;
 	hammer2_chain_t *chain;
 	hammer2_key_t lbase;
+	int methods; //for now used to check compression on a blockref
 
 	bio = ap->a_bio;
 	bp = bio->bio_buf;
@@ -2433,6 +2434,8 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		 * Data is embedded in the inode (copy from inode).
 		 */
 		kprintf("TYPE_INODE detected.\n");
+		methods = HAMMER2_DEC_COMP(chain->bref.methods);
+		kprintf("Compression method %d detected.\n", methods);
 		hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
 	} else if (chain->bref.type == HAMMER2_BREF_TYPE_DATA) {
@@ -2442,6 +2445,8 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		 * XXX direct-IO shortcut could go here XXX.
 		 */
 		kprintf("TYPE_DATA detected.\n");
+		methods = HAMMER2_DEC_COMP(chain->bref.methods);
+		kprintf("Compression method %d detected.\n", methods);
 		hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
 	} else {
