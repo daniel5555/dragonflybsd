@@ -2447,8 +2447,17 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		kprintf("TYPE_DATA detected.\n");
 		methods = HAMMER2_DEC_COMP(chain->bref.methods);
 		kprintf("Compression method %d detected.\n", methods);
-		hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
+		if (methods == 2) {
+			breadcb(chain->hmp->devvp, lbase, bp->b_bufsize,
+			hammer_indirect_callback, nbio);
+			/* Then, as the data ends in nbio, decompress it into compressed_buffer,
+			 * and then copy it back into bio.
+			 */
+		}
+		else {
+			hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
+		}
 	} else {
 		panic("hammer2_strategy_read: unknown bref type");
 		chain = NULL;
