@@ -71,8 +71,57 @@ static void hammer2_extend_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
+static void hammer_indirect_callback(struct bio *bio);
 				
 char compressed_buffer[65536];
+
+/* From hammer_io.c */
+static void
+hammer_indirect_callback(struct bio *bio)
+{
+	struct buf *bp = bio->bio_buf;
+	struct buf *obp;
+	struct bio *obio;
+
+	/*
+	 * If BIO_DONE is already set the device buffer was already
+	 * fully valid (B_CACHE).  If it is not set then I/O was issued
+	 * and we have to run I/O completion as the last bio.
+	 *
+	 * Nobody is waiting for our device I/O to complete, we are
+	 * responsible for bqrelse()ing it which means we also have to do
+	 * the equivalent of biowait() and clear BIO_DONE (which breadcb()
+	 * may have set).
+	 *
+	 * Any preexisting device buffer should match the requested size,
+	 * but due to bigblock recycling and other factors there is some
+	 * fragility there, so we assert that the device buffer covers
+	 * the request.
+	 */
+	if ((bio->bio_flags & BIO_DONE) == 0)
+		bpdone(bp, 0);
+	bio->bio_flags &= ~(BIO_DONE | BIO_SYNC);
+
+	obio = bio->bio_caller_info1.ptr;
+	obp = obio->bio_buf;
+
+	if (bp->b_flags & B_ERROR) {
+		obp->b_flags |= B_ERROR;
+		obp->b_error = bp->b_error;
+	} else if (obio->bio_caller_info2.index &&
+		   obio->bio_caller_info1.uvalue32 !=
+		    crc32(bp->b_data, bp->b_bufsize)) {
+		obp->b_flags |= B_ERROR;
+		obp->b_error = EIO;
+	} else {
+		KKASSERT(bp->b_bufsize >= obp->b_bufsize);
+		bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
+		obp->b_resid = 0;
+		obp->b_flags |= B_AGE;
+	}
+	biodone(obio);
+	bqrelse(bp);
+}
 
 static __inline
 void
