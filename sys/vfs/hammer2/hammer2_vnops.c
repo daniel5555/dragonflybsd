@@ -2405,6 +2405,9 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 	lbase = bio->bio_offset;
 	chain = NULL;
 	KKASSERT(((int)lbase & HAMMER2_PBUFMASK) == 0);
+	
+	kprintf("Reading...\n");
+	kprintf("lbase = %d\n", lbase);
 
 #if 0
 	kprintf("read lbase %jd cached %016jx\n",
@@ -2424,10 +2427,12 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		bp->b_error = 0;
 		bzero(bp->b_data, bp->b_bcount);
 		biodone(nbio);
+		kprintf("Zero-fill data detected.\n");
 	} else if (chain->bref.type == HAMMER2_BREF_TYPE_INODE) {
 		/*
 		 * Data is embedded in the inode (copy from inode).
 		 */
+		kprintf("TYPE_INODE detected.\n");
 		hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
 	} else if (chain->bref.type == HAMMER2_BREF_TYPE_DATA) {
@@ -2436,6 +2441,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		 *
 		 * XXX direct-IO shortcut could go here XXX.
 		 */
+		kprintf("TYPE_DATA detected.\n");
 		hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
 	} else {
@@ -2443,6 +2449,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		chain = NULL;
 	}
 	hammer2_inode_unlock_sh(ip, parent);
+	kprintf("Arrived at the end of strategy read.\n");
 	return (0);
 }
 
