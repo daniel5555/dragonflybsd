@@ -53,6 +53,7 @@
 #include <sys/uio.h>
 
 #include "hammer2.h"
+#include "hammer2_lz4.h"
 
 #define ZFOFFSET	(-2LL)
 
@@ -1033,6 +1034,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			//char compressed_buffer[65536];
 
 			int compressed_size; //the size of resulting compressed info
+			int compressed_block_size; //power-of-2 size where compressed block fits
 			
 			/* For now assume that compression always fails. 
 			 * Declare char buffer[] for compressed data.
@@ -1042,14 +1044,39 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			
 			char *compressed_buffer;
-			compressed_buffer = kmalloc(65536, NULL, 0);
+			compressed_buffer = kmalloc(32768, NULL, 0);
 			
 			kprintf("Starting copying into the buffer.\n");
-			compressed_size = n; //if compression fails
-			bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
-			kprintf("Finished copying into the buffer.\n");
-			int compressed_block_size; //power-of-2 size where compressed block fits
-			compressed_block_size = lblksize; //if compression doesn't succeed
+			//compressed_size = n; //if compression fails
+			compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
+				compressed_buffer, 65536, 32768);
+			if (compressed_size == 0) {
+				compressed_size = n; //compression failed
+				compressed_block_size = lblksize; //if compression doesn't succeed
+				kprintf("Compression failed.\n");
+			}
+			//bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
+			else {
+				kprintf("Compression succeed.\n");
+				if (compressed_size <= 1024) {
+					compressed_block_size = 1024;
+				}
+				else if (compressed_size <= 2048) {
+					compressed_block_size = 2048;
+				}
+				else if (compressed_size <= 4096) {
+					compressed_block_size = 4096;
+				}
+				else if (compressed_size <= 8192) {
+					copressed_block_size = 8192;
+				}
+				else if (compressed_size <= 16384) {
+					compressed_block_size = 16384;
+				}
+				else if (compressed_size <= 32768) {
+					compressed_block_size = 32768);
+				}
+			}
 			
 			// Call hammer2_assign_physical() here.
 			chain = hammer2_assign_physical(trans, ip, parentp,
@@ -1098,18 +1125,17 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
 			switch(chain->bref.type) {
-			case HAMMER2_BREF_TYPE_INODE:
+			case HAMMER2_BREF_TYPE_INODE: //ATTENTION: do not use compression in this case. move this above to abort compression!
 				KKASSERT(chain->data->ipdata.op_flags &
 					HAMMER2_OPFLAG_DIRECTDATA);
 				KKASSERT(bp->b_loffset == 0);
-				bcopy(compressed_buffer, chain->data->ipdata.u.data,
+				bcopy(bp->b_data, chain->data->ipdata.u.data,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
 				dbp = getblk(chain->hmp->devvp, pbase,
 					psize, 0, 0); //use the size that fits compressed info
-				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size);
-				kfree(compressed_buffer, NULL);
+				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //may use the compressed size instead of block size?
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
@@ -1134,6 +1160,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			/* NOT REACHED */
 				break;
 			}
+			
+			kfree(compressed_buffer, NULL);
 			
 			/* Mark the original bp with B_RELBUF. */
 			bp->b_flags |= B_RELBUF;
