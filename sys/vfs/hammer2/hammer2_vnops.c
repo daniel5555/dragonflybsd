@@ -2499,8 +2499,35 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		if (methods == 2) {
 			int off;
 			int size;
-			off = chain->bref.data_off & 0xFFFFFFFFFFFFC;
+			off = chain->bref.data_off & 0xFFFFFFFFFFFFC0;
 			size = chain->bref.data_off & 0x0000000000003E;
+			switch (size) {
+			case 10:
+				size = 1024;
+				break;
+			case 11:
+				size = 2048;
+				break;
+			case 12:
+				size = 4096;
+				break;
+			case 13:
+				size = 8192;
+				break;
+			case 14:
+				size = 16384;
+				break;
+			case 15:
+				size = 32768;
+				break;
+			case 16:
+				size = 65536;
+				break;
+			default:
+				kprintf("We should never end here.\n");
+				size = 0;
+				break;
+			}
 			breadcb(chain->hmp->devvp, off, size,
 			hammer_indirect_callback, nbio);
 			/* Then, as the data ends in nbio, decompress it into compressed_buffer,
