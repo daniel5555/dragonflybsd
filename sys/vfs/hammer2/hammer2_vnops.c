@@ -1034,7 +1034,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			//char compressed_buffer[65536];
 
 			int compressed_size; //the size of resulting compressed info
-			int compressed_block_size; //power-of-2 size where compressed block fits
+			int compressed_block_size = lblksize; //power-of-2 size where compressed block fits, equals to logical block if compression fails
 			
 			/* For now assume that compression always fails. 
 			 * Declare char buffer[] for compressed data.
@@ -1052,7 +1052,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				compressed_buffer, 65536, 32768);
 			if (compressed_size == 0) {
 				compressed_size = n; //compression failed
-				compressed_block_size = lblksize; //if compression doesn't succeed
 				kprintf("Compression failed.\n");
 			}
 			//bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
