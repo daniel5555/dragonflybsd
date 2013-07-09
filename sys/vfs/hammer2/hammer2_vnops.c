@@ -1042,7 +1042,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			
 			char *compressed_buffer;
-			compressed_buffer = kmalloc(65536, GPF_ATOMIC);
+			compressed_buffer = kmalloc(65536, NULL, M_INTWAIT);
 			
 			kprintf("Starting copying into the buffer.\n");
 			compressed_size = n; //if compression fails
@@ -1109,7 +1109,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				dbp = getblk(chain->hmp->devvp, pbase,
 					psize, 0, 0); //use the size that fits compressed info
 				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size);
-				kfree(compressed_buffer);
+				kfree(compressed_buffer, NULL);
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
