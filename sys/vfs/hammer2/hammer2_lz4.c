@@ -405,7 +405,7 @@ to be used by the LZ4_compress_heap* family of functions.
 LZ4_createHeapMemory() returns NULL is memory allocation fails.
 */
 void* LZ4_create() { return kmalloc(HASHTABLESIZE, NULL, 0); }
-int   LZ4_free(void* ctx) { kfree(ctx); return 0; }
+int   LZ4_free(void* ctx) { kfree(ctx, NULL); return 0; }
 
 
 /*
