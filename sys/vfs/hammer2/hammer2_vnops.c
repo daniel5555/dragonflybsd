@@ -1068,13 +1068,13 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					compressed_block_size = 4096;
 				}
 				else if (compressed_size <= 8192) {
-					copressed_block_size = 8192;
+					compressed_block_size = 8192;
 				}
 				else if (compressed_size <= 16384) {
 					compressed_block_size = 16384;
 				}
 				else if (compressed_size <= 32768) {
-					compressed_block_size = 32768);
+					compressed_block_size = 32768;
 				}
 			}
 			
