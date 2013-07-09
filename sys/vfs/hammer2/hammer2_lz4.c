@@ -340,7 +340,7 @@ Destination buffer must be already allocated, and sized at a minimum of LZ4_comp
 return : the number of bytes written in buffer 'dest'
 */
 #define FUNCTION_NAME LZ4_compress_stack
-#include "lz4_encoder.h"
+#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -356,7 +356,7 @@ return : the number of bytes written in buffer 'dest', or 0 if the compression f
 */
 #define FUNCTION_NAME LZ4_compress_stack_limitedOutput
 #define LIMITED_OUTPUT
-#include "lz4_encoder.h"
+#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -373,7 +373,7 @@ return : the number of bytes written in buffer 'dest', or 0 if compression fails
 */
 #define FUNCTION_NAME LZ4_compress64k_stack
 #define COMPRESS_64K
-#include "lz4_encoder.h"
+#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -392,7 +392,7 @@ return : the number of bytes written in buffer 'dest', or 0 if the compression f
 #define FUNCTION_NAME LZ4_compress64k_stack_limitedOutput
 #define COMPRESS_64K
 #define LIMITED_OUTPUT
-#include "lz4_encoder.h"
+#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -421,7 +421,7 @@ return : the number of bytes written in buffer 'dest'
 */
 #define FUNCTION_NAME LZ4_compress_heap
 #define USE_HEAPMEMORY
-#include "lz4_encoder.h"
+#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -440,7 +440,7 @@ return : the number of bytes written in buffer 'dest', or 0 if the compression f
 #define FUNCTION_NAME LZ4_compress_heap_limitedOutput
 #define LIMITED_OUTPUT
 #define USE_HEAPMEMORY
-#include "lz4_encoder.h"
+#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -459,7 +459,7 @@ return : the number of bytes written in buffer 'dest'
 #define FUNCTION_NAME LZ4_compress64k_heap
 #define COMPRESS_64K
 #define USE_HEAPMEMORY
-#include "lz4_encoder.h"
+#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -480,7 +480,7 @@ return : the number of bytes written in buffer 'dest', or 0 if the compression f
 #define COMPRESS_64K
 #define LIMITED_OUTPUT
 #define USE_HEAPMEMORY
-#include "lz4_encoder.h"
+#include "hammer2_lz4_encoder.h"
 
 
 int LZ4_compress(const char* source, char* dest, int inputSize)
