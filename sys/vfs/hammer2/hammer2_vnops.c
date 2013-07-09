@@ -72,8 +72,6 @@ static void hammer2_extend_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer_indirect_callback(struct bio *bio);
-				
-char compressed_buffer[65536];
 
 /* From hammer_io.c */
 static void
@@ -1043,6 +1041,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 * The compressed data is in buffer[] and we also have the size.
 			 */
 			
+			char *compressed_buffer;
+			compressed_buffer = kmalloc(65536, GPF_ATOMIC);
+			
 			kprintf("Starting copying into the buffer.\n");
 			compressed_size = n; //if compression fails
 			bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
@@ -1105,9 +1106,10 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
-				dbp = getblk(chain->hmp->devvp/*hmp->devvp*/, pbase,
+				dbp = getblk(chain->hmp->devvp, pbase,
 					psize, 0, 0); //use the size that fits compressed info
 				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size);
+				kfree(compressed_buffer);
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
