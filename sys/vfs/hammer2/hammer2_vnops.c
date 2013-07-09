@@ -2497,10 +2497,14 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		methods = HAMMER2_DEC_COMP(chain->bref.methods);
 		kprintf("Compression method %d detected.\n", methods);
 		if (methods == 2) {
-			breadcb(chain->hmp->devvp, lbase, bp->b_bufsize,
+			int off;
+			int size;
+			off = chain->bref.data_off & 0xFFFFFFFFFFFFC;
+			size = chain->bref.data_off & 0x0000000000003E;
+			breadcb(chain->hmp->devvp, off, size,
 			hammer_indirect_callback, nbio);
 			/* Then, as the data ends in nbio, decompress it into compressed_buffer,
-			 * and then copy it back into bio.
+			 * and then copy it back into nbio.
 			 */
 		}
 		else {
