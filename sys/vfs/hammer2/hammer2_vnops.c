@@ -1042,7 +1042,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			
 			char *compressed_buffer;
-			compressed_buffer = kmalloc(65536, NULL, NULL);
+			compressed_buffer = kmalloc(65536, NULL, 0);
 			
 			kprintf("Starting copying into the buffer.\n");
 			compressed_size = n; //if compression fails
