@@ -50,7 +50,7 @@ Note : this source file requires "lz4_encoder.h"
 // in memory stack (0:default, fastest), or in memory heap (1:requires memory allocation (malloc)).
 // Default allocation strategy is to use stack (HEAPMODE 0)
 // Note : explicit functions *_stack* and *_heap* are unaffected by this setting
-#define HEAPMODE 0
+#define HEAPMODE 1
 
 // BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE :
 // This will provide a small boost to performance for big endian cpu, but the resulting compressed stream will be incompatible with little-endian CPU.
@@ -146,8 +146,9 @@ Note : this source file requires "lz4_encoder.h"
 //**************************************
 // Includes
 //**************************************
-#include <stdlib.h>   // for malloc
-#include <string.h>   // for memset
+//#include <stdlib.h>   // for malloc
+//#include <string.h>   // for memset
+#include "hammer2.h"
 #include "hammer2_lz4.h"
 
 
@@ -403,7 +404,7 @@ Used to allocate and free hashTable memory
 to be used by the LZ4_compress_heap* family of functions.
 LZ4_createHeapMemory() returns NULL is memory allocation fails.
 */
-void* LZ4_create() { return malloc(HASHTABLESIZE); }
+void* LZ4_create() { return kmalloc(HASHTABLESIZE, null, 0); }
 int   LZ4_free(void* ctx) { free(ctx); return 0; }
 
 
