@@ -57,6 +57,9 @@
 
 #define ZFOFFSET	(-2LL)
 
+MALLOC_DECLARE(C_BUFFER);
+MALLOC_DEFINE(C_BUFFER, "compbuffer", "Auxiliar buffer used for compression.");
+
 static int hammer2_read_file(hammer2_inode_t *ip, struct uio *uio,
 				int seqcount);
 static int hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
@@ -1042,9 +1045,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 * compress();
 			 * The compressed data is in buffer[] and we also have the size.
 			 */
-			
-			MALLOC_DECLARE(C_BUFFER);
-			MALLOC_DEFINE(C_BUFFER, "compbuffer", "Auxiliar buffer used for compression.");
 			
 			char *compressed_buffer;
 			compressed_buffer = kmalloc(65536, C_BUFFER, M_INTWAIT);
