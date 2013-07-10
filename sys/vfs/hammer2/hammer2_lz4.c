@@ -58,10 +58,6 @@ Note : this source file requires "lz4_encoder.h"
 // This option is useless on Little_Endian CPU (such as x86)
 //#define BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE 1
 
-//Declaration for kmalloc functions
-MALLOC_DECLARE(C_HASHTABLE);
-MALLOC_DEFINE(C_HASHTABLE, "comphashtable", "A hash table used by LZ4 compression function.");
-
 
 //**************************************
 // CPU Feature Detection
@@ -153,6 +149,12 @@ MALLOC_DEFINE(C_HASHTABLE, "comphashtable", "A hash table used by LZ4 compressio
 //#include <string.h>   // for memset
 #include "hammer2.h"
 #include "hammer2_lz4.h"
+#include <sys/malloc.h>
+
+
+//Declaration for kmalloc functions
+MALLOC_DECLARE(C_HASHTABLE);
+MALLOC_DEFINE(C_HASHTABLE, "comphashtable", "A hash table used by LZ4 compression function.");
 
 
 //**************************************
