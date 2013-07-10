@@ -147,9 +147,9 @@ Note : this source file requires "lz4_encoder.h"
 //**************************************
 //#include <stdlib.h>   // for malloc
 //#include <string.h>   // for memset
+#include <sys/malloc.h> //for malloc macros
 #include "hammer2.h"
 #include "hammer2_lz4.h"
-#include <sys/malloc.h>
 
 
 //Declaration for kmalloc functions

@@ -680,18 +680,6 @@ retry:
 		nipdata->op_flags |= HAMMER2_OPFLAG_DIRECTDATA;
 	}
 
-	//ATTETION: NEEDS TESTING
-	/*if (nipdata->op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
-		int i;
-		int temp;
-		for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
-			if (nipdata->u.blockset.blockref[i].type != HAMMER2_BREF_TYPE_EMPTY) {
-				temp = HAMMER2_DEC_CHECK(nipdata->u.blockset.blockref[i].methods);
-				nipdata->u.blockset.blockref[i].methods = 18;//HAMMER2_ENC_COMP(dipdata->comp_algo) + HAMMER2_ENC_CHECK(temp);
-			}
-		}
-	}*/
-
 	KKASSERT(name_len < HAMMER2_INODE_MAXNAME);
 	bcopy(name, nipdata->filename, name_len);
 	nipdata->name_key = lhc;
