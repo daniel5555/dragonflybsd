@@ -1128,8 +1128,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
-				int temp_check = chain->bref.methods;
-				temp_check = HAMMER2_DEC_CHECK(temp_check);
+				int temp_check = (((chain->bref.methods) >> 4) & 15); //can't use macros here?
 				if (compressed_size < n) {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 				}
