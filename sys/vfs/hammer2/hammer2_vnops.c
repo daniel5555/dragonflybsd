@@ -1052,7 +1052,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			kprintf("Starting copying into the buffer.\n");
 			//compressed_size = n; //if compression fails
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
-				compressed_buffer, 65536, 32768);
+				compressed_buffer, lblksize, 32768);
 			if (compressed_size == 0) {
 				compressed_size = n; //compression failed
 				bcopy(bp->b_data + loff, compressed_buffer, compressed_size); //extremely inneficient, redo later
