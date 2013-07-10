@@ -2583,8 +2583,8 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				if (result < 0) {
 					kprintf("Error during decompression!\b");
 				}
-				nbio->bio_buf = getblk(chain->hmp->devvp, pbase,
-					65536, 0, 0);
+				//nbio->bio_buf = getblk(chain->hmp->devvp, pbase,
+				//	65536, 0, 0);
 				bcopy(compressed_buffer, nbio->bio_buf->b_data, 65536);
 			}
 			
