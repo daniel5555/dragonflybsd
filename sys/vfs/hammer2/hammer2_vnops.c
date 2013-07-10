@@ -2568,7 +2568,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			/* Then, as the data ends in nbio, decompress it into compressed_buffer,
 			 * and then copy it back into nbio.
 			 */
-			kprintf("Size of bio buffer is %d.\n", nbio->bio_buf.b_bufsize);
+			kprintf("Size of bio buffer is %d.\n", nbio->bio_buf->b_bufsize);
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
 				hammer2_off_t pbase;
 				hammer2_off_t pmask;
@@ -2579,13 +2579,13 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				pbase = chain->bref.data_off & ~pmask;
 				char *compressed_buffer;
 				compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-				int result = LZ4_decompress_fast(nbio->bio_buf.b_data, compressed_buffer, 65536);
+				int result = LZ4_decompress_fast(nbio->bio_buf->b_data, compressed_buffer, 65536);
 				if (result < 0) {
 					kprintf("Error during decompression!\b");
 				}
-				nbio.bio_buf = getblk(chain->hmp->devvp, pbase,
+				nbio->bio_buf = getblk(chain->hmp->devvp, pbase,
 					65536, 0, 0);
-				bcopy(compressed_buffer, nbio->bio_buf.b_data, 65536);
+				bcopy(compressed_buffer, nbio->bio_buf->b_data, 65536);
 			}
 			
 		}
