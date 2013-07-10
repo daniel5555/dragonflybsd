@@ -1044,7 +1044,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			
 			char *compressed_buffer;
-			compressed_buffer = kmalloc(32768, NULL, 0);
+			compressed_buffer = kmalloc(65536, NULL, 0);
 			
 			kprintf("Starting copying into the buffer.\n");
 			compressed_size = n; //if compression fails
@@ -1054,7 +1054,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				compressed_size = n; //compression failed
 				kprintf("Compression failed.\n");
 			}
-			//bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
+			bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
 			else {
 				kprintf("Compression succeed.\n");
 				if (compressed_size <= 1024) {
