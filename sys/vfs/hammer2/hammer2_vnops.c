@@ -1054,7 +1054,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				compressed_size = n; //compression failed
 				kprintf("Compression failed.\n");
 			}
-			bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
 			else {
 				kprintf("Compression succeed.\n");
 				if (compressed_size <= 1024) {
@@ -1076,6 +1075,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					compressed_block_size = 32768;
 				}
 			}
+			
+			bcopy(bp->b_data + loff, compressed_buffer, compressed_size);
 			
 			// Call hammer2_assign_physical() here.
 			chain = hammer2_assign_physical(trans, ip, parentp,
