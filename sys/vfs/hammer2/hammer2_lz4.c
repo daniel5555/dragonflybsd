@@ -58,6 +58,9 @@ Note : this source file requires "lz4_encoder.h"
 // This option is useless on Little_Endian CPU (such as x86)
 //#define BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE 1
 
+//Declaration for kmalloc functions
+MALLOC_DECLARE(C_HASHTABLE);
+MALLOC_DEFINE(C_HASHTABLE, "comphashtable", "A hash table used by LZ4 compression function.");
 
 
 //**************************************
@@ -404,8 +407,8 @@ Used to allocate and free hashTable memory
 to be used by the LZ4_compress_heap* family of functions.
 LZ4_createHeapMemory() returns NULL is memory allocation fails.
 */
-void* LZ4_create() { return kmalloc(HASHTABLESIZE, NULL, 0); }
-int   LZ4_free(void* ctx) { kfree(ctx, NULL); return 0; }
+void* LZ4_create() { return kmalloc(HASHTABLESIZE, C_HASHTABLE, M_INTWAIT); }
+int   LZ4_free(void* ctx) { kfree(ctx, C_HASHTABLE); return 0; }
 
 
 /*
