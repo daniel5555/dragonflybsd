@@ -2592,6 +2592,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		else {
 			hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
+			kprintf("Size of bio buffer is %d.\n", nbio->bio_buf->b_bufsize);
 		}
 	} else {
 		panic("hammer2_strategy_read: unknown bref type");
