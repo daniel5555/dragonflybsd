@@ -1043,8 +1043,11 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 * The compressed data is in buffer[] and we also have the size.
 			 */
 			
+			MALLOC_DECLARE(C_BUFFER);
+			MALLOC_DEFINE(C_BUFFER, "compbuffer", "Auxiliar buffer used for compression.");
+			
 			char *compressed_buffer;
-			compressed_buffer = kmalloc(65536, NULL, M_INTWAIT);
+			compressed_buffer = kmalloc(65536, C_BUFFER, M_INTWAIT);
 			
 			kprintf("Starting copying into the buffer.\n");
 			compressed_size = n; //if compression fails
@@ -1161,7 +1164,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			}
 			
-			kfree(compressed_buffer, NULL);
+			kfree(compressed_buffer, C_BUFFER);
 			
 			/* Mark the original bp with B_RELBUF. */
 			bp->b_flags |= B_RELBUF;
