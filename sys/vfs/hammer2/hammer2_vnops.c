@@ -125,7 +125,8 @@ hammer_indirect_callback(struct bio *bio)
 		kprintf("obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-		int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536);
+		int result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 65536);
+		//int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536); //ATTENTION: probably reads beyound bp->data buffer and causes page fault
 		if (result < 0) {
 			kprintf("Error during decompression!\b");
 		}
