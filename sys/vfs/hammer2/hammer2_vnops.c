@@ -1145,9 +1145,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				/*if (compressed_size < n) {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 				}
-				else {
+				else {*/
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
-				}*/
+				/*}*/
 				dbp = getblk(chain->hmp->devvp, pbase,
 					psize, 0, 0); //use the size that fits compressed info
 				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //may use the compressed size instead of block size?
