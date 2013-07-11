@@ -2662,7 +2662,7 @@ hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,
 			int size = chain->bref.data_off & 0x0000000000003E;
 			int *compressed_size;
 			compressed_size = &data[size - sizeof(int)];
-			int result = LZ4_decompress_safe(data, compressed_buffer, compressed_size, 65536);
+			int result = LZ4_decompress_safe(data, compressed_buffer, *compressed_size, 65536);
 			if (result < 0) {
 				kprintf("Error during decompression.\n");
 			}
