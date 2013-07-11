@@ -2595,7 +2595,10 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				//	65536, 0, 0);
 				bcopy(compressed_buffer, nbio->bio_buf->b_data, 65536);
 			}*/
-			
+			else {
+				hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
+					 nbio);
+			}			
 		}
 		else {
 			hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
