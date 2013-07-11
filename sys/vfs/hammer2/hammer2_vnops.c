@@ -2563,7 +2563,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				size = 0;
 				break;
 			}
-			breadcb(chain->hmp->devvp, off, size,
+			breadcb(chain->hmp->devvp, off, 65536,
 			hammer_indirect_callback, nbio); //add a certain comment about this callback
 			/* Then, as the data ends in nbio, decompress it into compressed_buffer,
 			 * and then copy it back into nbio.
