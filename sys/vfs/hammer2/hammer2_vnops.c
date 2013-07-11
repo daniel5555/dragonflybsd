@@ -119,7 +119,7 @@ hammer_indirect_callback(struct bio *bio)
 		obp->b_flags |= B_ERROR;
 		obp->b_error = EIO;
 	} else {
-//		KKASSERT(bp->b_bufsize >= obp->b_bufsize);
+		KKASSERT(bp->b_bufsize >= obp->b_bufsize);
 		bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
