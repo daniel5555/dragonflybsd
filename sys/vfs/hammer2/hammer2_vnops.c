@@ -1067,7 +1067,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			kprintf("Starting copying into the buffer.\n");
 			compressed_size = 0; //if compression fails
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
-				compressed_buffer, lblksize, 32768);//ATTENTION: comment this to turn off compression
+				compressed_buffer, lblksize, 32768 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
 				compressed_size = n; //compression failed
 				bcopy(bp->b_data + loff, compressed_buffer, compressed_size); //extremely inneficient, redo later
@@ -1075,24 +1075,27 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			}
 			else {
 				kprintf("Compression succeed.\n");
-				if (compressed_size <= 1024) {
+				if (compressed_size <= 1024 - sizeof(int)) {
 					compressed_block_size = 1024;
 				}
-				else if (compressed_size <= 2048) {
+				else if (compressed_size <= 2048 - sizeof(int)) {
 					compressed_block_size = 2048;
 				}
-				else if (compressed_size <= 4096) {
+				else if (compressed_size <= 4096 - sizeof(int)) {
 					compressed_block_size = 4096;
 				}
-				else if (compressed_size <= 8192) {
+				else if (compressed_size <= 8192 - sizeof(int)) {
 					compressed_block_size = 8192;
 				}
-				else if (compressed_size <= 16384) {
+				else if (compressed_size <= 16384 - sizeof(int)) {
 					compressed_block_size = 16384;
 				}
-				else if (compressed_size <= 32768) {
+				else if (compressed_size <= 32768 - sizeof(int)) {
 					compressed_block_size = 32768;
 				}
+				int* c_size;
+				c_size = compressed_buffer[compressed_block_size - sizeof(int)];
+				*c_size = compressed_size;
 			}
 			
 			// Call hammer2_assign_physical() here.
@@ -1152,7 +1155,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				}
 				dbp = getblk(chain->hmp->devvp, pbase,
 					psize, 0, 0); //use the size that fits compressed info
-				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //may use the compressed size instead of block size?
+				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block, because there is compressed size at the end
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
@@ -2657,9 +2660,11 @@ hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,
 			char *compressed_buffer;
 			compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 			int size = chain->bref.data_off & 0x0000000000003E;
-			int result = LZ4_decompress_safe(data, compressed_buffer, size, 65536);
+			int *compressed_size;
+			compressed_size = &data[size - sizeof(int)];
+			int result = LZ4_decompress_safe(data, compressed_buffer, compressed_size, 65536);
 			if (result < 0) {
-				kprintf("Error during decompression.");
+				kprintf("Error during decompression.\n");
 			}
 			bcopy(compressed_buffer, bp->b_data, bp->b_bcount);
 			bp->b_flags |= B_NOTMETA;
