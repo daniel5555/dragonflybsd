@@ -120,6 +120,9 @@ hammer_indirect_callback(struct bio *bio)
 		obp->b_error = EIO;
 	} else {
 		KKASSERT(bp->b_bufsize >= obp->b_bufsize);
+		kprintf("Inside callback:\n");
+		kprintf("bp(c_bp) buf. size = %d\n", bp->b_bufsize);
+		kprintf("obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
 		/*char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536);
@@ -2571,7 +2574,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				break;
 			}
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
-				kprintf("Starting breacb with size = %d and off = %d.\n", size, off);
+				kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
 				breadcb(chain->hmp->devvp, off, size,
 					hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
