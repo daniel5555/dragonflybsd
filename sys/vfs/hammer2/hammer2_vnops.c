@@ -128,6 +128,7 @@ hammer_indirect_callback(struct bio *bio)
 		int result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 65536);
 		//int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536); //ATTENTION: probably reads beyound bp->data buffer and causes page fault
 		if (result < 0) {
+			int result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 65536);
 			kprintf("Error during decompression!\b");
 		}
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
