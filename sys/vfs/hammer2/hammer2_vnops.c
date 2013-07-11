@@ -2650,12 +2650,26 @@ hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,
 		 *
 		 * XXX direct-IO shortcut could go here XXX.
 		 */
-		bcopy(data, bp->b_data, bp->b_bcount);
-		bp->b_flags |= B_NOTMETA;
-		bp->b_resid = 0;
-		bp->b_error = 0;
-		hammer2_chain_unlock(chain);
-		biodone(nbio);
+		if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
+			char *compressed_buffer;
+			compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
+			int size = chain->bref.data_off & 0x0000000000003E;
+			int result = LZ4_decompress_safe(data, compressed_buffer, size, 65536);
+			bcopy(compressed_buffer, bp->b_data, bp->b_bcount);
+			bp->b_flags |= B_NOTMETA;
+			bp->b_resid = 0;
+			bp->b_error = 0;
+			hammer2_chain_unlock(chain);
+			biodone(nbio);
+		}
+		else {
+			bcopy(data, bp->b_data, bp->b_bcount);
+			bp->b_flags |= B_NOTMETA;
+			bp->b_resid = 0;
+			bp->b_error = 0;
+			hammer2_chain_unlock(chain);
+			biodone(nbio);
+		}
 	} else {
 		if (dbp)
 			bqrelse(dbp);
