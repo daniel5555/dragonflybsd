@@ -119,18 +119,18 @@ hammer_indirect_callback(struct bio *bio)
 		obp->b_flags |= B_ERROR;
 		obp->b_error = EIO;
 	} else {
-		KKASSERT(bp->b_bufsize >= obp->b_bufsize);
+		//KKASSERT(bp->b_bufsize >= obp->b_bufsize);
 		kprintf("Inside callback:\n");
 		kprintf("bp(c_bp) buf. size = %d\n", bp->b_bufsize);
 		kprintf("obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
-		/*char *compressed_buffer;
+		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536);
 		if (result < 0) {
 			kprintf("Error during decompression!\b");
 		}
-		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);*/
-		bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
+		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
+		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
 	}
@@ -1064,8 +1064,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			
 			kprintf("Starting copying into the buffer.\n");
 			compressed_size = 0; //if compression fails
-			//compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
-			//	compressed_buffer, lblksize, 32768);
+			compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
+				compressed_buffer, lblksize, 32768);//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
 				compressed_size = n; //compression failed
 				bcopy(bp->b_data + loff, compressed_buffer, compressed_size); //extremely inneficient, redo later
@@ -1145,9 +1145,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				/*if (compressed_size < n) {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 				}
-				else {*/
+				else {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
-				/*}*/
+				}*/
 				dbp = getblk(chain->hmp->devvp, pbase,
 					psize, 0, 0); //use the size that fits compressed info
 				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //may use the compressed size instead of block size?
@@ -2600,7 +2600,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				//	65536, 0, 0);
 				bcopy(compressed_buffer, nbio->bio_buf->b_data, 65536);
 			}*/
-			else {
+			else {//never enters here...
 				kprintf("Starting chain_load_async instead of breadcb.\n");
 				hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
