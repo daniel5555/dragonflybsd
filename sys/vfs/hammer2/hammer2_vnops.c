@@ -2577,11 +2577,13 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			}
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {//ATTENTION: should we detect compressed block in function of size or in function of methods??
 				kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
-				breadcb(chain->hmp->devvp, 0/*off*/, size,
-					hammer_indirect_callback, nbio); //add a certain comment about this callback
+				//breadcb(chain->hmp->devvp, off, size,
+				//	hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
 					* and then copy it back into nbio.
 					*/
+				hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
+					 nbio);
 			}
 			/*kprintf("Size of bio buffer is %d.\n", nbio->bio_buf->b_bufsize);
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
