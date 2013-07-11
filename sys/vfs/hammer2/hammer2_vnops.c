@@ -120,13 +120,14 @@ hammer_indirect_callback(struct bio *bio)
 		obp->b_error = EIO;
 	} else {
 		KKASSERT(bp->b_bufsize >= obp->b_bufsize);
-		char *compressed_buffer;
+		/*char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536);
 		if (result < 0) {
 			kprintf("Error during decompression!\b");
 		}
-		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
+		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);*/
+		bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
 	}
@@ -1059,9 +1060,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			compressed_buffer = kmalloc(65536, C_BUFFER, M_INTWAIT);
 			
 			kprintf("Starting copying into the buffer.\n");
-			//compressed_size = n; //if compression fails
-			compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
-				compressed_buffer, lblksize, 32768);
+			compressed_size = 0; //if compression fails
+			//compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
+			//	compressed_buffer, lblksize, 32768);
 			if (compressed_size == 0) {
 				compressed_size = n; //compression failed
 				bcopy(bp->b_data + loff, compressed_buffer, compressed_size); //extremely inneficient, redo later
@@ -1138,12 +1139,12 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
-				if (compressed_size < n) {
+				/*if (compressed_size < n) {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 				}
 				else {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
-				}
+				}*/
 				dbp = getblk(chain->hmp->devvp, pbase,
 					psize, 0, 0); //use the size that fits compressed info
 				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //may use the compressed size instead of block size?
@@ -2570,7 +2571,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				break;
 			}
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
-				breadcb(chain->hmp->devvp, off, 65536,
+				breadcb(chain->hmp->devvp, off, size,
 					hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
 					* and then copy it back into nbio.
