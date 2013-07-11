@@ -120,7 +120,13 @@ hammer_indirect_callback(struct bio *bio)
 		obp->b_error = EIO;
 	} else {
 		KKASSERT(bp->b_bufsize >= obp->b_bufsize);
-		bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
+		char *compressed_buffer;
+		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
+		int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536);
+		if (result < 0) {
+			kprintf("Error during decompression!\b");
+		}
+		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
 	}
@@ -2563,12 +2569,14 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				size = 0;
 				break;
 			}
-			breadcb(chain->hmp->devvp, off, 65536,
-			hammer_indirect_callback, nbio); //add a certain comment about this callback
-			/* Then, as the data ends in nbio, decompress it into compressed_buffer,
-			 * and then copy it back into nbio.
-			 */
-			kprintf("Size of bio buffer is %d.\n", nbio->bio_buf->b_bufsize);
+			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
+				breadcb(chain->hmp->devvp, off, 65536,
+					hammer_indirect_callback, nbio); //add a certain comment about this callback
+					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
+					* and then copy it back into nbio.
+					*/
+			}
+			/*kprintf("Size of bio buffer is %d.\n", nbio->bio_buf->b_bufsize);
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
 				hammer2_off_t pbase;
 				hammer2_off_t pmask;
@@ -2586,7 +2594,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				//nbio->bio_buf = getblk(chain->hmp->devvp, pbase,
 				//	65536, 0, 0);
 				bcopy(compressed_buffer, nbio->bio_buf->b_data, 65536);
-			}
+			}*/
 			
 		}
 		else {
