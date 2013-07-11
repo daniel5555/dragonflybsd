@@ -2571,6 +2571,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				break;
 			}
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
+				krpintf("Starting breacb with size = %d and off = %d.\n", size, off);
 				breadcb(chain->hmp->devvp, off, size,
 					hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
@@ -2597,6 +2598,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				bcopy(compressed_buffer, nbio->bio_buf->b_data, 65536);
 			}*/
 			else {
+				kprintf("Starting chain_load_async instead of breadcb.\n");
 				hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
 			}			
