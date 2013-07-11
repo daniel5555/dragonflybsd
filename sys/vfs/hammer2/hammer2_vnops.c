@@ -1142,12 +1142,12 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
-				/*if (compressed_size < n) {
+				if (compressed_size < n) {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 				}
 				else {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
-				}*/
+				}
 				dbp = getblk(chain->hmp->devvp, pbase,
 					psize, 0, 0); //use the size that fits compressed info
 				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //may use the compressed size instead of block size?
@@ -2573,7 +2573,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				size = 0;
 				break;
 			}
-			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
+			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {//ATTENTION: should we detect compressed block in function of size or in function of methods??
 				kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
 				breadcb(chain->hmp->devvp, off, size,
 					hammer_indirect_callback, nbio); //add a certain comment about this callback
