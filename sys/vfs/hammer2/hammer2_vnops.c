@@ -1094,7 +1094,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					compressed_block_size = 32768;
 				}
 				int* c_size;
-				c_size = compressed_buffer[compressed_block_size - sizeof(int)];
+				c_size = &compressed_buffer[compressed_block_size - sizeof(int)];
 				*c_size = compressed_size;
 			}
 			
