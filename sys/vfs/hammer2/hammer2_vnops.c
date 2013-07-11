@@ -125,7 +125,7 @@ hammer_indirect_callback(struct bio *bio)
 		kprintf("obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-		int result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 16384);
+		int result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 65536);
 		//int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536); //ATTENTION: probably reads beyound bp->data buffer and causes page fault
 		if (result < 0) {
 			//result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 65536);
@@ -2577,7 +2577,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			}
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {//ATTENTION: should we detect compressed block in function of size or in function of methods??
 				kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
-				breadcb(chain->hmp->devvp, off, size,
+				breadcb(chain->hmp->devvp, 0/*off*/, size,
 					hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
 					* and then copy it back into nbio.
