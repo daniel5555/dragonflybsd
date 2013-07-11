@@ -2576,12 +2576,13 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				break;
 			}
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {//ATTENTION: should we detect compressed block in function of size or in function of methods??
-				kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
+				//kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
 				//breadcb(chain->hmp->devvp, off, size,
 				//	hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
 					* and then copy it back into nbio.
 					*/
+				kprintf("Starting chain_load_async.\n");
 				hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
 			}
@@ -2651,10 +2652,15 @@ hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,
 		 * XXX direct-IO shortcut could go here XXX.
 		 */
 		if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
+			kprintf("Inside strategy read callback.\n");
+			kprintf("LZ4 detected.\n");
 			char *compressed_buffer;
 			compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 			int size = chain->bref.data_off & 0x0000000000003E;
 			int result = LZ4_decompress_safe(data, compressed_buffer, size, 65536);
+			if (result < 0) {
+				kprintf("Error during decompression.");
+			}
 			bcopy(compressed_buffer, bp->b_data, bp->b_bcount);
 			bp->b_flags |= B_NOTMETA;
 			bp->b_resid = 0;
