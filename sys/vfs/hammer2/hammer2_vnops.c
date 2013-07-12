@@ -123,9 +123,6 @@ hammer_indirect_callback(struct bio *bio)
 		kprintf("Inside callback:\n");
 		kprintf("bp(c_bp) buf. size = %d\n", bp->b_bufsize);
 		kprintf("obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
-		char *compressed_buffer;
-		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-		int result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 65536);
 		
 		int *compressed_size;
 		char *buffer;
