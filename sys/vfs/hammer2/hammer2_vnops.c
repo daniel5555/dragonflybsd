@@ -1102,7 +1102,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				}
 				int* c_size;
 				//c_size = &compressed_buffer[compressed_block_size - sizeof(int)];//write the compressed size at the end
-				c_size = &compressed_buffer;//write the compressed size at start
+				c_size = compressed_buffer;//write the compressed size at start
 				*c_size = compressed_size;
 				kprintf("Compressed size is %d.\n", compressed_size);
 				kprintf("Compressed size in block is %d.\n", *c_size);
