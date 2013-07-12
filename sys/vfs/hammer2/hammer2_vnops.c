@@ -126,12 +126,26 @@ hammer_indirect_callback(struct bio *bio)
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		int result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 65536);
+		
+		int *compressed_size;
+		char *buffer;
+		buffer = bp->b_data;
+		compressed_size = &buffer[bp->b_bufsize - sizeof(int)];
+		char *compressed_buffer;
+		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
+		kprintf("Compressed size is %d.\n", *compressed_size);
+		int result = LZ4_decompress_safe(data, compressed_buffer, *compressed_size, 65536);
+		if (result < 0) {
+			kprintf("Error during decompression.\n");
+		}
+		
 		//int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536); //ATTENTION: probably reads beyound bp->data buffer and causes page fault
 		if (result < 0) {
 			//result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 65536);
 			kprintf("Error during decompression!\b");
 		}
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
+		kfree(compressed_buffer, D_BUFFER);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
@@ -2583,14 +2597,20 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			}
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {//ATTENTION: should we detect compressed block in function of size or in function of methods??
 				//kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
-				//breadcb(chain->hmp->devvp, off, size,
-				//	hammer_indirect_callback, nbio); //add a certain comment about this callback
+				bref = &chain->bref;
+
+				psize = hammer2_devblksize(chain->bytes);
+				pmask = (hammer2_off_t)psize - 1;
+				pbase = bref->data_off & ~pmask;
+				kprintf("Starting breadcb with pbase = %d and psize = %d.\n", pbase, psize);
+				breadcb(chain->hmp->devvp, pbase, psize,
+					hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
 					* and then copy it back into nbio.
 					*/
 				kprintf("Starting chain_load_async.\n");
-				hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
-					 nbio);
+				//hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
+				//	 nbio);
 			}
 			/*kprintf("Size of bio buffer is %d.\n", nbio->bio_buf->b_bufsize);
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
