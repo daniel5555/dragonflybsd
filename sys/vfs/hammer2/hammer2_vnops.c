@@ -128,11 +128,11 @@ hammer_indirect_callback(struct bio *bio)
 		char *buffer;
 		buffer = bp->b_data;
 		//compressed_size = &buffer[bp->b_bufsize - sizeof(int)];//compressed size at the end of stream
-		compressed_size = &buffer;//compressed size at the start
+		compressed_size = buffer;//compressed size at the start
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		kprintf("Compressed size is %d.\n", *compressed_size);
-		int result = LZ4_decompress_safe(buffer[sizeof(int)], compressed_buffer, *compressed_size, 65536);
+		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, 65536);
 		if (result < 0) {
 			kprintf("Error during decompression.\n");
 		}
@@ -1074,7 +1074,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			kprintf("Starting copying into the buffer.\n");
 			compressed_size = 0; //if compression fails
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
-				compressed_buffer[sizeof(int)], lblksize, 32768 - sizeof(int));//ATTENTION: comment this to turn off compression
+				&compressed_buffer[sizeof(int)], lblksize, 32768 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
 				compressed_size = n; //compression failed
 				bcopy(bp->b_data + loff, compressed_buffer, compressed_size); //extremely inneficient, redo later
