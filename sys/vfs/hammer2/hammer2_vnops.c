@@ -131,7 +131,7 @@ hammer_indirect_callback(struct bio *bio)
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		kprintf("Compressed size is %d.\n", *compressed_size);
-		int result = LZ4_decompress_safe(data, compressed_buffer, *compressed_size, 65536);
+		int result = LZ4_decompress_safe(bp->b_data, compressed_buffer, *compressed_size, 65536);
 		if (result < 0) {
 			kprintf("Error during decompression.\n");
 		}
