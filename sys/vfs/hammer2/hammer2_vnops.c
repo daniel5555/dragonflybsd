@@ -2705,7 +2705,6 @@ hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,
 			hammer2_chain_unlock(chain);
 			kfree(compressed_buffer, D_BUFFER);
 			biodone(nbio);
-			bqrelse(bp);
 		}
 		else {
 			bcopy(data, bp->b_data, bp->b_bcount);
