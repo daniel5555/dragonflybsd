@@ -2599,7 +2599,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				psize = hammer2_devblksize(chain->bytes);
 				pmask = (hammer2_off_t)psize - 1;
 				pbase = bref->data_off & ~pmask;
-				kprintf("Starting breadcb with pbase = %d and psize = %d.\n", pbase, size);
+				kprintf("Starting breadcb with pbase = %d and size = %d.\n", pbase, size);
 				breadcb(chain->hmp->devvp, pbase, size,
 					hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
