@@ -2597,8 +2597,13 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			}
 			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {//ATTENTION: should we detect compressed block in function of size or in function of methods??
 				//kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
+				hammer2_blockref_t *bref;
+				hammer2_off_t pbase;
+				hammer2_off_t pmask;
+				size_t boff;
+				size_t psize;
+								
 				bref = &chain->bref;
-
 				psize = hammer2_devblksize(chain->bytes);
 				pmask = (hammer2_off_t)psize - 1;
 				pbase = bref->data_off & ~pmask;
