@@ -136,11 +136,6 @@ hammer_indirect_callback(struct bio *bio)
 			kprintf("Error during decompression.\n");
 		}
 		
-		//int result = LZ4_decompress_fast(bp->b_data, compressed_buffer, 65536); //ATTENTION: probably reads beyound bp->data buffer and causes page fault
-		if (result < 0) {
-			//result = LZ4_decompress_safe(bp->b_data, compressed_buffer, bp->b_bufsize, 65536);
-			kprintf("Error during decompression!\b");
-		}
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
 		kfree(compressed_buffer, D_BUFFER);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
@@ -2605,7 +2600,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				pmask = (hammer2_off_t)psize - 1;
 				pbase = bref->data_off & ~pmask;
 				kprintf("Starting breadcb with pbase = %d and psize = %d.\n", pbase, psize);
-				breadcb(chain->hmp->devvp, pbase, psize,
+				breadcb(chain->hmp->devvp, pbase, size,
 					hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
 					* and then copy it back into nbio.
