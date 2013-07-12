@@ -2663,6 +2663,33 @@ hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,
 			char *compressed_buffer;
 			compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 			int size = chain->bref.data_off & 0x0000000000003E;
+			switch (size) {
+			case 10:
+				size = 1024;
+				break;
+			case 11:
+				size = 2048;
+				break;
+			case 12:
+				size = 4096;
+				break;
+			case 13:
+				size = 8192;
+				break;
+			case 14:
+				size = 16384;
+				break;
+			case 15:
+				size = 32768;
+				break;
+			case 16:
+				size = 65536;
+				break;
+			default:
+				kprintf("We should never end here.\n");
+				size = 0;
+				break;
+			}
 			kprintf("Size of chain is %d.\n", size);
 			int *compressed_size;
 			compressed_size = &data[size - sizeof(int)];
