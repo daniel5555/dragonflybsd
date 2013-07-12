@@ -127,11 +127,12 @@ hammer_indirect_callback(struct bio *bio)
 		int *compressed_size;
 		char *buffer;
 		buffer = bp->b_data;
-		compressed_size = &buffer[bp->b_bufsize - sizeof(int)];
+		//compressed_size = &buffer[bp->b_bufsize - sizeof(int)];//compressed size at the end of stream
+		compressed_size = &buffer;//compressed size at the start
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		kprintf("Compressed size is %d.\n", *compressed_size);
-		int result = LZ4_decompress_safe(bp->b_data, compressed_buffer, *compressed_size, 65536);
+		int result = LZ4_decompress_safe(buffer[sizeof(int)], compressed_buffer, *compressed_size, 65536);
 		if (result < 0) {
 			kprintf("Error during decompression.\n");
 		}
@@ -1073,7 +1074,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			kprintf("Starting copying into the buffer.\n");
 			compressed_size = 0; //if compression fails
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
-				compressed_buffer, lblksize, 32768 - sizeof(int));//ATTENTION: comment this to turn off compression
+				compressed_buffer[sizeof(int)], lblksize, 32768 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
 				compressed_size = n; //compression failed
 				bcopy(bp->b_data + loff, compressed_buffer, compressed_size); //extremely inneficient, redo later
@@ -1100,7 +1101,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					compressed_block_size = 32768;
 				}
 				int* c_size;
-				c_size = &compressed_buffer[compressed_block_size - sizeof(int)];
+				//c_size = &compressed_buffer[compressed_block_size - sizeof(int)];//write the compressed size at the end
+				c_size = &compressed_buffer;//write the compressed size at start
 				*c_size = compressed_size;
 				kprintf("Compressed size is %d.\n", compressed_size);
 				kprintf("Compressed size in block is %d.\n", *c_size);
@@ -2600,34 +2602,15 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				pmask = (hammer2_off_t)psize - 1;
 				pbase = bref->data_off & ~pmask;
 				kprintf("Starting breadcb with pbase = %d and size = %d.\n", pbase, size);
-				breadcb(chain->hmp->devvp, pbase, size,
+				breadcb(chain->hmp->devvp, pbase, psize,
 					hammer_indirect_callback, nbio); //add a certain comment about this callback
 					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
 					* and then copy it back into nbio.
 					*/
-				kprintf("Starting chain_load_async.\n");
+				//kprintf("Starting chain_load_async.\n");
 				//hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 				//	 nbio);
 			}
-			/*kprintf("Size of bio buffer is %d.\n", nbio->bio_buf->b_bufsize);
-			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
-				hammer2_off_t pbase;
-				hammer2_off_t pmask;
-				size_t psize;
-			
-				psize = hammer2_devblksize(chain->bytes);
-				pmask = (hammer2_off_t)psize - 1;
-				pbase = chain->bref.data_off & ~pmask;
-				char *compressed_buffer;
-				compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-				int result = LZ4_decompress_fast(nbio->bio_buf->b_data, compressed_buffer, 65536);
-				if (result < 0) {
-					kprintf("Error during decompression!\b");
-				}
-				//nbio->bio_buf = getblk(chain->hmp->devvp, pbase,
-				//	65536, 0, 0);
-				bcopy(compressed_buffer, nbio->bio_buf->b_data, 65536);
-			}*/
 			else {//never enters here...
 				kprintf("Starting chain_load_async instead of breadcb.\n");
 				hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
