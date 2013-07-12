@@ -1166,7 +1166,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				}
 				dbp = getblk(chain->hmp->devvp, pbase,
 					psize, 0, 0); //use the size that fits compressed info
-				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block, because there is compressed size at the end
+				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
@@ -2557,65 +2557,21 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		kprintf("TYPE_DATA detected.\n");
 		methods = HAMMER2_DEC_COMP(chain->bref.methods);
 		kprintf("Compression method %d detected.\n", methods);
-		if (methods == 2) {
-			int off;
-			int size;
-			off = chain->bref.data_off & 0xFFFFFFFFFFFFC0;
-			size = chain->bref.data_off & 0x0000000000003E;
-			switch (size) {
-			case 10:
-				size = 1024;
-				break;
-			case 11:
-				size = 2048;
-				break;
-			case 12:
-				size = 4096;
-				break;
-			case 13:
-				size = 8192;
-				break;
-			case 14:
-				size = 16384;
-				break;
-			case 15:
-				size = 32768;
-				break;
-			case 16:
-				size = 65536;
-				break;
-			default:
-				kprintf("We should never end here.\n");
-				size = 0;
-				break;
-			}
-			if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {//ATTENTION: should we detect compressed block in function of size or in function of methods??
-				//kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
-				hammer2_blockref_t *bref;
-				hammer2_off_t pbase;
-				hammer2_off_t pmask;
-				size_t boff;
-				size_t psize;
-								
-				bref = &chain->bref;
-				psize = hammer2_devblksize(chain->bytes);
-				pmask = (hammer2_off_t)psize - 1;
-				pbase = bref->data_off & ~pmask;
-				kprintf("Starting breadcb with pbase = %d and size = %d.\n", pbase, size);
-				breadcb(chain->hmp->devvp, pbase, psize,
-					hammer_indirect_callback, nbio); //add a certain comment about this callback
-					/* Then, as the data ends in nbio, decompress it into compressed_buffer,
-					* and then copy it back into nbio.
-					*/
-				//kprintf("Starting chain_load_async.\n");
-				//hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
-				//	 nbio);
-			}
-			else {//never enters here...
-				kprintf("Starting chain_load_async instead of breadcb.\n");
-				hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
-					 nbio);
-			}			
+		if (methods == HAMMER2_COMP_LZ4) {
+			//kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
+			hammer2_blockref_t *bref;
+			hammer2_off_t pbase;
+			hammer2_off_t pmask;
+			size_t boff;
+			size_t psize;
+				
+			bref = &chain->bref;
+			psize = hammer2_devblksize(chain->bytes);
+			pmask = (hammer2_off_t)psize - 1;
+			pbase = bref->data_off & ~pmask;
+			kprintf("Starting breadcb with pbase = %d and psize = %d.\n", pbase, psize);
+			breadcb(chain->hmp->devvp, pbase, psize,
+				hammer_indirect_callback, nbio); //add a certain comment about this callback
 		}
 		else {
 			hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
@@ -2657,63 +2613,12 @@ hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,
 		 *
 		 * XXX direct-IO shortcut could go here XXX.
 		 */
-		if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
-			kprintf("Inside strategy read callback.\n");
-			kprintf("LZ4 detected.\n");
-			char *compressed_buffer;
-			compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-			int size = chain->bref.data_off & 0x0000000000003E;
-			switch (size) {
-			case 10:
-				size = 1024;
-				break;
-			case 11:
-				size = 2048;
-				break;
-			case 12:
-				size = 4096;
-				break;
-			case 13:
-				size = 8192;
-				break;
-			case 14:
-				size = 16384;
-				break;
-			case 15:
-				size = 32768;
-				break;
-			case 16:
-				size = 65536;
-				break;
-			default:
-				kprintf("We should never end here.\n");
-				size = 0;
-				break;
-			}
-			kprintf("Size of chain is %d.\n", size);
-			int *compressed_size;
-			compressed_size = &data[size - sizeof(int)];
-			kprintf("Compressed size is %d.\n", *compressed_size);
-			int result = LZ4_decompress_safe(data, compressed_buffer, *compressed_size, 65536);
-			if (result < 0) {
-				kprintf("Error during decompression.\n");
-			}
-			bcopy(compressed_buffer, bp->b_data, bp->b_bcount);
-			bp->b_flags |= B_NOTMETA;
-			bp->b_resid = 0;
-			bp->b_error = 0;
-			hammer2_chain_unlock(chain);
-			kfree(compressed_buffer, D_BUFFER);
-			biodone(nbio);
-		}
-		else {
-			bcopy(data, bp->b_data, bp->b_bcount);
-			bp->b_flags |= B_NOTMETA;
-			bp->b_resid = 0;
-			bp->b_error = 0;
-			hammer2_chain_unlock(chain);
-			biodone(nbio);
-		}
+		bcopy(data, bp->b_data, bp->b_bcount);
+		bp->b_flags |= B_NOTMETA;
+		bp->b_resid = 0;
+		bp->b_error = 0;
+		hammer2_chain_unlock(chain);
+		biodone(nbio);
 	} else {
 		if (dbp)
 			bqrelse(dbp);
