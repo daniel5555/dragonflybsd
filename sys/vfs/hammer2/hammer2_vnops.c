@@ -1096,6 +1096,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				int* c_size;
 				c_size = &compressed_buffer[compressed_block_size - sizeof(int)];
 				*c_size = compressed_size;
+				kprintf("Compressed size is %d.\n", compressed_size);
+				kprintf("Compressed size in block is %d.\n", *c_size);
+				kprintf("Compressed block size is %d.\n", compressed_block_size);
 			}
 			
 			// Call hammer2_assign_physical() here.
@@ -2660,8 +2663,10 @@ hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,
 			char *compressed_buffer;
 			compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 			int size = chain->bref.data_off & 0x0000000000003E;
+			kprintf("Size of chain is %d.\n", size);
 			int *compressed_size;
 			compressed_size = &data[size - sizeof(int)];
+			kprintf("Compressed size is %d.\n", *compressed_size);
 			int result = LZ4_decompress_safe(data, compressed_buffer, *compressed_size, 65536);
 			if (result < 0) {
 				kprintf("Error during decompression.\n");
