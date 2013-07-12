@@ -2570,7 +2570,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			pmask = (hammer2_off_t)psize - 1;
 			pbase = bref->data_off & ~pmask;
 			kprintf("Starting breadcb with pbase = %d and psize = %d.\n", pbase, psize);
-			breadcb(chain->hmp->devvp, pbase, psize,
+			breadcb(chain->hmp->devvp, pbase, 0,
 				hammer_indirect_callback, nbio); //add a certain comment about this callback
 		}
 		else {
