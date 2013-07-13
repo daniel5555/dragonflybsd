@@ -84,7 +84,7 @@ static void hammer_indirect_callback(struct bio *bio);
 static void
 hammer_indirect_callback(struct bio *bio)
 {
-	kPRintf("READ PATH: Entering callback.\n");
+	kprintf("READ PATH: Entering callback.\n");
 	struct buf *bp = bio->bio_buf;
 	struct buf *obp;
 	struct bio *obio;
