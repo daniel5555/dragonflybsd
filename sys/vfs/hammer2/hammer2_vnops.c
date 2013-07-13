@@ -84,6 +84,7 @@ static void hammer_indirect_callback(struct bio *bio);
 static void
 hammer_indirect_callback(struct bio *bio)
 {
+	kPRintf("READ PATH: Entering callback.\n");
 	struct buf *bp = bio->bio_buf;
 	struct buf *obp;
 	struct bio *obio;
@@ -120,9 +121,9 @@ hammer_indirect_callback(struct bio *bio)
 		obp->b_error = EIO;
 	} else {
 		//KKASSERT(bp->b_bufsize >= obp->b_bufsize);
-		kprintf("Inside callback:\n");
-		kprintf("bp(c_bp) buf. size = %d\n", bp->b_bufsize);
-		kprintf("obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
+		kprintf("READ PATH: Inside callback:\n");
+		kprintf("READ PATH: bp(c_bp) buf. size = %d\n", bp->b_bufsize);
+		kprintf("READ PATH: obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
 		
 		int *compressed_size;
 		char *buffer;
@@ -131,10 +132,10 @@ hammer_indirect_callback(struct bio *bio)
 		compressed_size = buffer;//compressed size at the start
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-		kprintf("Compressed size is %d.\n", *compressed_size);
+		kprintf("READ PATH: Compressed size is %d.\n", *compressed_size);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, 65536);
 		if (result < 0) {
-			kprintf("Error during decompression.\n");
+			kprintf("READ PATH: Error during decompression.\n");
 		}
 		
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
@@ -145,6 +146,7 @@ hammer_indirect_callback(struct bio *bio)
 	}
 	biodone(obio);
 	bqrelse(bp);
+	kprintf("READ PATH: Arrived at the end of callback.\n");
 }
 
 static __inline
@@ -876,6 +878,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		   hammer2_chain_t **parentp,
 		   struct uio *uio, int ioflag, int seqcount)
 {
+	kprintf("WRITE PATH: write_file started.\n");
 	hammer2_inode_data_t *ipdata;
 	hammer2_key_t old_eof;
 	struct buf *bp;
@@ -1033,55 +1036,28 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			brelse(bp);
 			break;
 		}
-		
-		/* Testing behavior. */
-		if (ipdata->comp_algo == 2) {
-			kprintf("Compression set 2 detected.\n");
-		}
-		else {
-			if (ipdata->comp_algo == 1) {
-				kprintf("Compression set 1 detected.\n");
-			}
-			else {
-				if (ipdata->comp_algo == 0) {
-					kprintf("Compression set 0 detected.\n");
-				}
-				else {
-					kprintf("Unknown compression set detected.\n");
-				}
-			}
-		}
 
 		if (ipdata->comp_algo == 2) {
 			/* Perform uiomove for logical buffer. */
-			kprintf("LZ4 compression set.\n");
-			
-			//char compressed_buffer[65536];
+			kprintf("WRITE PATH: LZ4 compression set in the directory.\n");
 
 			int compressed_size; //the size of resulting compressed info
 			int compressed_block_size = lblksize; //power-of-2 size where compressed block fits, equals to logical block if compression fails
-			
-			/* For now assume that compression always fails. 
-			 * Declare char buffer[] for compressed data.
-			 * Get the uncompressed data from bp.
-			 * compress();
-			 * The compressed data is in buffer[] and we also have the size.
-			 */
 			
 			char *compressed_buffer;
 			compressed_buffer = kmalloc(65536, C_BUFFER, M_INTWAIT);
 			
 			kprintf("Starting copying into the buffer.\n");
-			compressed_size = 0; //if compression fails
+			//compressed_size = 0; //if compression fails
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
 				&compressed_buffer[sizeof(int)], lblksize, 32768 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
 				compressed_size = n; //compression failed
 				bcopy(bp->b_data + loff, compressed_buffer, compressed_size); //extremely inneficient, redo later
-				kprintf("Compression failed.\n");
+				kprintf("WRITE PATH: Compression failed.\n");
 			}
 			else {
-				kprintf("Compression succeed.\n");
+				kprintf("WRITE PATH: Compression succeed.\n");
 				if (compressed_size <= 1024 - sizeof(int)) {
 					compressed_block_size = 1024;
 				}
@@ -1104,9 +1080,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				//c_size = &compressed_buffer[compressed_block_size - sizeof(int)];//write the compressed size at the end
 				c_size = compressed_buffer;//write the compressed size at start
 				*c_size = compressed_size;
-				kprintf("Compressed size is %d.\n", compressed_size);
-				kprintf("Compressed size in block is %d.\n", *c_size);
-				kprintf("Compressed block size is %d.\n", compressed_block_size);
+				kprintf("WRITE PATH: Compressed size is %d.\n", compressed_size);
+				kprintf("WRITE PATH: Compressed size in block is %d.\n", *c_size);
+				kprintf("WRITE PATH: Compressed block size is %d.\n", compressed_block_size);
 			}
 			
 			// Call hammer2_assign_physical() here.
@@ -1115,6 +1091,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 			
 			if (error) {
+				kprintf("WRITE PATH: Error ocurred while assign_physical.\n");
 				KKASSERT(chain == NULL);
 				brelse(bp);
 				break;
@@ -1151,6 +1128,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
 			switch(chain->bref.type) {
 			case HAMMER2_BREF_TYPE_INODE: //ATTENTION: do not use compression in this case. move this above to abort compression!
+				kprintf("WRITE PATH: TYPE_INODE detected, no compression.\n");
 				KKASSERT(chain->data->ipdata.op_flags &
 					HAMMER2_OPFLAG_DIRECTDATA);
 				KKASSERT(bp->b_loffset == 0);
@@ -1158,6 +1136,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
+				kprintf("WRITE PATH: TYPE_DATA detected, will use compression if successfull.\n")
 				if (compressed_size < n) {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 				}
@@ -1200,7 +1179,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			brelse(bp);
 			hammer2_chain_unlock(chain);
 			//uio->uio_resid = 0;
-			/* That's the writing path, need to actually test it with some buffer. */			
+			/* That's the writing path, need to actually test it with some buffer. */
+			kprintf("WRITE PATH: Compresion route, arrived at the end.\n");		
 		}
 		else {
 			/* Otherwise proceed as before without taking its value into account. */
@@ -2499,6 +2479,7 @@ static
 int
 hammer2_strategy_read(struct vop_strategy_args *ap)
 {
+	kprintf("READ PATH: Started strategy_read.\n");
 	struct buf *bp;
 	struct bio *bio;
 	struct bio *nbio;
@@ -2506,7 +2487,6 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 	hammer2_chain_t *parent;
 	hammer2_chain_t *chain;
 	hammer2_key_t lbase;
-	int methods; //for now used to check compression on a blockref
 
 	bio = ap->a_bio;
 	bp = bio->bio_buf;
@@ -2517,7 +2497,6 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 	chain = NULL;
 	KKASSERT(((int)lbase & HAMMER2_PBUFMASK) == 0);
 	
-	kprintf("Reading...\n");
 	kprintf("lbase = %d\n", lbase);
 
 #if 0
@@ -2543,9 +2522,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		/*
 		 * Data is embedded in the inode (copy from inode).
 		 */
-		kprintf("TYPE_INODE detected.\n");
-		methods = HAMMER2_DEC_COMP(chain->bref.methods);
-		kprintf("Compression method %d detected.\n", methods);
+		kprintf("READ PATH: TYPE_INODE detected.\n");
 		hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
 	} else if (chain->bref.type == HAMMER2_BREF_TYPE_DATA) {
@@ -2554,10 +2531,9 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		 *
 		 * XXX direct-IO shortcut could go here XXX.
 		 */
-		kprintf("TYPE_DATA detected.\n");
-		methods = HAMMER2_DEC_COMP(chain->bref.methods);
-		kprintf("Compression method %d detected.\n", methods);
-		if (methods == HAMMER2_COMP_LZ4) {
+		kprintf("READ PATH: TYPE_DATA detected.\n");
+		if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
+			kprintf("READ PATH: Compression method 2 detected.\n");
 			//kprintf("Starting breadcb with size = %d and off = %d.\n", size, off);
 			hammer2_blockref_t *bref;
 			hammer2_off_t pbase;
@@ -2569,21 +2545,22 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			psize = hammer2_devblksize(chain->bytes);
 			pmask = (hammer2_off_t)psize - 1;
 			pbase = bref->data_off & ~pmask;
-			kprintf("Starting breadcb with pbase = %d and psize = %d.\n", pbase, psize);
+			kprintf("READ PATH: Starting breadcb with pbase = %d and psize = %d.\n", pbase, psize);
 			breadcb(chain->hmp->devvp, pbase, psize,
 				hammer_indirect_callback, nbio); //add a certain comment about this callback
 		}
 		else {
+			kprintf("READ PATH: No compression method detected.\n");
 			hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
 					 nbio);
-			kprintf("Size of bio buffer is %d.\n", nbio->bio_buf->b_bufsize);
+			kprintf("READ PATH: Size of bio buffer is %d.\n", nbio->bio_buf->b_bufsize);
 		}
 	} else {
-		panic("hammer2_strategy_read: unknown bref type");
+		panic("READ PATH: hammer2_strategy_read: unknown bref type");
 		chain = NULL;
 	}
 	hammer2_inode_unlock_sh(ip, parent);
-	kprintf("Arrived at the end of strategy read.\n");
+	kprintf("READ PATH: Arrived at the end of strategy read.\n");
 	return (0);
 }
 
