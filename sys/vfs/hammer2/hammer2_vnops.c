@@ -2537,7 +2537,6 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			hammer2_blockref_t *bref;
 			hammer2_off_t pbase;
 			hammer2_off_t pmask;
-			size_t boff;
 			size_t psize;
 				
 			bref = &chain->bref;
