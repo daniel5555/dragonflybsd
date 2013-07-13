@@ -2543,6 +2543,8 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			psize = hammer2_devblksize(chain->bytes);
 			pmask = (hammer2_off_t)psize - 1;
 			pbase = bref->data_off & ~pmask;
+			kprintf("READ PATH: Chain's physical size is %d.\n", chain.bytes);
+			kprintf("READ PATH: Blockref's physical size is %d.\n", (bref->data_off & 0x0000003F);
 			kprintf("READ PATH: Starting breadcb with pbase = %d and psize = %d.\n", pbase, psize);
 			breadcb(chain->hmp->devvp, pbase, psize,
 				hammer_indirect_callback, nbio); //add a certain comment about this callback
