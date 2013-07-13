@@ -128,7 +128,6 @@ hammer_indirect_callback(struct bio *bio)
 		int *compressed_size;
 		char *buffer;
 		buffer = bp->b_data;
-		//compressed_size = &buffer[bp->b_bufsize - sizeof(int)];//compressed size at the end of stream
 		compressed_size = buffer;//compressed size at the start
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
