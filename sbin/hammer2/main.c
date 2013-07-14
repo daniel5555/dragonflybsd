@@ -577,7 +577,7 @@ usage(int code)
 		"    rsainit            Initialize rsa fields\n"
 		"    show devpath       Raw hammer2 media dump\n"
 		"    freemap devpath    Raw hammer2 media dump\n"
-		"    setcmp directory   Sets compression mode on a directory\n"
+		"    setcomp comp_algo directory   Sets compression with comp_algo (0-2) on a directory\n"
 	);
 	exit(code);
 }
