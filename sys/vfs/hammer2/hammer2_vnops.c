@@ -1138,7 +1138,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
 				}
 				dbp = getblk(chain->hmp->devvp, pbase,
-					compressed_block_size/*psize*/, 0, 0); //use the size that fits compressed info
+					psize, 0, 0); //use the size that fits compressed info
 				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
