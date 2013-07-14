@@ -1036,7 +1036,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			break;
 		}
 
-		if (ipdata->comp_algo == 2) {
+		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 			kprintf("WRITE PATH: LZ4 compression set in the directory.\n");
 
 			int compressed_size; //the size of resulting compressed info
@@ -1095,7 +1095,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			}
 			
-			bp->b_flags |= B_AGE;
+			//bp->b_flags |= B_AGE;
 			
 			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
 			
