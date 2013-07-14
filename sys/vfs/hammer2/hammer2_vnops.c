@@ -1095,7 +1095,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			}
 			
-			//bp->b_flags |= B_AGE;
+			bp->b_flags |= B_AGE;
 			
 			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
 			
