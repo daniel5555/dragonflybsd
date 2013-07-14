@@ -1037,7 +1037,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		}
 
 		if (ipdata->comp_algo == 2) {
-			/* Perform uiomove for logical buffer. */
 			kprintf("WRITE PATH: LZ4 compression set in the directory.\n");
 
 			int compressed_size; //the size of resulting compressed info
@@ -1102,10 +1101,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			
 			/* Obtain the related device buffer cache. */
 			struct buf *dbp; //create physical buffer
-			/* getblk parameters: 1st - device, 2nd - offset,
-			 * 3rd - size of block (from 1KB to 64KB), 4th - ...,
-			 * 6th - ...
-			 */
 			
 			/* Get device offset, hopefully this is correct... */
 			hammer2_off_t pbase;
@@ -1143,7 +1138,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
 				}
 				dbp = getblk(chain->hmp->devvp, pbase,
-					psize, 0, 0); //use the size that fits compressed info
+					chain->bytes/*psize*/, 0, 0); //use the size that fits compressed info
 				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
