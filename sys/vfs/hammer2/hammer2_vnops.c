@@ -1173,7 +1173,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			brelse(bp);
 			hammer2_chain_unlock(chain);
 			//uio->uio_resid = 0;
-			/* That's the writing path, need to actually test it with some buffer. */
 			kprintf("WRITE PATH: Compresion route, arrived at the end.\n");		
 		}
 		else {
