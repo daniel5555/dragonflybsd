@@ -137,7 +137,7 @@ hammer_indirect_callback(struct bio *bio)
 			kprintf("READ PATH: Error during decompression.\n");
 		}
 		
-		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
+		bcopy(compressed_buffer, obp->b_data, result);
 		kfree(compressed_buffer, D_BUFFER);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
