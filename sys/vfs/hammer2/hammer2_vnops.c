@@ -1137,8 +1137,18 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				else {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
 				}
-				dbp = getblk(chain->hmp->devvp, pbase,
-					psize, 0, 0); //use the size that fits compressed info
+				if (psize == compressed_block_size) {//use the size that fits compressed info
+					dbp = getblk(chain->hmp->devvp, pbase,
+						psize, 0, 0);
+				}
+				else {
+					error = bread(chain->hmp->devvp, pbase, psize, &dbp);
+					if (error) {
+						kprintf("WRITE PATH: Error ocurred while bread().\n");
+						brelse(bp);
+						break;
+					}
+				}						
 				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
