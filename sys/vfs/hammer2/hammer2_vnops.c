@@ -1050,7 +1050,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data,
 				&compressed_buffer[sizeof(int)], lblksize, lblksize/2 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
-				compressed_size = n; //compression failed
+				compressed_size = lblksize; //compression failed
 				bcopy(bp->b_data, compressed_buffer, compressed_size); //extremely inneficient, redo later
 				kprintf("WRITE PATH: Compression failed.\n");
 			}
