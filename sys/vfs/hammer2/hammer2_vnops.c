@@ -1149,7 +1149,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 						break;
 					}
 				}						
-				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
+				bcopy(compressed_buffer, dbp->b_data/* + boff*/, compressed_block_size); //need to copy the whole block
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
