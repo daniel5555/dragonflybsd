@@ -1047,11 +1047,11 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			
 			kprintf("Starting copying into the buffer.\n");
 			//compressed_size = 0; //if compression fails
-			compressed_size = LZ4_compress_limitedOutput(bp->b_data + loff,
-				&compressed_buffer[sizeof(int)], lblksize, 32768 - sizeof(int));//ATTENTION: comment this to turn off compression
+			compressed_size = LZ4_compress_limitedOutput(bp->b_data,
+				&compressed_buffer[sizeof(int)], lblksize, lblksize/2 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
 				compressed_size = n; //compression failed
-				bcopy(bp->b_data + loff, compressed_buffer, compressed_size); //extremely inneficient, redo later
+				bcopy(bp->b_data, compressed_buffer, compressed_size); //extremely inneficient, redo later
 				kprintf("WRITE PATH: Compression failed.\n");
 			}
 			else {
