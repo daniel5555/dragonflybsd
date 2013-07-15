@@ -1149,7 +1149,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 						break;
 					}
 				}						
-				bcopy(compressed_buffer, dbp->b_data/* + boff*/, compressed_block_size); //need to copy the whole block
+				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
@@ -2549,8 +2549,8 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			pbase = bref->data_off & ~pmask;
 			//kprintf("READ PATH: Chain's physical size is %d.\n", chain->bytes);
 			//kprintf("READ PATH: Blockref's physical size is %d.\n", (bref->data_off & 0x0000003F));
-			kprintf("READ PATH: Starting breadcb with pbase = %d and size = %d.\n", pbase, chain->bytes/*psize*/);
-			breadcb(chain->hmp->devvp, pbase, chain->bytes/*psize*/,
+			kprintf("READ PATH: Starting breadcb with pbase = %d and psize = %d.\n", pbase, /*chain->bytes*/psize);
+			breadcb(chain->hmp->devvp, pbase, /*chain->bytes*/psize,
 				hammer_indirect_callback, nbio); //add a certain comment about this callback
 		}
 		else {
