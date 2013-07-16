@@ -131,8 +131,8 @@ hammer_indirect_callback(struct bio *bio)
 		compressed_size = buffer;//compressed size at the start
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-		kprintf("READ PATH: Compressed size is %d.\n", *compressed_size);
-		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, 65536);
+		kprintf("READ PATH: Compressed size is %d / %d.\n", *compressed_size, obp->b_bufsize);
+		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
 		if (result < 0) {
 			kprintf("READ PATH: Error during decompression.\n");
 		}
@@ -1050,7 +1050,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data,
 				&compressed_buffer[sizeof(int)], lblksize, lblksize/2 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
-				compressed_size = lblksize; //compression failed
+				compressed_size = n; //compression failed
 				bcopy(bp->b_data, compressed_buffer, compressed_size); //extremely inneficient, redo later
 				kprintf("WRITE PATH: Compression failed.\n");
 			}
@@ -1149,7 +1149,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 						break;
 					}
 				}						
-				bcopy(compressed_buffer, dbp->b_data/* + boff*/, compressed_block_size); //need to copy the whole block
+				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
