@@ -137,7 +137,7 @@ hammer_indirect_callback(struct bio *bio)
 			kprintf("READ PATH: Error during decompression.\n");
 		}
 		
-		bcopy(compressed_buffer, obp->b_data, result/*obp->b_bufsize*/);
+		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
 		kfree(compressed_buffer, D_BUFFER);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
@@ -1131,7 +1131,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
 				kprintf("WRITE PATH: TYPE_DATA detected, will use compression if successfull.\n");
-				if (compressed_size < n) {
+				if (compressed_size < lblksize) {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 				}
 				else {
@@ -2550,7 +2550,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			//kprintf("READ PATH: Chain's physical size is %d.\n", chain->bytes);
 			//kprintf("READ PATH: Blockref's physical size is %d.\n", (bref->data_off & 0x0000003F));
 			kprintf("READ PATH: Starting breadcb with pbase = %d and psize = %d.\n", pbase, /*chain->bytes*/psize);
-			breadcb(chain->hmp->devvp, 0/*pbase*/, /*chain->bytes*/psize,
+			breadcb(chain->hmp->devvp, pbase, /*chain->bytes*/psize,
 				hammer_indirect_callback, nbio); //add a certain comment about this callback
 		}
 		else {
