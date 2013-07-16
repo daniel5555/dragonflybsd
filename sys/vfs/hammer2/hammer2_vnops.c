@@ -88,6 +88,7 @@ hammer_indirect_callback(struct bio *bio)
 	struct buf *bp = bio->bio_buf;
 	struct buf *obp;
 	struct bio *obio;
+	int loff;
 
 	/*
 	 * If BIO_DONE is already set the device buffer was already
@@ -110,6 +111,7 @@ hammer_indirect_callback(struct bio *bio)
 
 	obio = bio->bio_caller_info1.ptr;
 	obp = obio->bio_buf;
+	loff = obio->bio_caller_info3.value;
 
 	if (bp->b_flags & B_ERROR) {
 		obp->b_flags |= B_ERROR;
@@ -127,7 +129,7 @@ hammer_indirect_callback(struct bio *bio)
 		
 		int *compressed_size;
 		char *buffer;
-		buffer = bp->b_data;
+		buffer = bp->b_data + loff;
 		compressed_size = buffer;//compressed size at the start
 		char *compressed_buffer;
 		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
@@ -2490,6 +2492,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 	hammer2_chain_t *parent;
 	hammer2_chain_t *chain;
 	hammer2_key_t lbase;
+	int loff;
 
 	bio = ap->a_bio;
 	bp = bio->bio_buf;
@@ -2547,9 +2550,11 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			psize = hammer2_devblksize(chain->bytes);
 			pmask = (hammer2_off_t)psize - 1;
 			pbase = bref->data_off & ~pmask;
+			loff = (int)((bref->data_off & ~HAMMER2_OFF_MASK_RADIX) - pbase);
 			//kprintf("READ PATH: Chain's physical size is %d.\n", chain->bytes);
 			//kprintf("READ PATH: Blockref's physical size is %d.\n", (bref->data_off & 0x0000003F));
 			kprintf("READ PATH: Starting breadcb with pbase = %d and psize = %d.\n", pbase, /*chain->bytes*/psize);
+			nbio->bio_caller_info3.value = loff;
 			breadcb(chain->hmp->devvp, pbase, /*chain->bytes*/psize,
 				hammer_indirect_callback, nbio); //add a certain comment about this callback
 		}
