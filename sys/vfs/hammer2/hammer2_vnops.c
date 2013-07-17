@@ -1045,6 +1045,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			int compressed_block_size = lblksize; //power-of-2 size where compressed block fits, equals to logical block if compression fails
 			
 			char *compressed_buffer;
+			int* c_size;
+			
 			compressed_buffer = kmalloc(lblksize/2, C_BUFFER, M_INTWAIT);
 			
 			kprintf("Starting copying into the buffer.\n");
@@ -1053,7 +1055,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				&compressed_buffer[sizeof(int)], lblksize, lblksize/2 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
 				compressed_size = lblksize; //compression failed
-				//bcopy(bp->b_data, compressed_buffer, compressed_size); //extremely inneficient, redo later
 				kprintf("WRITE PATH: Compression failed.\n");
 			}
 			else {
@@ -1076,8 +1077,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				else if (compressed_size <= 32768 - sizeof(int)) {
 					compressed_block_size = 32768;
 				}
-				int* c_size;
-				//c_size = &compressed_buffer[compressed_block_size - sizeof(int)];//write the compressed size at the end
 				c_size = compressed_buffer;//write the compressed size at start
 				*c_size = compressed_size;
 				kprintf("WRITE PATH: Compressed size is %d.\n", compressed_size);
@@ -1104,22 +1103,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			/* Obtain the related device buffer cache. */
 			struct buf *dbp; //create physical buffer
 			
-			/* Get device offset, hopefully this is correct... */
-			hammer2_off_t pbase;
-			hammer2_off_t pmask;
-			hammer2_off_t peof;
-			size_t boff;
-			size_t psize;
-			
 			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
-			
-			psize = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
-			pmask = (hammer2_off_t)psize - 1;
-			pbase = chain->bref.data_off & ~pmask;
-			boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
-			peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
-			int temp_check = HAMMER2_DEC_CHECK(chain->bref.methods);
-			//error = bread(hmp->devvp, offset, HAMMER2_BUFSIZE, &dbp);
 			
 			/* Copy the buffer[] with compressed info into device buffer somehow. */
 			switch(chain->bref.type) {
@@ -1132,6 +1116,20 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
+				/* Get device offset */
+				hammer2_off_t pbase;
+				hammer2_off_t pmask;
+				//hammer2_off_t peof;
+				size_t boff;
+				size_t psize;
+				
+				psize = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
+				pmask = (hammer2_off_t)psize - 1;
+				pbase = chain->bref.data_off & ~pmask;
+				boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
+				//peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
+				int temp_check = HAMMER2_DEC_CHECK(chain->bref.methods);
+				
 				kprintf("WRITE PATH: TYPE_DATA detected, will use compression if successfull.\n");
 				if (psize == compressed_block_size) {//use the size that fits compressed info
 					dbp = getblk(chain->hmp->devvp, pbase,
