@@ -1045,7 +1045,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			int compressed_block_size = lblksize; //power-of-2 size where compressed block fits, equals to logical block if compression fails
 			
 			char *compressed_buffer;
-			compressed_buffer = kmalloc(65536, C_BUFFER, M_INTWAIT);
+			compressed_buffer = kmalloc(lblksize/2, C_BUFFER, M_INTWAIT);
 			
 			kprintf("Starting copying into the buffer.\n");
 			//compressed_size = 0; //if compression fails
