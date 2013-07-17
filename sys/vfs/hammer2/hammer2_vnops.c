@@ -1050,11 +1050,12 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			compressed_buffer = kmalloc(lblksize/2, C_BUFFER, M_INTWAIT);
 			
 			kprintf("Starting copying into the buffer.\n");
-			//compressed_size = 0; //if compression fails
+			//compressed_size = 0; //if compression fails; uncomment this to turn off compression
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data,
 				&compressed_buffer[sizeof(int)], lblksize, lblksize/2 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
 				compressed_size = lblksize; //compression failed
+				kfree(compressed_buffer, C_BUFFER); //let's free the buffer as soon as possible
 				kprintf("WRITE PATH: Compression failed.\n");
 			}
 			else {
@@ -1146,6 +1147,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				if (compressed_size < lblksize) {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 					bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
+					kfree(compressed_buffer, C_BUFFER);
 				}
 				else {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
@@ -1177,7 +1179,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			}
 			
-			kfree(compressed_buffer, C_BUFFER);
+			//kfree(compressed_buffer, C_BUFFER);
 			
 			/* Mark the original bp with B_RELBUF. */
 			bp->b_flags |= B_RELBUF;
