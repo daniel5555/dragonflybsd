@@ -1053,7 +1053,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				&compressed_buffer[sizeof(int)], lblksize, lblksize/2 - sizeof(int));//ATTENTION: comment this to turn off compression
 			if (compressed_size == 0) {
 				compressed_size = lblksize; //compression failed
-				bcopy(bp->b_data, compressed_buffer, compressed_size); //extremely inneficient, redo later
+				//bcopy(bp->b_data, compressed_buffer, compressed_size); //extremely inneficient, redo later
 				kprintf("WRITE PATH: Compression failed.\n");
 			}
 			else {
@@ -1133,12 +1133,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 			case HAMMER2_BREF_TYPE_DATA:
 				kprintf("WRITE PATH: TYPE_DATA detected, will use compression if successfull.\n");
-				if (compressed_size < lblksize) {
-					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
-				}
-				else {
-					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
-				}
 				if (psize == compressed_block_size) {//use the size that fits compressed info
 					dbp = getblk(chain->hmp->devvp, pbase,
 						psize, 0, 0);
@@ -1150,8 +1144,16 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 						brelse(bp);
 						break;
 					}
-				}						
-				bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
+				}
+				if (compressed_size < lblksize) {
+					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
+					bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
+				}
+				else {
+					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
+					bcopy(bp->b_data, dbp->b_data + boff, compressed_size);
+				}				
+				//bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
 				/*
