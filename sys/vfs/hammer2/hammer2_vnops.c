@@ -1101,7 +1101,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			/* Get device offset */
 			hammer2_off_t pbase;
 			hammer2_off_t pmask;
-			//hammer2_off_t peof;
+			hammer2_off_t peof;
 			size_t boff;
 			size_t psize;
 			
@@ -1127,7 +1127,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				pmask = (hammer2_off_t)psize - 1;
 				pbase = chain->bref.data_off & ~pmask;
 				boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
-				//peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
+				peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
 				int temp_check = HAMMER2_DEC_CHECK(chain->bref.methods);
 				
 				kprintf("WRITE PATH: TYPE_DATA detected, will use compression if successfull.\n");
