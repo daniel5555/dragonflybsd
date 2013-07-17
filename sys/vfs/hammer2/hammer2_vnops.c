@@ -127,20 +127,22 @@ hammer_indirect_callback(struct bio *bio)
 		kprintf("READ PATH: bp(c_bp) buf. size = %d\n", bp->b_bufsize);
 		kprintf("READ PATH: obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
 		
-		int *compressed_size;
 		char *buffer;
+		//char *compressed_buffer;
+		int *compressed_size;
+		
 		buffer = bp->b_data + loff;
 		compressed_size = buffer;//compressed size at the start
-		char *compressed_buffer;
-		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
+		//compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		kprintf("READ PATH: Compressed size is %d / %d.\n", *compressed_size, obp->b_bufsize);
-		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
+		int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
+		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
 		if (result < 0) {
 			kprintf("READ PATH: Error during decompression.\n");
 		}
 		
-		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
-		kfree(compressed_buffer, D_BUFFER);
+		//bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
+		//kfree(compressed_buffer, D_BUFFER);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
@@ -2553,10 +2555,10 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			pmask = (hammer2_off_t)psize - 1;
 			pbase = bref->data_off & ~pmask;
 			loff = (int)((bref->data_off & ~HAMMER2_OFF_MASK_RADIX) - pbase);
+			nbio->bio_caller_info3.value = loff;
 			//kprintf("READ PATH: Chain's physical size is %d.\n", chain->bytes);
 			//kprintf("READ PATH: Blockref's physical size is %d.\n", (bref->data_off & 0x0000003F));
 			kprintf("READ PATH: Starting breadcb with pbase = %d and psize = %d.\n", pbase, /*chain->bytes*/psize);
-			nbio->bio_caller_info3.value = loff;
 			breadcb(chain->hmp->devvp, pbase, /*chain->bytes*/psize,
 				hammer_indirect_callback, nbio); //add a certain comment about this callback
 		}
