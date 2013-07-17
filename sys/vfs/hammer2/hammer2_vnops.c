@@ -1098,6 +1098,13 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			
 			bp->b_flags |= B_AGE;
 			
+			/* Get device offset */
+			hammer2_off_t pbase;
+			hammer2_off_t pmask;
+			//hammer2_off_t peof;
+			size_t boff;
+			size_t psize;
+			
 			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
 			
 			/* Obtain the related device buffer cache. */
@@ -1115,14 +1122,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				bcopy(bp->b_data, chain->data->ipdata.u.data,
 					HAMMER2_EMBEDDED_BYTES);
 				break;
-			case HAMMER2_BREF_TYPE_DATA:
-				/* Get device offset */
-				hammer2_off_t pbase;
-				hammer2_off_t pmask;
-				//hammer2_off_t peof;
-				size_t boff;
-				size_t psize;
-				
+			case HAMMER2_BREF_TYPE_DATA:				
 				psize = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
 				pmask = (hammer2_off_t)psize - 1;
 				pbase = chain->bref.data_off & ~pmask;
