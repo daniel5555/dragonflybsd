@@ -137,7 +137,9 @@ hammer_indirect_callback(struct bio *bio)
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
 		kprintf("READ PATH: result = %d.\n", result);
-		kprintf("READ PATH: bufsize = %d.\n", obp->b_bufsize);
+		kprintf("READ PATH: b_bufsize = %d.\n", obp->b_bufsize);
+		kprintf("READ PATH: b_data = %d.\n", obp->b_data);
+		kprintf("READ PATH: loff = %d.\n", loff);
 		if (result < 0) {
 			//kprintf("READ PATH: Error during decompression.\n");
 		}
