@@ -133,8 +133,8 @@ hammer_indirect_callback(struct bio *bio)
 		compressed_size = buffer;//compressed (or decompressed) size at the start
 		//compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		//kprintf("READ PATH: Compressed size is %d / %d.\n", *compressed_size, obp->b_bufsize);
-		int result = LZ4_decompress_fast(&buffer[sizeof(int)], obp->b_data, *compressed_size);
-		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
+		//int result = LZ4_decompress_fast(&buffer[sizeof(int)], obp->b_data, *compressed_size);
+		int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
 		if (result < 0) {
 			//kprintf("READ PATH: Error during decompression.\n");
@@ -1080,8 +1080,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					compressed_block_size = 32768;
 				}
 				c_size = compressed_buffer;//write the compressed size at start
-				//*c_size = compressed_size; //ATTENTION: use this for decompress_safe
-				*c_size = lblksize; //ATTENTION: for decompress_fast we need the original size
+				*c_size = compressed_size; //ATTENTION: use this for decompress_safe
+				//*c_size = lblksize; //ATTENTION: for decompress_fast we need the original size
 				//kprintf("WRITE PATH: Compressed size is %d.\n", compressed_size);
 				//kprintf("WRITE PATH: Compressed size in block is %d.\n", *c_size);
 				//kprintf("WRITE PATH: Compressed block size is %d.\n", compressed_block_size);
