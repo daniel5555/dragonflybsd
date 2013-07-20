@@ -1237,13 +1237,13 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			}
 			else { //block is zero-filled
 				kprintf("Zero-filled block detected.\n");
-				chain = NULL; //if zero-filled block is detected
+				//hammer2_chain_delete(trans, chain); //if zero-filled block is detected
 				ipdata = &ip->chain->data->ipdata;
-				bp->b_flags |= B_AGE;
+				//bp->b_flags |= B_AGE;
 				//kprintf("Calling write_bp.\n");
 				//hammer2_write_bp(chain, bp, ioflag);
 				brelse(bp);
-				hammer2_chain_unlock(chain);
+				//hammer2_chain_unlock(chain);
 			}
 		}
 		else {
