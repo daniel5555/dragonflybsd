@@ -1201,14 +1201,14 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 * If it's not zero-filled, proceed as in no compression-case,
 			 * else don't assign physical storage, but still go throught the motions.
 			 */
-			char *check_buffer; //used to check whether the block is zero-filled
+			int *check_buffer; //used to check whether the block is zero-filled
 			check_buffer = bp->b_data;
 			int i;
-			for (i = 0; i < lblksize; ++i) {
+			for (i = 0; i < lblksize/sizeof(int); ++i) {
 				if (check_buffer[i] != 0)
 					break;
 			}
-			if (i < lblksize) { //block is not zero-filled
+			if (i < lblksize/sizeof(int)) { //block is not zero-filled
 				kprintf("Not a zero-filled block.\n");
 				chain = hammer2_assign_physical(trans, ip, parentp,
 							lbase, lblksize, &error);
