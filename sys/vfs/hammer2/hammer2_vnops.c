@@ -1203,7 +1203,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			int *check_buffer; //used to check whether the block is zero-filled
 			check_buffer = bp->b_data;
-			for (int i = 0; i < lblksize/sizeof(int); ++i) {
+			int i;
+			for (i = 0; i < lblksize/sizeof(int); ++i) {
 				if (check_buffer[i] != 0)
 					i = lblksize;
 			}
