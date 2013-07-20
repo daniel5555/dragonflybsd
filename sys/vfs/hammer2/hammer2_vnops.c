@@ -928,7 +928,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	}
 	KKASSERT(ipdata->type != HAMMER2_OBJTYPE_HARDLINK);
 	
-	int iteration = 0;
+	//int iteration = 0;
 
 	/*
 	 * UIO write loop
@@ -1195,6 +1195,53 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			//uio->uio_resid = 0;
 			//kprintf("WRITE PATH: Compression route, arrived at the end.\n");		
 		}
+		else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
+			kprintf("Zero-checking is detected.\n");
+			/* Detect if a block is zero-filled or not.
+			 * If it's not zero-filled, proceed as in no compression-case,
+			 * else don't assign physical storage, but still go throught the motions.
+			 */
+			int *check_buffer; //used to check whether the block is zero-filled
+			check_buffer = bp->b_data;
+			for (int i = 0; i < lblksize/sizeof(int); ++i) {
+				if (check_buffer[i] != 0)
+					i = lblksize;
+			}
+			if (i == lblksize) { //block is not zero-filled
+				chain = hammer2_assign_physical(trans, ip, parentp,
+							lbase, lblksize, &error);
+				ipdata = &ip->chain->data->ipdata;	/* RELOAD */
+
+				if (error) {
+					//kprintf("Got an error right after assign_physical.\n");
+					KKASSERT(chain == NULL);
+					brelse(bp);
+					break;
+				}
+
+				/* XXX update ip_data.mtime */
+
+				/*
+				* Once we dirty a buffer any cached offset becomes invalid.
+				*
+				* NOTE: For cluster_write() always use the trailing block
+				*	 size, which is HAMMER2_PBUFSIZE.  lblksize is the
+				*	 eof-straddling blocksize and is incorrect.
+				*/
+				bp->b_flags |= B_AGE;
+				//kprintf("Calling write_bp.\n");
+				hammer2_write_bp(chain, bp, ioflag);
+				hammer2_chain_unlock(chain);
+			}
+			else { //block is zero-filled
+				chain = NULL; //if zero-filled block is detected
+				ipdata = &ip->chain->data->ipdata;
+				bp->b_flags |= B_AGE;
+				//kprintf("Calling write_bp.\n");
+				hammer2_write_bp(chain, bp, ioflag);
+				hammer2_chain_unlock(chain);
+			}
+		}
 		else {
 			/* Otherwise proceed as before without taking its value into account. */
 			/*
@@ -1238,7 +1285,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			hammer2_write_bp(chain, bp, ioflag);
 			hammer2_chain_unlock(chain);
 		}
-		++iteration;
+		//++iteration;
 	}
 
 	/*
