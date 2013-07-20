@@ -1242,6 +1242,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				bp->b_flags |= B_AGE;
 				//kprintf("Calling write_bp.\n");
 				//hammer2_write_bp(chain, bp, ioflag);
+				brelse(bp);
 				hammer2_chain_unlock(chain);
 			}
 		}
