@@ -1203,11 +1203,17 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			char *check_buffer; //used to check whether the block is zero-filled
 			check_buffer = bp->b_data;
-			/*int i;
+			int i;
 			for (i = 0; i < lblksize; ++i) {
 				if (check_buffer[i] != 0)
 					break;
-			}*/
+			}
+			if (i < lblksize) {
+				kprintf("Not a zero-filled block.\n");
+			}
+			else {
+				kprintf("Zero-filled block detected.\n");
+			}
 			//if (i < lblksize) { //block is not zero-filled
 				chain = hammer2_assign_physical(trans, ip, parentp,
 							lbase, lblksize, &error);
