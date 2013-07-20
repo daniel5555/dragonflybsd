@@ -1206,9 +1206,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			int i;
 			for (i = 0; i < lblksize/sizeof(int); ++i) {
 				if (check_buffer[i] != 0)
-					i = lblksize;
+					break;
 			}
-			if (i == lblksize) { //block is not zero-filled
+			if (i < lblksize/sizeof(int)) { //block is not zero-filled
 				chain = hammer2_assign_physical(trans, ip, parentp,
 							lbase, lblksize, &error);
 				ipdata = &ip->chain->data->ipdata;	/* RELOAD */
