@@ -1046,154 +1046,170 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 			//kprintf("WRITE PATH: LZ4 compression set in the directory.\n");
 
-			int compressed_size; //the size of resulting compressed info
-			int compressed_block_size = lblksize; //power-of-2 size where compressed block fits, equals to logical block if compression fails
+			/* First of all, check if there is a block filled with zeros. */
+			int *check_buffer; //used to check whether the block is zero-filled
+			check_buffer = bp->b_data;
+			int i;
+			for (i = 0; i < lblksize/sizeof(int); ++i) {
+				if (check_buffer[i] != 0)
+					break;
+			}
 			
-			char *compressed_buffer;
-			int* c_size;
+			if (i < lblksize/sizeof(int)) {
+				int compressed_size; //the size of resulting compressed info
+				int compressed_block_size = lblksize; //power-of-2 size where compressed block fits, equals to logical block if compression fails
 			
-			compressed_buffer = kmalloc(lblksize/2, C_BUFFER, M_INTWAIT);
+				char *compressed_buffer;
+				int* c_size;
 			
-			//kprintf("Starting copying into the buffer.\n");
-			//compressed_size = 0; //if compression fails; uncomment this to turn off compression
-			compressed_size = LZ4_compress_limitedOutput(bp->b_data,
-				&compressed_buffer[sizeof(int)], lblksize, lblksize/2 - sizeof(int));//ATTENTION: comment this to turn off compression
-			if (compressed_size == 0) {
-				compressed_size = lblksize; //compression failed
-				kfree(compressed_buffer, C_BUFFER); //let's free the buffer as soon as possible
-				//kprintf("WRITE PATH: Compression failed.\n");
+				compressed_buffer = kmalloc(lblksize/2, C_BUFFER, M_INTWAIT);
+			
+				//kprintf("Starting copying into the buffer.\n");
+				//compressed_size = 0; //if compression fails; uncomment this to turn off compression
+				compressed_size = LZ4_compress_limitedOutput(bp->b_data,
+					&compressed_buffer[sizeof(int)], lblksize, lblksize/2 - sizeof(int));//ATTENTION: comment this to turn off compression
+				if (compressed_size == 0) {
+					compressed_size = lblksize; //compression failed
+					kfree(compressed_buffer, C_BUFFER); //let's free the buffer as soon as possible
+					//kprintf("WRITE PATH: Compression failed.\n");
+				}
+				else {
+					//kprintf("WRITE PATH: Compression succeed.\n");
+					if (compressed_size <= 1024 - sizeof(int)) {
+						compressed_block_size = 1024;
+					}
+					else if (compressed_size <= 2048 - sizeof(int)) {
+						compressed_block_size = 2048;
+					}
+					else if (compressed_size <= 4096 - sizeof(int)) {
+						compressed_block_size = 4096;
+					}
+					else if (compressed_size <= 8192 - sizeof(int)) {
+						compressed_block_size = 8192;
+					}
+					else if (compressed_size <= 16384 - sizeof(int)) {
+						compressed_block_size = 16384;
+					}
+					else if (compressed_size <= 32768 - sizeof(int)) {
+						compressed_block_size = 32768;
+					}
+					c_size = compressed_buffer;//write the compressed size at start
+					*c_size = compressed_size; //ATTENTION: use this for decompress_safe
+					//*c_size = lblksize; //ATTENTION: for decompress_fast we need the original size
+					//kprintf("WRITE PATH: Compressed size is %d.\n", compressed_size);
+					//kprintf("WRITE PATH: Compressed size in block is %d.\n", *c_size);
+					//kprintf("WRITE PATH: Compressed block size is %d.\n", compressed_block_size);
+				}
+			
+				// Call hammer2_assign_physical() here.
+				chain = hammer2_assign_physical(trans, ip, parentp,
+								lbase, compressed_block_size, &error);
+				ipdata = &ip->chain->data->ipdata;	/* RELOAD */
+			
+				if (error) {
+					//kprintf("WRITE PATH: Error ocurred while assign_physical.\n");
+					KKASSERT(chain == NULL);
+					brelse(bp);
+					break;
+				}
+			
+				bp->b_flags |= B_AGE;
+			
+				/* Get device offset */
+				hammer2_off_t pbase;
+				hammer2_off_t pmask;
+				hammer2_off_t peof;
+				size_t boff;
+				size_t psize;
+			
+				KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
+			
+				/* Obtain the related device buffer cache. */
+				struct buf *dbp; //create physical buffer
+			
+				KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
+			
+				/* Copy the buffer[] with compressed info into device buffer somehow. */
+				switch(chain->bref.type) {
+				case HAMMER2_BREF_TYPE_INODE: //ATTENTION: do not use compression in this case. move this above to abort compression!
+					//kprintf("WRITE PATH: TYPE_INODE detected, no compression.\n");
+					KKASSERT(chain->data->ipdata.op_flags &
+						HAMMER2_OPFLAG_DIRECTDATA);
+					KKASSERT(bp->b_loffset == 0);
+					bcopy(bp->b_data, chain->data->ipdata.u.data,
+						HAMMER2_EMBEDDED_BYTES);
+					break;
+				case HAMMER2_BREF_TYPE_DATA:				
+					psize = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
+					pmask = (hammer2_off_t)psize - 1;
+					pbase = chain->bref.data_off & ~pmask;
+					boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
+					peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
+					int temp_check = HAMMER2_DEC_CHECK(chain->bref.methods);
+				
+					//kprintf("WRITE PATH: TYPE_DATA detected, will use compression if successfull.\n");
+					if (psize == compressed_block_size) {//use the size that fits compressed info
+						dbp = getblk(chain->hmp->devvp, pbase,
+							psize, 0, 0);
+					}
+					else {
+						error = bread(chain->hmp->devvp, pbase, psize, &dbp);
+						if (error) {
+							//kprintf("WRITE PATH: Error ocurred while bread().\n");
+							brelse(bp);
+							break;
+						}
+					}
+					if (compressed_size < lblksize) {
+						chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
+						bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
+						kfree(compressed_buffer, C_BUFFER);
+					}
+					else {
+						chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
+						bcopy(bp->b_data, dbp->b_data + boff, compressed_size);
+					}				
+					//bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
+					/* Now write the related bdp. */
+					if (ioflag & IO_SYNC) {
+					/*
+					* Synchronous I/O requested.
+					*/
+						bwrite(dbp);
+					/*
+					} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
+					bdwrite(dbp);
+					*/
+					} else if (ioflag & IO_ASYNC) {
+						bawrite(dbp);
+					} else if (hammer2_cluster_enable) {
+						cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
+					} else {
+						bdwrite(dbp);
+					}
+					break;
+				default:
+					panic("hammer2_write_bp: bad chain type %d\n",
+						chain->bref.type);
+				/* NOT REACHED */
+					break;
+				}
+			
+				//kfree(compressed_buffer, C_BUFFER);
+			
+				/* Mark the original bp with B_RELBUF. */
+				bp->b_flags |= B_RELBUF;
+				/* Release bp. */
+				brelse(bp);
+				hammer2_chain_unlock(chain);
+				//uio->uio_resid = 0;
+				//kprintf("WRITE PATH: Compression route, arrived at the end.\n");
 			}
 			else {
-				//kprintf("WRITE PATH: Compression succeed.\n");
-				if (compressed_size <= 1024 - sizeof(int)) {
-					compressed_block_size = 1024;
-				}
-				else if (compressed_size <= 2048 - sizeof(int)) {
-					compressed_block_size = 2048;
-				}
-				else if (compressed_size <= 4096 - sizeof(int)) {
-					compressed_block_size = 4096;
-				}
-				else if (compressed_size <= 8192 - sizeof(int)) {
-					compressed_block_size = 8192;
-				}
-				else if (compressed_size <= 16384 - sizeof(int)) {
-					compressed_block_size = 16384;
-				}
-				else if (compressed_size <= 32768 - sizeof(int)) {
-					compressed_block_size = 32768;
-				}
-				c_size = compressed_buffer;//write the compressed size at start
-				*c_size = compressed_size; //ATTENTION: use this for decompress_safe
-				//*c_size = lblksize; //ATTENTION: for decompress_fast we need the original size
-				//kprintf("WRITE PATH: Compressed size is %d.\n", compressed_size);
-				//kprintf("WRITE PATH: Compressed size in block is %d.\n", *c_size);
-				//kprintf("WRITE PATH: Compressed block size is %d.\n", compressed_block_size);
-			}
-			
-			// Call hammer2_assign_physical() here.
-			chain = hammer2_assign_physical(trans, ip, parentp,
-							lbase, compressed_block_size, &error);
-			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
-			
-			if (error) {
-				//kprintf("WRITE PATH: Error ocurred while assign_physical.\n");
-				KKASSERT(chain == NULL);
+				kprintf("Zero-filled block detected.\n");
+				ipdata = &ip->chain->data->ipdata;
 				brelse(bp);
-				break;
 			}
-			
-			bp->b_flags |= B_AGE;
-			
-			/* Get device offset */
-			hammer2_off_t pbase;
-			hammer2_off_t pmask;
-			hammer2_off_t peof;
-			size_t boff;
-			size_t psize;
-			
-			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
-			
-			/* Obtain the related device buffer cache. */
-			struct buf *dbp; //create physical buffer
-			
-			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
-			
-			/* Copy the buffer[] with compressed info into device buffer somehow. */
-			switch(chain->bref.type) {
-			case HAMMER2_BREF_TYPE_INODE: //ATTENTION: do not use compression in this case. move this above to abort compression!
-				//kprintf("WRITE PATH: TYPE_INODE detected, no compression.\n");
-				KKASSERT(chain->data->ipdata.op_flags &
-					HAMMER2_OPFLAG_DIRECTDATA);
-				KKASSERT(bp->b_loffset == 0);
-				bcopy(bp->b_data, chain->data->ipdata.u.data,
-					HAMMER2_EMBEDDED_BYTES);
-				break;
-			case HAMMER2_BREF_TYPE_DATA:				
-				psize = hammer2_devblksize(chain->bytes); //maybe size == size that fits compressed info?
-				pmask = (hammer2_off_t)psize - 1;
-				pbase = chain->bref.data_off & ~pmask;
-				boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
-				peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
-				int temp_check = HAMMER2_DEC_CHECK(chain->bref.methods);
-				
-				//kprintf("WRITE PATH: TYPE_DATA detected, will use compression if successfull.\n");
-				if (psize == compressed_block_size) {//use the size that fits compressed info
-					dbp = getblk(chain->hmp->devvp, pbase,
-						psize, 0, 0);
-				}
-				else {
-					error = bread(chain->hmp->devvp, pbase, psize, &dbp);
-					if (error) {
-						//kprintf("WRITE PATH: Error ocurred while bread().\n");
-						brelse(bp);
-						break;
-					}
-				}
-				if (compressed_size < lblksize) {
-					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
-					bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
-					kfree(compressed_buffer, C_BUFFER);
-				}
-				else {
-					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
-					bcopy(bp->b_data, dbp->b_data + boff, compressed_size);
-				}				
-				//bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
-				/* Now write the related bdp. */
-				if (ioflag & IO_SYNC) {
-				/*
-				* Synchronous I/O requested.
-				*/
-					bwrite(dbp);
-				/*
-				} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
-				bdwrite(dbp);
-				*/
-				} else if (ioflag & IO_ASYNC) {
-					bawrite(dbp);
-				} else if (hammer2_cluster_enable) {
-					cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
-				} else {
-					bdwrite(dbp);
-				}
-				break;
-			default:
-				panic("hammer2_write_bp: bad chain type %d\n",
-					chain->bref.type);
-			/* NOT REACHED */
-				break;
-			}
-			
-			//kfree(compressed_buffer, C_BUFFER);
-			
-			/* Mark the original bp with B_RELBUF. */
-			bp->b_flags |= B_RELBUF;
-			/* Release bp. */
-			brelse(bp);
-			hammer2_chain_unlock(chain);
-			//uio->uio_resid = 0;
-			//kprintf("WRITE PATH: Compression route, arrived at the end.\n");		
 		}
 		else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
 			kprintf("Zero-checking is detected.\n");
