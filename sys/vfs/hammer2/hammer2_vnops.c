@@ -1195,8 +1195,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					break;
 				}
 			
-				//kfree(compressed_buffer, C_BUFFER);
-			
 				/* Mark the original bp with B_RELBUF. */
 				bp->b_flags |= B_RELBUF;
 				/* Release bp. */
