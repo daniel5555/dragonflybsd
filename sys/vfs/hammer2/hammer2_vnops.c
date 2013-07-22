@@ -126,16 +126,16 @@ hammer_indirect_callback(struct bio *bio)
 		//kprintf("READ PATH: obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
 		
 		char *buffer;
-		//char *compressed_buffer;
+		char *compressed_buffer;
 		int *compressed_size;
 		
 		buffer = bp->b_data + loff;
 		compressed_size = buffer;//compressed (or decompressed) size at the start
-		//compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
+		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
 		//kprintf("READ PATH: Compressed size is %d / %d.\n", *compressed_size, obp->b_bufsize);
 		//int result = LZ4_decompress_fast(&buffer[sizeof(int)], obp->b_data, *compressed_size);
-		int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
-		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
+		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
+		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
 		kprintf("READ PATH: result = %d.\n", result);
 		kprintf("READ PATH: b_bufsize = %d.\n", obp->b_bufsize);
 		kprintf("READ PATH: b_data = %d.\n", obp->b_data);
@@ -144,8 +144,8 @@ hammer_indirect_callback(struct bio *bio)
 			//kprintf("READ PATH: Error during decompression.\n");
 		}
 		
-		//bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
-		//kfree(compressed_buffer, D_BUFFER);
+		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
+		kfree(compressed_buffer, D_BUFFER);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
