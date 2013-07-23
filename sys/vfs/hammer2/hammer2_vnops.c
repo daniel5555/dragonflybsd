@@ -139,10 +139,10 @@ hammer_indirect_callback(struct bio *bio)
 		//int result = LZ4_decompress_fast(&buffer[sizeof(int)], obp->b_data, *compressed_size);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
-		kprintf("READ PATH: result = %d.\n", result);
-		kprintf("READ PATH: b_bufsize = %d.\n", obp->b_bufsize);
-		kprintf("READ PATH: b_data = %d.\n", obp->b_data);
-		kprintf("READ PATH: loff = %d.\n", loff);
+		//kprintf("READ PATH: result = %d.\n", result);
+		//kprintf("READ PATH: b_bufsize = %d.\n", obp->b_bufsize);
+		//kprintf("READ PATH: b_data = %d.\n", obp->b_data);
+		//kprintf("READ PATH: loff = %d.\n", loff);
 		if (result < 0) {
 			//kprintf("READ PATH: Error during decompression.\n");
 		}
@@ -887,7 +887,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		   hammer2_chain_t **parentp,
 		   struct uio *uio, int ioflag, int seqcount)
 {
-	kprintf("WRITE PATH: write_file started.\n");
+	//kprintf("WRITE PATH: write_file started.\n");
 	hammer2_inode_data_t *ipdata;
 	hammer2_key_t old_eof;
 	struct buf *bp;
