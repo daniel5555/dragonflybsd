@@ -82,7 +82,8 @@ static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer_indirect_callback(struct bio *bio);
 
-static struct objcache *cache_buffer; //trying to use objcache
+static struct objcache *cache_buffer_read; //trying to use objcache
+static struct objcache *cache_buffer_write;
 
 /* From hammer_io.c */
 static void
@@ -138,7 +139,7 @@ hammer_indirect_callback(struct bio *bio)
 		buffer = bp->b_data + loff;
 		compressed_size = buffer;//compressed (or decompressed) size at the start
 		//compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-		compressed_buffer = objcache_get(cache_buffer, M_INTWAIT);
+		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
 		//kprintf("READ PATH: Compressed size is %d / %d.\n", *compressed_size, obp->b_bufsize);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
@@ -152,7 +153,7 @@ hammer_indirect_callback(struct bio *bio)
 		
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
 		//kfree(compressed_buffer, D_BUFFER);
-		objcache_put(cache_buffer, compressed_buffer);
+		objcache_put(cache_buffer_read, compressed_buffer);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
@@ -851,7 +852,7 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	parent = hammer2_inode_lock_sh(ip);
 	size = ip->chain->data->ipdata.size;
 	
-	cache_buffer = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
+	cache_buffer_read = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
 
 	while (uio->uio_resid > 0 && uio->uio_offset < size) {
 		hammer2_key_t lbase;
@@ -879,7 +880,7 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 		uiomove((char *)bp->b_data + loff, n, uio);
 		bqrelse(bp);
 	}
-	objcache_destroy(cache_buffer);
+	objcache_destroy(cache_buffer_read);
 	hammer2_inode_unlock_sh(ip, parent);
 	return (error);
 }
@@ -939,6 +940,10 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	KKASSERT(ipdata->type != HAMMER2_OBJTYPE_HARDLINK);
 	
 	//int iteration = 0;
+	
+	if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
+		cache_buffer_write = objcache_create_simple(C_BUFFER, 32768);
+	}
 
 	/*
 	 * UIO write loop
@@ -1072,7 +1077,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				char *compressed_buffer;
 				int* c_size;
 			
-				compressed_buffer = kmalloc(lblksize/2, C_BUFFER, M_INTWAIT);
+				//compressed_buffer = kmalloc(lblksize/2, C_BUFFER, M_INTWAIT);
+				compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 			
 				//kprintf("Starting copying into the buffer.\n");
 				//compressed_size = 0; //if compression fails; uncomment this to turn off compression
@@ -1080,7 +1086,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					&compressed_buffer[sizeof(int)], lblksize, lblksize/2 - sizeof(int));//ATTENTION: comment this to turn off compression
 				if (compressed_size == 0) {
 					compressed_size = lblksize; //compression failed
-					kfree(compressed_buffer, C_BUFFER); //let's free the buffer as soon as possible
+					//kfree(compressed_buffer, C_BUFFER); //let's free the buffer as soon as possible
+					objcache_put(cache_buffer_write, compressed_buffer);
 					//kprintf("WRITE PATH: Compression failed.\n");
 				}
 				else {
@@ -1173,7 +1180,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					if (compressed_size < lblksize) {
 						chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 						bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
-						kfree(compressed_buffer, C_BUFFER);
+						//kfree(compressed_buffer, C_BUFFER);
+						objcache_put(cache_buffer_write, compressed_buffer);
 					}
 					else {
 						chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
@@ -1315,6 +1323,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		}
 		//++iteration;
 	}
+	
+	objcache_destroy(cache_buffer_write);
 
 	/*
 	 * Cleanup.  If we extended the file EOF but failed to write through
