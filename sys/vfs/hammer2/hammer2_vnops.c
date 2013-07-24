@@ -850,6 +850,8 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	 */
 	parent = hammer2_inode_lock_sh(ip);
 	size = ip->chain->data->ipdata.size;
+	
+	cache_buffer = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
 
 	while (uio->uio_resid > 0 && uio->uio_offset < size) {
 		hammer2_key_t lbase;
@@ -2625,8 +2627,6 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			hammer2_off_t pbase;
 			hammer2_off_t pmask;
 			size_t psize;
-			
-			cache_buffer = objcache_create_simple(D_BUFFER, 65536);
 				
 			bref = &chain->bref;
 			psize = hammer2_devblksize(chain->bytes);
