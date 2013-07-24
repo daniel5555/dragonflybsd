@@ -1324,7 +1324,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		//++iteration;
 	}
 	
-	objcache_destroy(cache_buffer_write);
+	if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
+		objcache_destroy(cache_buffer_write);
+	}
 
 	/*
 	 * Cleanup.  If we extended the file EOF but failed to write through
