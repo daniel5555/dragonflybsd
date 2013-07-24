@@ -879,6 +879,7 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 		uiomove((char *)bp->b_data + loff, n, uio);
 		bqrelse(bp);
 	}
+	objcache_destroy(cache_buffer);
 	hammer2_inode_unlock_sh(ip, parent);
 	return (error);
 }
