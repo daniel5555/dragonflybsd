@@ -51,6 +51,7 @@
 #include <sys/mountctl.h>
 #include <sys/dirent.h>
 #include <sys/uio.h>
+#include <sys/objcache.h>
 
 #include "hammer2.h"
 #include "hammer2_lz4.h"
@@ -80,6 +81,8 @@ static void hammer2_extend_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer_indirect_callback(struct bio *bio);
+
+static struct objcache *cache_buffer; //trying to use objcache
 
 /* From hammer_io.c */
 static void
@@ -134,9 +137,9 @@ hammer_indirect_callback(struct bio *bio)
 		
 		buffer = bp->b_data + loff;
 		compressed_size = buffer;//compressed (or decompressed) size at the start
-		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
+		//compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
+		compressed_buffer = objcache_get(cache_buffer, M_INTWAIT);
 		//kprintf("READ PATH: Compressed size is %d / %d.\n", *compressed_size, obp->b_bufsize);
-		//int result = LZ4_decompress_fast(&buffer[sizeof(int)], obp->b_data, *compressed_size);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
 		//kprintf("READ PATH: result = %d.\n", result);
@@ -148,7 +151,8 @@ hammer_indirect_callback(struct bio *bio)
 		}
 		
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
-		kfree(compressed_buffer, D_BUFFER);
+		//kfree(compressed_buffer, D_BUFFER);
+		objcache_put(cache_buffer, compressed_buffer);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
@@ -2621,6 +2625,8 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			hammer2_off_t pbase;
 			hammer2_off_t pmask;
 			size_t psize;
+			
+			cache_buffer = objcache_create_simple(D_BUFFER, 65536);
 				
 			bref = &chain->bref;
 			psize = hammer2_devblksize(chain->bytes);
