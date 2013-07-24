@@ -153,7 +153,8 @@ hammer_indirect_callback(struct bio *bio)
 		
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
 		//kfree(compressed_buffer, D_BUFFER);
-		objcache_put(cache_buffer_read, compressed_buffer);
+		//objcache_put(cache_buffer_read, compressed_buffer);
+		objcache_dtor(cache_buffer_read, compressed_buffer);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
@@ -941,8 +942,10 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	
 	//int iteration = 0;
 	
+	int objcache_used = 0;
 	if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 		cache_buffer_write = objcache_create_simple(C_BUFFER, 32768);
+		objcache_used = 1;
 	}
 
 	/*
@@ -1324,7 +1327,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		//++iteration;
 	}
 	
-	if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
+	if (objcache_used) {
 		objcache_destroy(cache_buffer_write);
 	}
 
