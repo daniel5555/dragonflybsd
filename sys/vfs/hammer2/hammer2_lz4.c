@@ -290,7 +290,14 @@ static inline int LZ4_NbCommonBytes (register U64 val)
     #elif defined(__GNUC__) && (GCC_VERSION >= 304) && !defined(LZ4_FORCE_SW_BITCOUNT)
     return (__builtin_ctzll(val) >> 3);
     #else
-    static const int DeBruijnBytePos[64] = { 0, 0, 0, 0, 0, 1, 1, 2, 0, 3, 1, 3, 1, 4, 2, 7, 0, 2, 3, 6, 1, 5, 3, 5, 1, 3, 4, 4, 2, 5, 6, 7, 7, 0, 1, 2, 3, 3, 4, 6, 2, 6, 5, 5, 3, 4, 5, 6, 7, 1, 2, 4, 6, 4, 4, 5, 7, 2, 6, 5, 7, 6, 7, 7 };
+    static const int DeBruijnBytePos[64] = { 
+		0, 0, 0, 0, 0, 1, 1, 2, 0, 3,
+		1, 3, 1, 4, 2, 7, 0, 2, 3, 6,
+		1, 5, 3, 5, 1, 3, 4, 4, 2, 5,
+		6, 7, 7, 0, 1, 2, 3, 3, 4, 6,
+		2, 6, 5, 5, 3, 4, 5, 6, 7, 1,
+		2, 4, 6, 4, 4, 5, 7, 2, 6, 5,
+		7, 6, 7, 7 };
     return DeBruijnBytePos[((U64)((val & -val) * 0x0218A392CDABBD3F)) >> 58];
     #endif
 #endif
@@ -321,7 +328,11 @@ static inline int LZ4_NbCommonBytes (register U32 val)
 #  elif defined(__GNUC__) && (GCC_VERSION >= 304) && !defined(LZ4_FORCE_SW_BITCOUNT)
     return (__builtin_ctz(val) >> 3);
 #  else
-    static const int DeBruijnBytePos[32] = { 0, 0, 3, 0, 3, 1, 3, 0, 3, 2, 2, 1, 3, 2, 0, 1, 3, 3, 1, 2, 2, 2, 2, 0, 3, 1, 2, 0, 1, 0, 1, 1 };
+    static const int DeBruijnBytePos[32] = { 
+		0, 0, 3, 0, 3, 1, 3, 0, 3, 2,
+		2, 1, 3, 2, 0, 1, 3, 3, 1, 2,
+		2, 2, 2, 0, 3, 1, 2, 0, 1, 0,
+		1, 1 };
     return DeBruijnBytePos[((U32)((val & -(S32)val) * 0x077CB531U)) >> 27];
 #  endif
 #endif
@@ -409,8 +420,15 @@ Used to allocate and free hashTable memory
 to be used by the LZ4_compress_heap* family of functions.
 LZ4_createHeapMemory() returns NULL is memory allocation fails.
 */
-void* LZ4_create() { return kmalloc(HASHTABLESIZE, C_HASHTABLE, M_INTWAIT); }
-int   LZ4_free(void* ctx) { kfree(ctx, C_HASHTABLE); return 0; }
+void* LZ4_create()
+{
+	return kmalloc(HASHTABLESIZE, C_HASHTABLE, M_INTWAIT);
+}
+int LZ4_free(void* ctx)
+{
+	kfree(ctx, C_HASHTABLE);
+	return 0;
+}
 
 
 /*
@@ -671,7 +689,8 @@ _output_error:
 
 int LZ4_decompress_safe(const char* source, char* dest, int inputSize, int maxOutputSize)
 {
-    return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize, endOnInputSize, noPrefix, full, 0);
+    return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
+							endOnInputSize, noPrefix, full, 0);
 }
 
 int LZ4_decompress_fast(const char* source, char* dest, int outputSize)
@@ -679,18 +698,23 @@ int LZ4_decompress_fast(const char* source, char* dest, int outputSize)
     return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize, noPrefix, full, 0);
 }
 
-int LZ4_decompress_safe_withPrefix64k(const char* source, char* dest, int inputSize, int maxOutputSize)
+int LZ4_decompress_safe_withPrefix64k(const char* source, char* dest, int inputSize,
+							int maxOutputSize)
 {
-    return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize, endOnInputSize, withPrefix, full, 0);
+    return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
+							endOnInputSize, withPrefix, full, 0);
 }
 
 int LZ4_decompress_fast_withPrefix64k(const char* source, char* dest, int outputSize)
 {
-    return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize, withPrefix, full, 0);
+    return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize,
+							withPrefix, full, 0);
 }
 
-int LZ4_decompress_safe_partial(const char* source, char* dest, int inputSize, int targetOutputSize, int maxOutputSize)
+int LZ4_decompress_safe_partial(const char* source, char* dest, int inputSize,
+							int targetOutputSize, int maxOutputSize)
 {
-    return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize, endOnInputSize, noPrefix, partial, targetOutputSize);
+    return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
+							endOnInputSize, noPrefix, partial, targetOutputSize);
 }
 

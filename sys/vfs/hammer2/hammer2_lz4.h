@@ -91,7 +91,8 @@ LZ4_compressBound() :
 */
 
 
-int LZ4_compress_limitedOutput (const char* source, char* dest, int inputSize, int maxOutputSize);
+int LZ4_compress_limitedOutput(const char* source, char* dest, int inputSize,
+						int maxOutputSize);
 
 /*
 LZ4_compress_limitedOutput() :
@@ -106,7 +107,7 @@ LZ4_compress_limitedOutput() :
 */
 
 
-int LZ4_decompress_fast (const char* source, char* dest, int outputSize);
+int LZ4_decompress_fast(const char* source, char* dest, int outputSize);
 
 /*
 LZ4_decompress_fast() :
@@ -119,7 +120,8 @@ LZ4_decompress_fast() :
            Destination buffer must be already allocated. Its size must be a minimum of 'outputSize' bytes.
 */
 
-int LZ4_decompress_safe_partial (const char* source, char* dest, int inputSize, int targetOutputSize, int maxOutputSize);
+int LZ4_decompress_safe_partial(const char* source, char* dest, int inputSize,
+						int targetOutputSize, int maxOutputSize);
 
 /*
 LZ4_decompress_safe_partial() :
@@ -135,8 +137,9 @@ LZ4_decompress_safe_partial() :
 */
 
 
-int LZ4_decompress_safe_withPrefix64k (const char* source, char* dest, int inputSize, int maxOutputSize);
-int LZ4_decompress_fast_withPrefix64k (const char* source, char* dest, int outputSize);
+int LZ4_decompress_safe_withPrefix64k(const char* source, char* dest, int inputSize,
+							int maxOutputSize);
+int LZ4_decompress_fast_withPrefix64k(const char* source, char* dest, int outputSize);
 
 /*
 *_withPrefix64k() :
@@ -150,8 +153,15 @@ int LZ4_decompress_fast_withPrefix64k (const char* source, char* dest, int outpu
 // Obsolete Functions
 //****************************
 
-static inline int LZ4_uncompress (const char* source, char* dest, int outputSize) { return LZ4_decompress_fast(source, dest, outputSize); }
-static inline int LZ4_uncompress_unknownOutputSize (const char* source, char* dest, int isize, int maxOutputSize) { return LZ4_decompress_safe(source, dest, isize, maxOutputSize); }
+static inline int LZ4_uncompress(const char* source, char* dest, int outputSize)
+{
+	return LZ4_decompress_fast(source, dest, outputSize);
+}
+static inline int LZ4_uncompress_unknownOutputSize(const char* source, char* dest,
+							int isize, int maxOutputSize)
+{
+	return LZ4_decompress_safe(source, dest, isize, maxOutputSize);
+}
 
 /* 
 These functions are deprecated and should no longer be used.

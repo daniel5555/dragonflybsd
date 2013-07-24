@@ -118,7 +118,8 @@ int FUNCTION_NAME(
 
     // First Byte
     HashTable[LZ4_HASHVALUE(ip)] = (CURRENT_H_TYPE)(ip - base);
-    ip++; forwardH = LZ4_HASHVALUE(ip);
+    ip++;
+    forwardH = LZ4_HASHVALUE(ip);
 
     // Main Loop
     for ( ; ; )
@@ -135,7 +136,9 @@ int FUNCTION_NAME(
             ip = forwardIp;
             forwardIp = ip + step;
 
-            if unlikely(forwardIp > mflimit) { goto _last_literals; }
+            if unlikely(forwardIp > mflimit) { 
+				goto _last_literals; 
+			}
 
             forwardH = LZ4_HASHVALUE(forwardIp);
             ref = base + HashTable[h];
@@ -144,7 +147,10 @@ int FUNCTION_NAME(
         } while ((ref < ip - MAX_DISTANCE) || (A32(ref) != A32(ip)));
 
         // Catch up
-        while ((ip>anchor) && (ref>(BYTE*)source) && unlikely(ip[-1]==ref[-1])) { ip--; ref--; }
+        while ((ip>anchor) && (ref>(BYTE*)source) && unlikely(ip[-1]==ref[-1])) { 
+			ip--;
+			ref--;
+		}
 
         // Encode Literal length
         length = (int)(ip - anchor);
@@ -156,7 +162,8 @@ int FUNCTION_NAME(
         { 
             int len = length-RUN_MASK; 
             *token=(RUN_MASK<<ML_BITS); 
-            for(; len >= 255 ; len-=255) *op++ = 255; 
+            for(; len >= 255 ; len-=255) 
+				*op++ = 255; 
             *op++ = (BYTE)len; 
         }
         else *token = (BYTE)(length<<ML_BITS);
@@ -174,32 +181,53 @@ _next_match:
         while likely(ip<matchlimit-(STEPSIZE-1))
         {
             UARCH diff = AARCH(ref) ^ AARCH(ip);
-            if (!diff) { ip+=STEPSIZE; ref+=STEPSIZE; continue; }
+            if (!diff) {
+				ip+=STEPSIZE;
+				ref+=STEPSIZE; 
+				continue; 
+			}
             ip += LZ4_NbCommonBytes(diff);
             goto _endCount;
         }
-        if (LZ4_ARCH64) if ((ip<(matchlimit-3)) && (A32(ref) == A32(ip))) { ip+=4; ref+=4; }
-        if ((ip<(matchlimit-1)) && (A16(ref) == A16(ip))) { ip+=2; ref+=2; }
-        if ((ip<matchlimit) && (*ref == *ip)) ip++;
+        if (LZ4_ARCH64) if ((ip<(matchlimit-3)) && (A32(ref) == A32(ip))) {
+			ip+=4;
+			ref+=4;
+		}
+        if ((ip<(matchlimit-1)) && (A16(ref) == A16(ip))) {
+			ip+=2;
+			ref+=2;
+		}
+        if ((ip<matchlimit) && (*ref == *ip)) 
+			ip++;
 _endCount:
 
         // Encode MatchLength
         length = (int)(ip - anchor);
 #ifdef LIMITED_OUTPUT
-        if unlikely(op + (1 + LASTLITERALS) + (length>>8) > oend) return 0;    // Check output limit
+        if unlikely(op + (1 + LASTLITERALS) + (length>>8) > oend) 
+			return 0;    // Check output limit
 #endif
         if (length>=(int)ML_MASK) 
         { 
             *token += ML_MASK; 
             length -= ML_MASK; 
-            for (; length > 509 ; length-=510) { *op++ = 255; *op++ = 255; } 
-            if (length >= 255) { length-=255; *op++ = 255; } 
+            for (; length > 509 ; length-=510) {
+				*op++ = 255;
+				*op++ = 255;
+			} 
+            if (length >= 255) {
+				length-=255;
+				*op++ = 255;
+			} 
             *op++ = (BYTE)length; 
         }
         else *token += (BYTE)length;
 
         // Test end of chunk
-        if (ip > mflimit) { anchor = ip;  break; }
+        if (ip > mflimit) {
+			anchor = ip;
+			break;
+		}
 
         // Fill table
         HashTable[LZ4_HASHVALUE(ip-2)] = (CURRENT_H_TYPE)(ip - 2 - base);
@@ -207,7 +235,11 @@ _endCount:
         // Test next position
         ref = base + HashTable[LZ4_HASHVALUE(ip)];
         HashTable[LZ4_HASHVALUE(ip)] = (CURRENT_H_TYPE)(ip - base);
-        if ((ref >= ip - MAX_DISTANCE) && (A32(ref) == A32(ip))) { token = op++; *token=0; goto _next_match; }
+        if ((ref >= ip - MAX_DISTANCE) && (A32(ref) == A32(ip))) {
+			token = op++;
+			*token=0;
+			goto _next_match;
+		}
 
         // Prepare next loop
         anchor = ip++;
@@ -219,9 +251,16 @@ _last_literals:
     {
         int lastRun = (int)(iend - anchor);
 #ifdef LIMITED_OUTPUT
-        if (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize) return 0;  // Check output limit
+        if (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize)
+			return 0;  // Check output limit
 #endif
-        if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun >= 255 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
+        if (lastRun>=(int)RUN_MASK) {
+			*op++=(RUN_MASK<<ML_BITS);
+			lastRun-=RUN_MASK;
+			for(; lastRun >= 255 ; lastRun-=255)
+				*op++ = 255;
+			*op++ = (BYTE) lastRun;
+		}
         else *op++ = (BYTE)(lastRun<<ML_BITS);
         memcpy(op, anchor, iend - anchor);
         op += iend-anchor;
