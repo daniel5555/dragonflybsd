@@ -82,7 +82,7 @@ static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer_indirect_callback(struct bio *bio);
 
-//static struct objcache *cache_buffer; //trying to use objcache
+static struct objcache *cache_buffer; //trying to use objcache
 
 /* From hammer_io.c */
 static void
@@ -137,8 +137,8 @@ hammer_indirect_callback(struct bio *bio)
 		
 		buffer = bp->b_data + loff;
 		compressed_size = buffer;//compressed (or decompressed) size at the start
-		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-		//compressed_buffer = objcache_get(cache_buffer, M_INTWAIT);
+		//compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
+		compressed_buffer = objcache_get(cache_buffer, M_INTWAIT);
 		//kprintf("READ PATH: Compressed size is %d / %d.\n", *compressed_size, obp->b_bufsize);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
@@ -151,8 +151,8 @@ hammer_indirect_callback(struct bio *bio)
 		}
 		
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
-		kfree(compressed_buffer, D_BUFFER);
-		//objcache_put(cache_buffer, compressed_buffer);
+		//kfree(compressed_buffer, D_BUFFER);
+		objcache_put(cache_buffer, compressed_buffer);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
@@ -851,7 +851,7 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	parent = hammer2_inode_lock_sh(ip);
 	size = ip->chain->data->ipdata.size;
 	
-	//cache_buffer = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
+	cache_buffer = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
 
 	while (uio->uio_resid > 0 && uio->uio_offset < size) {
 		hammer2_key_t lbase;
