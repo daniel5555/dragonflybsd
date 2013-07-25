@@ -64,7 +64,6 @@ MALLOC_DEFINE(C_BUFFER, "compbuffer", "Buffer used for compression.");
 MALLOC_DECLARE(D_BUFFER);
 MALLOC_DEFINE(D_BUFFER, "decompbuffer", "Buffer used for decompression.");
 
-static MALLOC_DECLARE(M_OBJCACHE);
 static MALLOC_DEFINE(M_OBJCACHE, "objcache", "Object Cache");
 
 static int hammer2_read_file(hammer2_inode_t *ip, struct uio *uio,
