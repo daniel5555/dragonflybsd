@@ -861,7 +861,7 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	margs->objsize = 65536;
 	margs->mtype = D_BUFFER;
 	
-	cache_buffer_read = objcache_create("cache_read_buffer", 16, 0,
+	cache_buffer_read = objcache_create("cache_read_buffer", 8, 0,
 		NULL, NULL, NULL,
 		objcache_malloc_alloc, objcache_malloc_free,
 		margs);
