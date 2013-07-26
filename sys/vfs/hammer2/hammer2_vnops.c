@@ -854,7 +854,7 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	size = ip->chain->data->ipdata.size;
 	
 	int use_objcache = 0;
-	if (ip->comp_algo == HAMMER2_COMP_LZ4) {
+	if (ip->chain->data->ipdata.comp_algo == HAMMER2_COMP_LZ4) {
 		cache_buffer_read = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
 		use_objcache = 1;
 	}
