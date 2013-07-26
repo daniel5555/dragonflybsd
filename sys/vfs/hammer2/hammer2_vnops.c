@@ -64,7 +64,7 @@ MALLOC_DEFINE(C_BUFFER, "compbuffer", "Buffer used for compression.");
 MALLOC_DECLARE(D_BUFFER);
 MALLOC_DEFINE(D_BUFFER, "decompbuffer", "Buffer used for decompression.");
 
-static MALLOC_DEFINE(M_OBJCACHE, "objcache", "Object Cache");
+//static MALLOC_DEFINE(M_OBJCACHE, "objcache", "Object Cache");
 
 static int hammer2_read_file(hammer2_inode_t *ip, struct uio *uio,
 				int seqcount);
@@ -83,8 +83,8 @@ static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer_indirect_callback(struct bio *bio);
 
-struct objcache *cache_buffer_read; //trying to use objcache
-struct objcache *cache_buffer_write;
+static struct objcache *cache_buffer_read; //trying to use objcache
+static struct objcache *cache_buffer_write;
 
 /* From hammer_io.c */
 static void
