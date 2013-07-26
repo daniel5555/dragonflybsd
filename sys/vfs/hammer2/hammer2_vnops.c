@@ -853,7 +853,11 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	parent = hammer2_inode_lock_sh(ip);
 	size = ip->chain->data->ipdata.size;
 	
-	cache_buffer_read = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
+	int use_objcache = 0;
+	if (ip->comp_algo == HAMMER2_COMP_LZ4) {
+		cache_buffer_read = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
+		use_objcache = 1;
+	}
 	
 	/*struct objcache_malloc_args *margs;
 
@@ -893,7 +897,9 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 		uiomove((char *)bp->b_data + loff, n, uio);
 		bqrelse(bp);
 	}
-	objcache_destroy(cache_buffer_read);
+	if (use_objcache) {
+		objcache_destroy(cache_buffer_read);
+	}
 	hammer2_inode_unlock_sh(ip, parent);
 	return (error);
 }
