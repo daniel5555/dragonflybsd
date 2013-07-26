@@ -853,19 +853,18 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	parent = hammer2_inode_lock_sh(ip);
 	size = ip->chain->data->ipdata.size;
 	
-	cache_buffer_read = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
+	//cache_buffer_read = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
 	
-	/*struct objcache_malloc_args *margs;
+	struct objcache_malloc_args *margs;
 
 	margs = kmalloc(sizeof(*margs), M_OBJCACHE, M_WAITOK|M_ZERO);
 	margs->objsize = 65536;
 	margs->mtype = D_BUFFER;
 	
-	cache_buffer_read = objcache_create("cache_read_buffer", 2, 0,
+	cache_buffer_read = objcache_create("cache_read_buffer", 32, 0,
 		NULL, NULL, NULL,
 		objcache_malloc_alloc, objcache_malloc_free,
 		margs);
-	*/
 
 	while (uio->uio_resid > 0 && uio->uio_offset < size) {
 		hammer2_key_t lbase;
