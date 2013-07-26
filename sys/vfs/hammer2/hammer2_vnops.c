@@ -139,8 +139,8 @@ hammer_indirect_callback(struct bio *bio)
 		
 		buffer = bp->b_data + loff;
 		compressed_size = buffer;//compressed (or decompressed) size at the start
-		//compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
-		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
+		compressed_buffer = kmalloc(65536, D_BUFFER, M_INTWAIT);
+		//compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
 		//kprintf("READ PATH: Compressed size is %d / %d.\n", *compressed_size, obp->b_bufsize);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
@@ -153,8 +153,8 @@ hammer_indirect_callback(struct bio *bio)
 		}
 		
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
-		//kfree(compressed_buffer, D_BUFFER);
-		objcache_put(cache_buffer_read, compressed_buffer);
+		kfree(compressed_buffer, D_BUFFER);
+		//objcache_put(cache_buffer_read, compressed_buffer);
 		//bcopy(bp->b_data, obp->b_data, obp->b_bufsize);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
