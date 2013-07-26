@@ -83,8 +83,8 @@ static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer_indirect_callback(struct bio *bio);
 
-static struct objcache *cache_buffer_read; //trying to use objcache
-static struct objcache *cache_buffer_write;
+struct objcache *cache_buffer_read = NULL; //trying to use objcache
+struct objcache *cache_buffer_write = NULL;
 
 /* From hammer_io.c */
 static void
@@ -853,7 +853,7 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	parent = hammer2_inode_lock_sh(ip);
 	size = ip->chain->data->ipdata.size;
 	
-	//cache_buffer_read = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
+	cache_buffer_read = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
 	
 	/*struct objcache_malloc_args *margs;
 
@@ -893,7 +893,7 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 		uiomove((char *)bp->b_data + loff, n, uio);
 		bqrelse(bp);
 	}
-	//objcache_destroy(cache_buffer_read);
+	objcache_destroy(cache_buffer_read);
 	hammer2_inode_unlock_sh(ip, parent);
 	return (error);
 }
