@@ -83,8 +83,8 @@ static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer_indirect_callback(struct bio *bio);
 
-static struct objcache *cache_buffer_read; //trying to use objcache
-static struct objcache *cache_buffer_write;
+struct objcache *cache_buffer_read; //trying to use objcache
+struct objcache *cache_buffer_write;
 
 /* From hammer_io.c */
 static void
