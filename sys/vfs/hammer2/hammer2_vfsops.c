@@ -43,12 +43,16 @@
 #include <sys/vfsops.h>
 #include <sys/sysctl.h>
 #include <sys/socket.h>
+//#include <sys/objcache.h>
 
 #include "hammer2.h"
 #include "hammer2_disk.h"
 #include "hammer2_mount.h"
 
 #define REPORT_REFS_ERRORS 1	/* XXX remove me */
+
+//extern static struct objcache *cache_buffer_read;
+//extern static struct objcache *cache_buffer_write;
 
 struct hammer2_sync_info {
 	hammer2_trans_t trans;
@@ -138,6 +142,7 @@ SYSCTL_LONG(_vfs_hammer2, OID_AUTO, ioa_volu_write, CTLFLAG_RW,
 	   &hammer2_ioa_volu_write, 0, "");
 
 static int hammer2_vfs_init(struct vfsconf *conf);
+static int hammer2_vfs_uninit();
 static int hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 				struct ucred *cred);
 static int hammer2_remount(struct mount *, char *, struct vnode *,
@@ -169,6 +174,7 @@ static void hammer2_autodmsg(kdmsg_msg_t *msg);
  */
 static struct vfsops hammer2_vfsops = {
 	.vfs_init	= hammer2_vfs_init,
+	.vfs_uninit = hammer2_vfs_uninit,
 	.vfs_sync	= hammer2_vfs_sync,
 	.vfs_mount	= hammer2_vfs_mount,
 	.vfs_unmount	= hammer2_vfs_unmount,
@@ -203,11 +209,21 @@ hammer2_vfs_init(struct vfsconf *conf)
 
 	if (error)
 		kprintf("HAMMER2 structure size mismatch; cannot continue.\n");
+		
+	cache_buffer_read = objcache_create_simple(D_BUFFER, 65536);
+	cache_buffer_write = objcache_create_simple(C_BUFFER, 32768);
 
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
 	TAILQ_INIT(&hammer2_mntlist);
 
 	return (error);
+}
+
+static
+int
+hammer2_vfs_uninit() {
+	objcache_destroy(cache_buffer_read);
+	objcache_destroy(cache_buffer_write);
 }
 
 /*

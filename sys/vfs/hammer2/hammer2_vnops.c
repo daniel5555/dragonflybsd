@@ -51,7 +51,7 @@
 #include <sys/mountctl.h>
 #include <sys/dirent.h>
 #include <sys/uio.h>
-#include <sys/objcache.h>
+//#include <sys/objcache.h>
 
 #include "hammer2.h"
 #include "hammer2_lz4.h"
@@ -853,11 +853,11 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	parent = hammer2_inode_lock_sh(ip);
 	size = ip->chain->data->ipdata.size;
 	
-	int use_objcache = 0;
+	/*int use_objcache = 0;
 	if (ip->chain->data->ipdata.comp_algo == HAMMER2_COMP_LZ4) {
 		cache_buffer_read = objcache_create_simple(D_BUFFER, 65536); //create objcache for this read_file instance
 		use_objcache = 1;
-	}
+	}*/
 	
 	/*struct objcache_malloc_args *margs;
 
@@ -897,9 +897,9 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 		uiomove((char *)bp->b_data + loff, n, uio);
 		bqrelse(bp);
 	}
-	if (use_objcache != 0) {
-	//	objcache_destroy(cache_buffer_read);
-	}
+	/*if (use_objcache != 0) {
+		objcache_destroy(cache_buffer_read);
+	}*/
 	hammer2_inode_unlock_sh(ip, parent);
 	return (error);
 }
@@ -960,11 +960,11 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	
 	//int iteration = 0;
 	
-	int objcache_used = 0;
+	/*int objcache_used = 0;
 	if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 		cache_buffer_write = objcache_create_simple(C_BUFFER, 32768);
 		objcache_used = 1;
-	}
+	}*/
 
 	/*
 	 * UIO write loop
@@ -1345,9 +1345,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		//++iteration;
 	}
 	
-	if (objcache_used) {
+	/*if (objcache_used) {
 		objcache_destroy(cache_buffer_write);
-	}
+	}*/
 
 	/*
 	 * Cleanup.  If we extended the file EOF but failed to write through
