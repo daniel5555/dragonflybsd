@@ -51,8 +51,8 @@
 
 #define REPORT_REFS_ERRORS 1	/* XXX remove me */
 
-//extern static struct objcache *cache_buffer_read;
-//extern static struct objcache *cache_buffer_write;
+extern struct objcache *cache_buffer_read;
+extern struct objcache *cache_buffer_write;
 
 struct hammer2_sync_info {
 	hammer2_trans_t trans;

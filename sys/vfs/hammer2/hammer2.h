@@ -79,9 +79,6 @@ struct hammer2_span;
 struct hammer2_state;
 struct hammer2_msg;
 
-extern struct objcache *cache_buffer_read;
-extern struct objcache *cache_buffer_write;
-
 /*
  * The chain structure tracks blockref recursions all the way to the root
  * volume.  These consist of indirect blocks, inodes, and eventually the
