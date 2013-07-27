@@ -51,7 +51,7 @@
 #include <sys/mountctl.h>
 #include <sys/dirent.h>
 #include <sys/uio.h>
-//#include <sys/objcache.h>
+#include <sys/objcache.h>
 
 #include "hammer2.h"
 #include "hammer2_lz4.h"

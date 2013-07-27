@@ -43,7 +43,7 @@
 #include <sys/vfsops.h>
 #include <sys/sysctl.h>
 #include <sys/socket.h>
-//#include <sys/objcache.h>
+#include <sys/objcache.h>
 
 #include "hammer2.h"
 #include "hammer2_disk.h"

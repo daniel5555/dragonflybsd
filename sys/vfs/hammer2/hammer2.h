@@ -64,7 +64,6 @@
 #include <sys/signal2.h>
 #include <sys/tree.h>
 #include <sys/dmsg.h>
-#include <sys/objcache.h>
 
 #include "hammer2_disk.h"
 #include "hammer2_mount.h"
