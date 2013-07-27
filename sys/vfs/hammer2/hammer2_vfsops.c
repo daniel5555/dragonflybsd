@@ -230,6 +230,7 @@ int
 hammer2_vfs_uninit() {
 	objcache_destroy(cache_buffer_read);
 	objcache_destroy(cache_buffer_write);
+	return 0;
 }
 
 /*
