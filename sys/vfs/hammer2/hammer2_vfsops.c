@@ -227,7 +227,8 @@ hammer2_vfs_init(struct vfsconf *conf)
 
 static
 int
-hammer2_vfs_uninit() {
+hammer2_vfs_uninit()
+{
 	objcache_destroy(cache_buffer_read);
 	objcache_destroy(cache_buffer_write);
 	return 0;
