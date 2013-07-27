@@ -1152,6 +1152,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			
 				if (error) {
 					//kprintf("WRITE PATH: Error ocurred while assign_physical.\n");
+					objcache_put(cache_buffer_write, compressed_buffer);
 					KKASSERT(chain == NULL);
 					brelse(bp);
 					break;
