@@ -1134,6 +1134,9 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					else if (compressed_size <= 32768 - sizeof(int)) {
 						compressed_block_size = 32768;
 					}
+					else {
+						panic("Weird compressed_size value.\n");
+					}
 					c_size = compressed_buffer;//write the compressed size at start
 					*c_size = compressed_size; //ATTENTION: use this for decompress_safe
 					//*c_size = lblksize; //ATTENTION: for decompress_fast we need the original size
