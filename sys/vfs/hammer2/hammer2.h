@@ -79,14 +79,14 @@ struct hammer2_span;
 struct hammer2_state;
 struct hammer2_msg;
 
-extern static struct objcache *cache_buffer_read;
-extern static struct objcache *cache_buffer_write;
-
 MALLOC_DECLARE(C_BUFFER);
 MALLOC_DEFINE(C_BUFFER, "compbuffer", "Buffer used for compression.");
 
 MALLOC_DECLARE(D_BUFFER);
 MALLOC_DEFINE(D_BUFFER, "decompbuffer", "Buffer used for decompression.");
+
+extern static struct objcache *cache_buffer_read;
+extern static struct objcache *cache_buffer_write;
 
 /*
  * The chain structure tracks blockref recursions all the way to the root
