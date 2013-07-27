@@ -88,6 +88,12 @@ long hammer2_ioa_meta_write;
 long hammer2_ioa_indr_write;
 long hammer2_ioa_volu_write;
 
+MALLOC_DECLARE(C_BUFFER);
+MALLOC_DEFINE(C_BUFFER, "compbuffer", "Buffer used for compression.");
+
+MALLOC_DECLARE(D_BUFFER);
+MALLOC_DEFINE(D_BUFFER, "decompbuffer", "Buffer used for decompression.");
+
 SYSCTL_NODE(_vfs, OID_AUTO, hammer2, CTLFLAG_RW, 0, "HAMMER2 filesystem");
 
 SYSCTL_INT(_vfs_hammer2, OID_AUTO, debug, CTLFLAG_RW,

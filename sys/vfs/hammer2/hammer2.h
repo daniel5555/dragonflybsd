@@ -79,12 +79,6 @@ struct hammer2_span;
 struct hammer2_state;
 struct hammer2_msg;
 
-MALLOC_DECLARE(C_BUFFER);
-MALLOC_DEFINE(C_BUFFER, "compbuffer", "Buffer used for compression.");
-
-MALLOC_DECLARE(D_BUFFER);
-MALLOC_DEFINE(D_BUFFER, "decompbuffer", "Buffer used for decompression.");
-
 static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
 
