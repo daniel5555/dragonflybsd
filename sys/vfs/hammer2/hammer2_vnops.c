@@ -129,6 +129,7 @@ hammer_indirect_callback(struct bio *bio)
 		obp->b_error = EIO;
 	} else {
 		//KKASSERT(bp->b_bufsize >= obp->b_bufsize);
+		KKASSERT(obp->b_bufsize <= 65536);
 		//kprintf("READ PATH: Inside callback:\n");
 		//kprintf("READ PATH: bp(c_bp) buf. size = %d\n", bp->b_bufsize);
 		//kprintf("READ PATH: obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
@@ -1005,6 +1006,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		lblksize = hammer2_calc_logical(ip, uio->uio_offset,
 						&lbase, &leof);
 		loff = (int)(uio->uio_offset - lbase);
+		
+		KKASSERT(lblksize <= 65536);
 
 		/*
 		 * Calculate bytes to copy this transfer and whether the
@@ -1108,7 +1111,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				if (compressed_size == 0) {
 					compressed_size = lblksize; //compression failed
 					//kfree(compressed_buffer, C_BUFFER); //let's free the buffer as soon as possible
-					objcache_put(cache_buffer_write, compressed_buffer);
+					//objcache_put(cache_buffer_write, compressed_buffer);
 					//kprintf("WRITE PATH: Compression failed.\n");
 				}
 				else {
@@ -1202,7 +1205,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 						chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 						bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
 						//kfree(compressed_buffer, C_BUFFER);
-						objcache_put(cache_buffer_write, compressed_buffer);
+						//objcache_put(cache_buffer_write, compressed_buffer);
 					}
 					else {
 						chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
@@ -1233,6 +1236,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				/* NOT REACHED */
 					break;
 				}
+				
+				objcache_put(cache_buffer_write, compressed_buffer);
 			
 				/* Mark the original bp with B_RELBUF. */
 				bp->b_flags |= B_RELBUF;
