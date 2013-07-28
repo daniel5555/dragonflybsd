@@ -1152,7 +1152,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			
 				if (error) {
 					//kprintf("WRITE PATH: Error ocurred while assign_physical.\n");
-					//objcache_put(cache_buffer_write, compressed_buffer); <- UNCOMMENT
+					objcache_put(cache_buffer_write, compressed_buffer);
 					KKASSERT(chain == NULL);
 					brelse(bp);
 					break;
@@ -1209,7 +1209,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 						chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_LZ4) + HAMMER2_ENC_CHECK(temp_check);
 						bcopy(compressed_buffer, dbp->b_data + boff, compressed_block_size); //need to copy the whole block
 						//kfree(compressed_buffer, C_BUFFER);
-						objcache_put(cache_buffer_write, compressed_buffer); //<- COMMENT
+						//objcache_put(cache_buffer_write, compressed_buffer);
 					}
 					else {
 						chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) + HAMMER2_ENC_CHECK(temp_check);
@@ -1241,7 +1241,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					break;
 				}
 				
-				//objcache_put(cache_buffer_write, compressed_buffer); <- UNCOMMENT
+				objcache_put(cache_buffer_write, compressed_buffer);
 			
 				/* Mark the original bp with B_RELBUF. */
 				bp->b_flags |= B_RELBUF;
