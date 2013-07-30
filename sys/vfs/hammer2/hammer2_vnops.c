@@ -136,7 +136,7 @@ hammer_indirect_callback(struct bio *bio)
 			kprintf("READ PATH: Error during decompression.\n");
 		}
 		
-		bcopy(compressed_buffer, obp->b_data, result/*obp->b_bufsize*/);
+		bcopy(compressed_buffer, obp->b_data, /*result*/obp->b_bufsize);
 		objcache_put(cache_buffer_read, compressed_buffer);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
