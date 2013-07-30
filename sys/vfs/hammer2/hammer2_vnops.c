@@ -127,7 +127,7 @@ hammer_indirect_callback(struct bio *bio)
 		int *compressed_size;
 		
 		buffer = bp->b_data + loff;
-		compressed_size = (char*)buffer;//compressed size is at the first position of buffer
+		compressed_size = (int*)buffer;//compressed size is at the first position of buffer
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
