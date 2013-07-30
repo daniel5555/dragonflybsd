@@ -121,9 +121,6 @@ hammer_indirect_callback(struct bio *bio)
 		obp->b_error = EIO;
 	} else {
 		KKASSERT(obp->b_bufsize <= 65536);
-		//kprintf("READ PATH: Inside callback:\n");
-		//kprintf("READ PATH: bp(c_bp) buf. size = %d\n", bp->b_bufsize);
-		//kprintf("READ PATH: obp (obio/nbio) buf. size = %d\n", obp->b_bufsize);
 		
 		char *buffer;
 		char *compressed_buffer;
@@ -132,13 +129,8 @@ hammer_indirect_callback(struct bio *bio)
 		buffer = bp->b_data + loff;
 		compressed_size = buffer;//compressed size is at the first position of buffer
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
-		//kprintf("READ PATH: Compressed size is %d / %d.\n", *compressed_size, obp->b_bufsize);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
-		//kprintf("READ PATH: result = %d.\n", result);
-		//kprintf("READ PATH: b_bufsize = %d.\n", obp->b_bufsize);
-		//kprintf("READ PATH: b_data = %d.\n", obp->b_data);
-		//kprintf("READ PATH: loff = %d.\n", loff);
 		if (result < 0) {
 			kprintf("READ PATH: Error during decompression.\n");
 		}
