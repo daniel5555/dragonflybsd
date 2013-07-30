@@ -127,7 +127,7 @@ hammer_indirect_callback(struct bio *bio)
 		int *compressed_size;
 		
 		buffer = bp->b_data + loff;
-		compressed_size = buffer;//compressed size is at the first position of buffer
+		compressed_size = (char*)buffer;//compressed size is at the first position of buffer
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
@@ -1036,7 +1036,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 			/* First of all, check if there is a block filled with zeros. */
 			int *check_buffer;
-			check_buffer = bp->b_data;
+			check_buffer = (int*)bp->b_data;
 			int i;
 			for (i = 0; i < lblksize/sizeof(int); ++i) {
 				if (check_buffer[i] != 0)
@@ -1080,7 +1080,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 					else {
 						panic("Weird compressed_size value.\n");
 					}
-					c_size = compressed_buffer;//write the compressed size at the first position of the buffer
+					c_size = (int*)compressed_buffer;//write the compressed size at the first position of the buffer
 					*c_size = compressed_size;
 				}
 			
@@ -1198,7 +1198,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 * else don't assign physical storage, but still go throught the motions.
 			 */
 			int *check_buffer; //used to check whether the block is zero-filled
-			check_buffer = bp->b_data;
+			check_buffer = (int*)bp->b_data;
 			int i;
 			for (i = 0; i < lblksize/sizeof(int); ++i) {
 				if (check_buffer[i] != 0)
