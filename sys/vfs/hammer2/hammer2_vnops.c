@@ -132,10 +132,11 @@ hammer_indirect_callback(struct bio *bio)
 		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
 		if (result < 0) {
+			result = 0; //to prevent a major failure
 			kprintf("READ PATH: Error during decompression.\n");
 		}
 		
-		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
+		bcopy(compressed_buffer, obp->b_data, result/*obp->b_bufsize*/);
 		objcache_put(cache_buffer_read, compressed_buffer);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
