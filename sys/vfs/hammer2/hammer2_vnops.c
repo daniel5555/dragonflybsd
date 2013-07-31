@@ -1058,7 +1058,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			}
 			
 			if (i < lblksize/sizeof(int)/*not_zero_filled_block((int*)bp->b_data, &lblksize)*/) {
-				krpintf("WRITE PATH: Not zero-filled block detected.\n");
+				kprintf("WRITE PATH: Not zero-filled block detected.\n");
 				int compressed_size;
 				int compressed_block_size = lblksize;
 			
