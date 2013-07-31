@@ -84,7 +84,6 @@ static
 void
 hammer_indirect_callback(struct bio *bio)
 {
-	kprintf("READ PATH: Entering callback.\n");
 	struct buf *bp = bio->bio_buf;
 	struct buf *obp;
 	struct bio *obio;
@@ -1048,16 +1047,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		}
 
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
-			/* First of all, check if there is a block filled with zeros. */
-			/*int *check_buffer;
-			check_buffer = (int*)bp->b_data;
-			int i;
-			for (i = 0; i < lblksize/sizeof(int); ++i) {
-				if (check_buffer[i] != 0)
-					break;
-			}*/
-			
-			if (/*i < lblksize/sizeof(int)*/not_zero_filled_block((int*)bp->b_data, &lblksize)) {
+			if (not_zero_filled_block((int*)bp->b_data, &lblksize)) {
 				kprintf("WRITE PATH: Not zero-filled block detected.\n");
 				int compressed_size;
 				int compressed_block_size = lblksize;
