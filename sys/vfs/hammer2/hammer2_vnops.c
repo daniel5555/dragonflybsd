@@ -287,7 +287,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
 				bdwrite(dbp);
 				*/
-				} else if (ioflag & IO_ASYNC) {
+				} else if (*ioflag & IO_ASYNC) {
 					bawrite(dbp);
 				} else if (hammer2_cluster_enable) {
 					cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
