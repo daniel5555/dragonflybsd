@@ -58,6 +58,8 @@
 
 #define ZFOFFSET	(-2LL)
 
+static void hammer_indirect_callback(struct bio *bio);
+static int not_zero_filled_block(int* block, int* lblksize);
 static int hammer2_read_file(hammer2_inode_t *ip, struct uio *uio,
 				int seqcount);
 static int hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
@@ -73,7 +75,6 @@ static void hammer2_extend_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
-static void hammer_indirect_callback(struct bio *bio);
 
 static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
