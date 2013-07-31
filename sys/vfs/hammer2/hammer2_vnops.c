@@ -75,6 +75,10 @@ static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer_indirect_callback(struct bio *bio);
 static int not_zero_filled_block(int* block, int* lblksize);
+static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
+				hammer2_inode_t *ip, hammer2_chain_t **parentp, 
+				hammer2_chain_t *chain,	hammer2_key_t* lbase, int* lblksize,
+				int* error)
 
 static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
@@ -1203,8 +1207,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		}
 
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
-			compress_and_write(bp, trans, ip, parentp, chain, lbase,
-				&lblksize, &error);
+			hammer2_compress_and_write(bp, trans, ip, parentp, chain,
+				lbase, &lblksize, &error);
 			//if (not_zero_filled_block((int*)bp->b_data, &lblksize)) {
 				//kprintf("WRITE PATH: Not zero-filled block detected.\n");
 				//int compressed_size;
