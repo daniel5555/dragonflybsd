@@ -78,7 +78,7 @@ static int not_zero_filled_block(int* block, int* lblksize);
 static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_chain_t **parentp, 
 				hammer2_chain_t *chain,	hammer2_key_t* lbase, int* lblksize,
-				int* error)
+				int* error);
 
 static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
