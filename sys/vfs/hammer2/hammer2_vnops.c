@@ -74,6 +74,7 @@ static void hammer2_extend_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer_indirect_callback(struct bio *bio);
+static int not_zero_filled_block(int* block, int* lblksize);
 
 static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
@@ -146,16 +147,16 @@ hammer_indirect_callback(struct bio *bio)
 	bqrelse(bp);
 }
 
-static __inline
+static
 int
 not_zero_filled_block(int* block, int* lblksize)
 {
 	int i;
 	for (i = 0; i < *lblksize/sizeof(int); ++i) {
 		if (block[i] != 0)
-			return 1;
+			return (1);
 	}
-	return 0;
+	return (0);
 }
 
 static __inline
