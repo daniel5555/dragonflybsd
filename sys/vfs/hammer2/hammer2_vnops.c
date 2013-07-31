@@ -175,7 +175,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		int compressed_block_size = *lblksize;
 			
 		char *compressed_buffer;
-		int* c_size;
+		int *c_size;
 
 		compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 			
@@ -262,7 +262,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				}
 				else {
 					*error = bread(chain->hmp->devvp, pbase, psize, &dbp);
-					if (error) {
+					if (*error) {
 						kprintf("WRITE PATH: An error ocurred while bread().\n");
 						brelse(bp);
 						break;
@@ -284,8 +284,8 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				*/
 					bwrite(dbp);
 				/*
-				} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
-				bdwrite(dbp);
+				} else if ((ioflag & IO_DIRECT) && loff + n == *lblksize) {
+					bdwrite(dbp);
 				*/
 				} else if (*ioflag & IO_ASYNC) {
 					bawrite(dbp);
@@ -1208,7 +1208,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		}
 
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
-			hammer2_compress_and_write(bp, trans, ip, ipdata, &parentp,
+			hammer2_compress_and_write(bp, trans, ip, ipdata, parentp,
 				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
 			if (error)
 				break;
