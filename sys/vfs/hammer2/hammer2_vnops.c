@@ -79,7 +79,8 @@ static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
 
 /* From hammer_io.c */
-static void
+static
+void
 hammer_indirect_callback(struct bio *bio)
 {
 	kprintf("READ PATH: Entering callback.\n");
@@ -143,6 +144,18 @@ hammer_indirect_callback(struct bio *bio)
 	}
 	biodone(obio);
 	bqrelse(bp);
+}
+
+static
+int
+not_zero_filled_block(int* block, int* lblksize)
+{
+	int i;
+	for (i = 0; i < *lblksize/sizeof(int); ++i) {
+		if (block[i] != 0)
+			return 1;
+	}
+	return 0;
 }
 
 static __inline
@@ -1035,15 +1048,16 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 			/* First of all, check if there is a block filled with zeros. */
-			int *check_buffer;
+			/*int *check_buffer;
 			check_buffer = (int*)bp->b_data;
 			int i;
 			for (i = 0; i < lblksize/sizeof(int); ++i) {
 				if (check_buffer[i] != 0)
 					break;
-			}
+			}*/
 			
-			if (i < lblksize/sizeof(int)) {
+			if (not_zero_filled_block((int*)bp->b_data, &lblksize)) {
+				krpintf("WRITE PATH: Not zero-filled block detected.\n");
 				int compressed_size;
 				int compressed_block_size = lblksize;
 			
@@ -1186,7 +1200,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_unlock(chain);
 			}
 			else {
-				kprintf("Zero-filled block detected.\n");
+				kprintf("WRITE PATH: Zero-filled block detected.\n");
 				ipdata = &ip->chain->data->ipdata;
 				brelse(bp);
 			}
