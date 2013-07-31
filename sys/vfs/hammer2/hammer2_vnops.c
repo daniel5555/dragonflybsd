@@ -1208,8 +1208,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		}
 
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
-			hammer2_compress_and_write(&bp, &trans, &ip, &ipdata, &parentp,
-				&chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
+			hammer2_compress_and_write(*bp, *trans, *ip, *ipdata, **parentp,
+				*chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
 			if (error)
 				break;
 			//if (not_zero_filled_block((int*)bp->b_data, &lblksize)) {
