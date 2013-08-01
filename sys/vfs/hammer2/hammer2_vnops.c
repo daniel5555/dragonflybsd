@@ -83,8 +83,9 @@ static void hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp, hammer2_chain_t *chain, 
 				hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error);
-static void hammer2_just_write(struct buf *bp, hammer2_inode_data_t *ipdata,
-				hammer2_chain_t *chain, int* ioflag, int* lblksize, int* error);
+static void hammer2_just_write(struct buf *bp, hammer2_inode_t *ip, 
+				hammer2_inode_data_t *ipdata, hammer2_chain_t *chain, 
+				int* ioflag, int* lblksize, int* error);
 
 static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
@@ -138,12 +139,10 @@ hammer_indirect_callback(struct bio *bio)
 		int *compressed_size;
 		
 		buffer = bp->b_data + loff;
-		compressed_size = (int*)buffer;
+		compressed_size = (int*)buffer;//compressed size is at the first position of buffer
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
-		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data,
-			//*compressed_size, obp->b_bufsize);
-		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer,
-			*compressed_size, obp->b_bufsize);
+		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
+		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
 		if (result < 0) {
 			result = 0; //to prevent a major failure
 			kprintf("READ PATH: Error during decompression.\n");
@@ -341,7 +340,7 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) {
 		chain = hammer2_assign_physical(trans, ip, parentp,
 			*lbase, *lblksize, error); //to avoid a compiler warning
-		hammer2_just_write(bp, ipdata, chain, ioflag, lblksize, error);
+		hammer2_just_write(bp, ip, ipdata, chain, ioflag, lblksize, error);
 	}
 	else {
 		ipdata = &ip->chain->data->ipdata;
@@ -351,8 +350,9 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 
 static
 void
-hammer2_just_write(struct buf *bp, hammer2_inode_data_t *ipdata,
-	hammer2_chain_t *chain, int* ioflag, int* error)
+hammer2_just_write(struct buf *bp, hammer2_inode_t *ip, 
+	hammer2_inode_data_t *ipdata, hammer2_chain_t *chain, int* ioflag, 
+	int* error)
 {
 	/*
 	* We have to assign physical storage to the buffer we intend
@@ -1298,7 +1298,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			chain = hammer2_assign_physical(trans, ip, parentp,
 				lbase, lblksize, &error);
-			hammer2_just_write(bp, ipdata, chain, &ioflag, &lblksize, &error);
+			hammer2_just_write(bp, ip, ipdata, chain, &ioflag, &lblksize, &error);
 		}
 		if (error)
 			break;
