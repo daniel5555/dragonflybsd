@@ -218,10 +218,10 @@ hammer2_vfs_init(struct vfsconf *conf)
 	if (error)
 		kprintf("HAMMER2 structure size mismatch; cannot continue.\n");
 		
-	cache_buffer_read = objcache_create_simple(D_BUFFER, 65536);
-	cache_buffer_write = objcache_create_simple(C_BUFFER, 32768);
+	//cache_buffer_read = objcache_create_simple(D_BUFFER, 65536);
+	//cache_buffer_write = objcache_create_simple(C_BUFFER, 32768);
 	
-	/*struct objcache_malloc_args *margs_read;
+	struct objcache_malloc_args *margs_read;
 	struct objcache_malloc_args *margs_write;
 
 	margs_read = kmalloc(sizeof(*margs_read), M_OBJCACHE, M_WAITOK|M_ZERO);
@@ -237,7 +237,7 @@ hammer2_vfs_init(struct vfsconf *conf)
 				objcache_malloc_free, margs_read);
 	cache_buffer_write = objcache_create(margs_write->mtype->ks_shortdesc,
 				0, 1, NULL, NULL, NULL, objcache_malloc_alloc,
-				objcache_malloc_free, margs_write);*/
+				objcache_malloc_free, margs_write);
 
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
 	TAILQ_INIT(&hammer2_mntlist);
