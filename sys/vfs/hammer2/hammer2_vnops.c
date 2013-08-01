@@ -340,6 +340,8 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error)
 {
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) { //block is not zero-filled
+		chain = hammer2_assign_physical(trans, ip, parentp,
+			*lbase, *lblksize, error); //to avoid a compiler warning
 		hammer2_just_write(bp, trans, ip, ipdata, parentp,
 				chain, lbase, ioflag, lblksize, error);
 		//kprintf("Not a zero-filled block.\n");
@@ -388,8 +390,8 @@ hammer2_just_write(struct buf *bp, hammer2_trans_t *trans,
 	* This can return NOOFFSET for inode-embedded data.  The
 	* strategy code will take care of it in that case.
 	*/
-	chain = hammer2_assign_physical(trans, ip, parentp,
-		*lbase, *lblksize, error);
+	//chain = hammer2_assign_physical(trans, ip, parentp,
+		//*lbase, *lblksize, error);
 	ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 
 	if (*error) {
@@ -1303,16 +1305,29 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 			hammer2_compress_and_write(bp, trans, ip, ipdata, parentp,
-				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
+				chain, &lbase, &ioflag, &lblksize, &error);
 		}
 		else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
 			hammer2_zero_check_and_write(bp, trans, ip, ipdata, parentp,
-				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
+				chain, &lbase, &ioflag, &lblksize, &error);
 		}
 		else {
-			/* Otherwise proceed as before without taking its value into account. */
+			/*
+			 * We have to assign physical storage to the buffer we intend
+			 * to dirty or write now to avoid deadlocks in the strategy
+			 * code later.
+			 *
+			 * This can return NOOFFSET for inode-embedded data.  The
+		     * strategy code will take care of it in that case.
+			 */
+			/* 
+			 * The hammer2_assing_physical() is out of hammer2_just_write()
+			 * in order to avoid a compiler warning.
+			 */
+			chain = hammer2_assign_physical(trans, ip, parentp,
+				lbase, lblksize, &error);
 			hammer2_just_write(bp, trans, ip, ipdata, parentp,
-				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
+				chain, &lbase, &ioflag, &lblksize, &error);
 		}
 		if (error)
 			break;
