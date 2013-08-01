@@ -79,6 +79,10 @@ static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp, hammer2_chain_t *chain,
 				hammer2_key_t* lbase, int *ioflag, int* lblksize, int* error);
+static void hammer2_zero-check_and_write(struct buf *bp, hammer2_trans_t *trans,
+	hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
+	hammer2_chain_t **parentp, hammer2_chain_t *chain, 
+	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error)
 
 static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
@@ -173,7 +177,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_chain_t **parentp, hammer2_chain_t *chain, 
 	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error)
 {
-	if (not_zero_filled_block((int*)bp->b_data, lblksize)) {
+	if (not_zero_filled_block((int*)bp->b_data, *lblksize)) {
 		kprintf("WRITE PATH: Not zero-filled block detected.\n");
 		int compressed_size;
 		int compressed_block_size = *lblksize;
@@ -319,6 +323,43 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 	}
 	else {
 		kprintf("WRITE PATH: Zero-filled block detected.\n");
+		ipdata = &ip->chain->data->ipdata;
+		brelse(bp);
+	}
+}
+
+static
+void
+hammer2_zero-check_and_write(struct buf *bp, hammer2_trans_t *trans,
+	hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
+	hammer2_chain_t **parentp, hammer2_chain_t *chain, 
+	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error)
+{
+	if (not_zero_filled_block((int*)bp->b_data, *lblksize)) { //block is not zero-filled
+		kprintf("Not a zero-filled block.\n");
+		chain = hammer2_assign_physical(trans, ip, parentp,
+			lbase, *lblksize, error);
+		ipdata = &ip->chain->data->ipdata;	/* RELOAD */
+
+		if (*error) {
+			KKASSERT(chain == NULL);
+			brelse(bp);
+		}
+
+		/* XXX update ip_data.mtime */
+
+		/*
+		 * Once we dirty a buffer any cached offset becomes invalid.
+		 *
+		 * NOTE: For cluster_write() always use the trailing block
+		 * size, which is HAMMER2_PBUFSIZE.  lblksize is the
+		 * eof-straddling blocksize and is incorrect.
+		 */
+		bp->b_flags |= B_AGE;
+		hammer2_write_bp(chain, bp, *ioflag);
+		hammer2_chain_unlock(chain);
+	}
+	else { //block is zero-filled
 		ipdata = &ip->chain->data->ipdata;
 		brelse(bp);
 	}
@@ -1219,41 +1260,45 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 		}
 		else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
-			kprintf("Zero-checking is detected.\n");
-			/* Detect if a block is zero-filled or not.
-			 * If it's not zero-filled, proceed as in no compression-case,
-			 * else don't assign physical storage, but still go throught the motions.
-			 */
-			if (not_zero_filled_block((int*)bp->b_data, lblksize)) { //block is not zero-filled
-				kprintf("Not a zero-filled block.\n");
-				chain = hammer2_assign_physical(trans, ip, parentp,
-							lbase, lblksize, &error);
-				ipdata = &ip->chain->data->ipdata;	/* RELOAD */
+			hammer2_zero-check_and_write(bp, trans, ip, ipdata, parentp,
+				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
+			if (error)
+				break;
+			//kprintf("Zero-checking is detected.\n");
+			///* Detect if a block is zero-filled or not.
+			 //* If it's not zero-filled, proceed as in no compression-case,
+			 //* else don't assign physical storage, but still go throught the motions.
+			 //*/
+			//if (not_zero_filled_block((int*)bp->b_data, lblksize)) { //block is not zero-filled
+				//kprintf("Not a zero-filled block.\n");
+				//chain = hammer2_assign_physical(trans, ip, parentp,
+							//lbase, lblksize, &error);
+				//ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 
-				if (error) {
-					//kprintf("Got an error right after assign_physical.\n");
-					KKASSERT(chain == NULL);
-					brelse(bp);
-					break;
-				}
+				//if (error) {
+					////kprintf("Got an error right after assign_physical.\n");
+					//KKASSERT(chain == NULL);
+					//brelse(bp);
+					//break;
+				//}
 
-				/* XXX update ip_data.mtime */
+				///* XXX update ip_data.mtime */
 
-				/*
-				* Once we dirty a buffer any cached offset becomes invalid.
-				*
-				* NOTE: For cluster_write() always use the trailing block
-				*	 size, which is HAMMER2_PBUFSIZE.  lblksize is the
-				*	 eof-straddling blocksize and is incorrect.
-				*/
-				bp->b_flags |= B_AGE;
-				hammer2_write_bp(chain, bp, ioflag);
-				hammer2_chain_unlock(chain);
-			}
-			else { //block is zero-filled
-				ipdata = &ip->chain->data->ipdata;
-				brelse(bp);
-			}
+				///*
+				//* Once we dirty a buffer any cached offset becomes invalid.
+				//*
+				//* NOTE: For cluster_write() always use the trailing block
+				//*	 size, which is HAMMER2_PBUFSIZE.  lblksize is the
+				//*	 eof-straddling blocksize and is incorrect.
+				//*/
+				//bp->b_flags |= B_AGE;
+				//hammer2_write_bp(chain, bp, ioflag);
+				//hammer2_chain_unlock(chain);
+			//}
+			//else { //block is zero-filled
+				//ipdata = &ip->chain->data->ipdata;
+				//brelse(bp);
+			//}
 		}
 		else {
 			/* Otherwise proceed as before without taking its value into account. */
