@@ -226,10 +226,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 			
 		if (*error) {
-			kprintf("WRITE PATH: An error occurred while assigning physical space.\n");
 			objcache_put(cache_buffer_write, compressed_buffer);
-			KKASSERT(chain == NULL);
-			brelse(bp);
 		}
 		else {
 			bp->b_flags |= B_AGE;
@@ -362,16 +359,9 @@ hammer2_just_write(struct buf *bp, hammer2_inode_t *ip,
 	* This can return NOOFFSET for inode-embedded data.  The
 	* strategy code will take care of it in that case.
 	*/
-	//chain = hammer2_assign_physical(trans, ip, parentp,
-		//*lbase, *lblksize, error);
 	ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 
-	if (*error) {
-		kprintf("WRITE PATH: An error while assigning physical space.\n");
-		KKASSERT(chain == NULL);
-		brelse(bp);
-	}
-	else {
+	if (*error == 0) {
 		/* XXX update ip_data.mtime */
 
 		/*
@@ -1300,8 +1290,12 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				lbase, lblksize, &error);
 			hammer2_just_write(bp, ip, ipdata, chain, &ioflag, &error);
 		}
-		if (error)
+		if (error) {
+			kprintf("WRITE PATH: An error occurred while assigning physical space.\n");
+			KKASSERT(chain == NULL);
+			brelse(bp);
 			break;
+		}
 	}
 
 	/*
