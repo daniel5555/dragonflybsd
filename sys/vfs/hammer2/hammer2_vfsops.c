@@ -51,6 +51,8 @@
 
 #define REPORT_REFS_ERRORS 1	/* XXX remove me */
 
+MALLOC_DEFINE(M_OBJCACHE, "objcache", "Object Cache");
+
 extern struct objcache *cache_buffer_read;
 extern struct objcache *cache_buffer_write;
 
@@ -222,11 +224,11 @@ hammer2_vfs_init(struct vfsconf *conf)
 	struct objcache_malloc_args *margs_read;
 	struct objcache_malloc_args *margs_write;
 
-	margs_read = kmalloc(sizeof(*margs), M_OBJCACHE, M_WAITOK|M_ZERO);
+	margs_read = kmalloc(sizeof(*margs_read), M_OBJCACHE, M_WAITOK|M_ZERO);
 	margs_read->objsize = 65536;
 	margs_read->mtype = D_BUFFER;
 	
-	margs_write = kmalloc(sizeof(*margs), M_OBJCACHE, M_WAITOK|M_ZERO);
+	margs_write = kmalloc(sizeof(*margs_write), M_OBJCACHE, M_WAITOK|M_ZERO);
 	margs_write->objsize = 32768;
 	margs_write->mtype = C_BUFFER;
 	
