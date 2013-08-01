@@ -85,7 +85,7 @@ static void hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error);
 static void hammer2_just_write(struct buf *bp, hammer2_inode_t *ip, 
 				hammer2_inode_data_t *ipdata, hammer2_chain_t *chain, 
-				int* ioflag, int* lblksize, int* error);
+				int* ioflag, int* error);
 
 static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
@@ -340,7 +340,7 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) {
 		chain = hammer2_assign_physical(trans, ip, parentp,
 			*lbase, *lblksize, error); //to avoid a compiler warning
-		hammer2_just_write(bp, ip, ipdata, chain, ioflag, lblksize, error);
+		hammer2_just_write(bp, ip, ipdata, chain, ioflag, error);
 	}
 	else {
 		ipdata = &ip->chain->data->ipdata;
