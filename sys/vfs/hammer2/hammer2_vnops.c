@@ -1260,7 +1260,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				break;
 		}
 		else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
-			hammer2_zero-check_and_write(bp, trans, ip, ipdata, parentp,
+			hammer2_zero_check_and_write(bp, trans, ip, ipdata, parentp,
 				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
 			if (error)
 				break;
