@@ -73,7 +73,7 @@ static void hammer2_extend_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
 static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_chain_t **parentp, hammer2_key_t nsize);
-static void hammer_indirect_callback(struct bio *bio);
+static void hammer2_decompress_callback(struct bio *bio);
 static int not_zero_filled_block(int* block, int* lblksize);
 static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
@@ -82,7 +82,7 @@ static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 static void hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp, hammer2_chain_t *chain, 
-				hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error);
+				hammer2_key_t *lbase, int* ioflag, int* lblksize, int* error);
 static void hammer2_just_write(struct buf *bp, hammer2_inode_t *ip, 
 				hammer2_inode_data_t *ipdata, hammer2_chain_t *chain, 
 				int* ioflag, int* error);
@@ -93,7 +93,7 @@ static struct objcache *cache_buffer_write;
 /* From hammer_io.c */
 static
 void
-hammer_indirect_callback(struct bio *bio)
+hammer2_decompress_callback(struct bio *bio)
 {
 	struct buf *bp = bio->bio_buf;
 	struct buf *obp;
@@ -139,16 +139,14 @@ hammer_indirect_callback(struct bio *bio)
 		int *compressed_size;
 		
 		buffer = bp->b_data + loff;
-		compressed_size = (int*)buffer;//compressed size is at the first position of buffer
+		compressed_size = (int*)buffer;
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
-		//int result = LZ4_decompress_safe(&buffer[sizeof(int)], obp->b_data, *compressed_size, obp->b_bufsize);
-		int result = LZ4_decompress_safe(&buffer[sizeof(int)], compressed_buffer, *compressed_size, obp->b_bufsize);
-		if (result < 0) {
-			result = 0; //to prevent a major failure
+		int result = LZ4_decompress_safe(&buffer[sizeof(int)],
+			compressed_buffer, *compressed_size, obp->b_bufsize);
+		if (result < 0)
 			kprintf("READ PATH: Error during decompression.\n");
-		}
 		
-		bcopy(compressed_buffer, obp->b_data, /*result*/obp->b_bufsize);
+		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
 		objcache_put(cache_buffer_read, compressed_buffer);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
@@ -2600,7 +2598,7 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			loff = (int)((bref->data_off & ~HAMMER2_OFF_MASK_RADIX) - pbase);
 			nbio->bio_caller_info3.value = loff;
 			breadcb(chain->hmp->devvp, pbase, psize,
-				hammer_indirect_callback, nbio); //add a certain comment about this callback
+				hammer2_decompress_callback, nbio);
 		}
 		else {
 			hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
