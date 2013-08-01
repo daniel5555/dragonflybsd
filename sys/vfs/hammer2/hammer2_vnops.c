@@ -1316,37 +1316,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
 			if (error)
 				break;
-			///*
-			//* We have to assign physical storage to the buffer we intend
-			//* to dirty or write now to avoid deadlocks in the strategy
-			//* code later.
-			//*
-			//* This can return NOOFFSET for inode-embedded data.  The
-			//* strategy code will take care of it in that case.
-			//*/
-			//chain = hammer2_assign_physical(trans, ip, parentp,
-							//lbase, lblksize, &error);
-			//ipdata = &ip->chain->data->ipdata;	/* RELOAD */
-
-			//if (error) {
-				//kprintf("WRITE PATH: An error right after assigning physical space.\n");
-				//KKASSERT(chain == NULL);
-				//brelse(bp);
-				//break;
-			//}
-
-			///* XXX update ip_data.mtime */
-
-			///*
-			//* Once we dirty a buffer any cached offset becomes invalid.
-			//*
-			//* NOTE: For cluster_write() always use the trailing block
-			//*	 size, which is HAMMER2_PBUFSIZE.  lblksize is the
-			//*	 eof-straddling blocksize and is incorrect.
-			//*/
-			//bp->b_flags |= B_AGE;
-			//hammer2_write_bp(chain, bp, ioflag);
-			//hammer2_chain_unlock(chain);
 		}
 	}
 
