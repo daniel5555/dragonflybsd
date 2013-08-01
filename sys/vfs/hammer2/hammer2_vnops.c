@@ -1298,7 +1298,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			 */
 			chain = hammer2_assign_physical(trans, ip, parentp,
 				lbase, lblksize, &error);
-			hammer2_just_write(bp, ip, ipdata, chain, &ioflag, &lblksize, &error);
+			hammer2_just_write(bp, ip, ipdata, chain, &ioflag, &error);
 		}
 		if (error)
 			break;
