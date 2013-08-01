@@ -218,8 +218,8 @@ hammer2_vfs_init(struct vfsconf *conf)
 	if (error)
 		kprintf("HAMMER2 structure size mismatch; cannot continue.\n");
 		
-	//cache_buffer_read = objcache_create_simple(D_BUFFER, 65536);
-	//cache_buffer_write = objcache_create_simple(C_BUFFER, 32768);
+	cache_buffer_read = objcache_create_simple(D_BUFFER, 65536);
+	cache_buffer_write = objcache_create_simple(C_BUFFER, 32768);
 	
 	/*struct objcache_malloc_args *margs_read;
 	struct objcache_malloc_args *margs_write;
