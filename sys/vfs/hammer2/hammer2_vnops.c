@@ -338,7 +338,7 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) { //block is not zero-filled
 		kprintf("Not a zero-filled block.\n");
 		chain = hammer2_assign_physical(trans, ip, parentp,
-			lbase, *lblksize, error);
+			*lbase, *lblksize, error);
 		ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 
 		if (*error) {
