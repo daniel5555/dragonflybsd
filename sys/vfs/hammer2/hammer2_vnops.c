@@ -340,30 +340,32 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error)
 {
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) { //block is not zero-filled
-		kprintf("Not a zero-filled block.\n");
-		chain = hammer2_assign_physical(trans, ip, parentp,
-			*lbase, *lblksize, error);
-		ipdata = &ip->chain->data->ipdata;	/* RELOAD */
+		hammer2_just_write(bp, trans, ip, ipdata, parentp,
+				chain, lbase, ioflag, lblksize, error);
+		//kprintf("Not a zero-filled block.\n");
+		//chain = hammer2_assign_physical(trans, ip, parentp,
+			//*lbase, *lblksize, error);
+		//ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 
-		if (*error) {
-			KKASSERT(chain == NULL);
-			brelse(bp);
-		}
-		else {
+		//if (*error) {
+			//KKASSERT(chain == NULL);
+			//brelse(bp);
+		//}
+		//else {
 
-			/* XXX update ip_data.mtime */
+			///* XXX update ip_data.mtime */
 
-			/*
-			 * Once we dirty a buffer any cached offset becomes invalid.
-			 *
-			 * NOTE: For cluster_write() always use the trailing block
-			 * size, which is HAMMER2_PBUFSIZE.  lblksize is the
-			 * eof-straddling blocksize and is incorrect.
-			 */
-			bp->b_flags |= B_AGE;
-			hammer2_write_bp(chain, bp, *ioflag);
-			hammer2_chain_unlock(chain);
-		}
+			///*
+			 //* Once we dirty a buffer any cached offset becomes invalid.
+			 //*
+			 //* NOTE: For cluster_write() always use the trailing block
+			 //* size, which is HAMMER2_PBUFSIZE.  lblksize is the
+			 //* eof-straddling blocksize and is incorrect.
+			 //*/
+			//bp->b_flags |= B_AGE;
+			//hammer2_write_bp(chain, bp, *ioflag);
+			//hammer2_chain_unlock(chain);
+		//}
 	}
 	else { //block is zero-filled
 		ipdata = &ip->chain->data->ipdata;
@@ -391,23 +393,24 @@ hammer2_just_write(struct buf *bp, hammer2_trans_t *trans,
 	ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 
 	if (*error) {
-		kprintf("WRITE PATH: An error right after assigning physical space.\n");
+		kprintf("WRITE PATH: An error while assigning physical space.\n");
 		KKASSERT(chain == NULL);
 		brelse(bp);
 	}
+	else {
+		/* XXX update ip_data.mtime */
 
-	/* XXX update ip_data.mtime */
-
-	/*
-	 * Once we dirty a buffer any cached offset becomes invalid.
-	 *
-	 * NOTE: For cluster_write() always use the trailing block
-	 * size, which is HAMMER2_PBUFSIZE.  lblksize is the
-	 * eof-straddling blocksize and is incorrect.
-	 */
-	bp->b_flags |= B_AGE;
-	hammer2_write_bp(chain, bp, *ioflag);
-	hammer2_chain_unlock(chain);
+		/*
+		 * Once we dirty a buffer any cached offset becomes invalid.
+		 *
+		 * NOTE: For cluster_write() always use the trailing block
+		 * size, which is HAMMER2_PBUFSIZE.  lblksize is the
+		 * eof-straddling blocksize and is incorrect.
+		 */
+		bp->b_flags |= B_AGE;
+		hammer2_write_bp(chain, bp, *ioflag);
+		hammer2_chain_unlock(chain);
+	}
 }
 
 static __inline
@@ -1301,22 +1304,18 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 			hammer2_compress_and_write(bp, trans, ip, ipdata, parentp,
 				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
-			if (error)
-				break;
 		}
 		else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
 			hammer2_zero_check_and_write(bp, trans, ip, ipdata, parentp,
 				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
-			if (error)
-				break;
 		}
 		else {
 			/* Otherwise proceed as before without taking its value into account. */
 			hammer2_just_write(bp, trans, ip, ipdata, parentp,
 				chain, &lbase, &ioflag, &lblksize, &error); //improve this -> return error
-			if (error)
-				break;
 		}
+		if (error)
+			break;
 	}
 
 	/*
