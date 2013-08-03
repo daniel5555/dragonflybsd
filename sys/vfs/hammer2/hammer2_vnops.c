@@ -90,7 +90,9 @@ static void hammer2_just_write(struct buf *bp, hammer2_inode_t *ip,
 static struct objcache *cache_buffer_read;
 static struct objcache *cache_buffer_write;
 
-/* From hammer_io.c */
+/* 
+ * Callback used in read path in case that a block is compressed.
+ */
 static
 void
 hammer2_decompress_callback(struct bio *bio)
@@ -328,6 +330,9 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 	}
 }
 
+/*
+ * This function corresponds to write path with zero-chechking.
+ */
 static
 void
 hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
@@ -336,16 +341,22 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error)
 {
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) {
+		kprintf("WRITE PATH: Not zero-filled block detected.\n");
 		chain = hammer2_assign_physical(trans, ip, parentp,
 			*lbase, *lblksize, error); //to avoid a compiler warning
 		hammer2_just_write(bp, ip, ipdata, chain, ioflag, error);
 	}
 	else {
+		kprintf("WRITE PATH: Zero-filled block detected.\n");
 		ipdata = &ip->chain->data->ipdata;
 		brelse(bp);
 	}
 }
 
+/*
+ * This function corresponds to write path without compression
+ * of any sort.
+ */
 static
 void
 hammer2_just_write(struct buf *bp, hammer2_inode_t *ip, 
