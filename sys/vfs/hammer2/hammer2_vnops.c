@@ -370,6 +370,7 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 		hammer2_just_write(bp, ip, ipdata, chain, ioflag, error);
 	}
 	else {
+		chain = NULL; //to avoid a compiler warning
 		zero_check(bp, trans, ip, ipdata, parentp, chain, lbase);
 	}
 }
