@@ -76,8 +76,9 @@ static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 static void hammer2_decompress_callback(struct bio *bio);
 static int not_zero_filled_block(int* block, int* lblksize);
 static void zero_check(struct buf *bp, hammer2_trans_t *trans,
-				hammer2_inode_data_t *ipdata, hammer2_chain_t **parentp,
-				hammer2_chain_t *chain, hammer2_key_t* lbase);
+				hammer2_inode_t *ip,	hammer2_inode_data_t *ipdata,
+				hammer2_chain_t **parentp, hammer2_chain_t *chain,
+				hammer2_key_t* lbase);
 static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp, hammer2_chain_t *chain,
@@ -174,14 +175,14 @@ not_zero_filled_block(int* block, int* lblksize)
 
 static
 void
-zero_check(struct buf *bp, hammer2_trans_t *trans,
+zero_check(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip
 	hammer2_inode_data_t *ipdata, hammer2_chain_t **parentp,
 	hammer2_chain_t *chain, hammer2_key_t* lbase)
 {
 	hammer2_chain_t *parent;
 	parent = *parentp;
 	hammer2_chain_lock(*parentp, HAMMER2_RESOLVE_ALWAYS); /* extra lock */
-	chain = hammer2_chain_lookup(**parentp, *lbase, *lbase, HAMMER2_LOOKUP_NODATA);
+	chain = hammer2_chain_lookup(parentp, *lbase, *lbase, HAMMER2_LOOKUP_NODATA);
 	hammer2_chain_lookup_done(*parentp);
 	if (chain) {
 		kprintf("WRITE PATH: Found a chain.\n");
@@ -371,7 +372,7 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 		hammer2_just_write(bp, ip, ipdata, chain, ioflag, error);
 	}
 	else {
-		zero_check(bp, trans, ipdata, parentp, chain, lbase);
+		zero_check(bp, trans, ip, ipdata, parentp, chain, lbase);
 		//kprintf("WRITE PATH: Zero-filled block detected.\n");
 		//hammer2_chain_t *parent;
 		//parent = *parentp;
