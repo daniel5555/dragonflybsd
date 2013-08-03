@@ -182,11 +182,16 @@ zero_check(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
 	kprintf("WRITE PATH: Zero-filled block detected.\n");
 	hammer2_chain_t *parent;
 	parent = *parentp;
-	hammer2_chain_lock(parent, HAMMER2_RESOLVE_ALWAYS); /* extra lock */
-	chain = hammer2_chain_lookup(&parent,
+	//hammer2_chain_lock(parent, HAMMER2_RESOLVE_ALWAYS); /* extra lock */
+	hammer2_chain_lock(*parentp, HAMMER2_RESOLVE_ALWAYS); /* extra lock */
+	//chain = hammer2_chain_lookup(&parent,
+		//*lbase, *lbase,
+		//HAMMER2_LOOKUP_NODATA);
+	chain = hammer2_chain_lookup(parentp,
 		*lbase, *lbase,
 		HAMMER2_LOOKUP_NODATA);
-	hammer2_chain_lookup_done(parent);
+	//hammer2_chain_lookup_done(parent);
+	hammer2_chain_lookup_done(*parentp);
 	if (chain) {
 		kprintf("WRITE PATH: Found a chain.\n");
 		hammer2_chain_delete(trans, chain);
@@ -352,9 +357,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		}
 	}
 	else {
-		kprintf("WRITE PATH: Zero-filled block detected.\n");
-		ipdata = &ip->chain->data->ipdata;
-		brelse(bp);
+		zero_check(bp, trans, ip, ipdata, parentp, chain, lbase);
 	}
 }
 
@@ -376,22 +379,6 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	}
 	else {
 		zero_check(bp, trans, ip, ipdata, parentp, chain, lbase);
-		//kprintf("WRITE PATH: Zero-filled block detected.\n");
-		//hammer2_chain_t *parent;
-		//parent = *parentp;
-		//hammer2_chain_lock(parent, HAMMER2_RESOLVE_ALWAYS); /* extra lock */
-		//chain = hammer2_chain_lookup(&parent,
-				     //*lbase, *lbase,
-				     //HAMMER2_LOOKUP_NODATA);
-		//hammer2_chain_lookup_done(parent);
-		//if (chain) {
-			//kprintf("WRITE PATH: Found a chain.\n");
-			//hammer2_chain_delete(trans, chain);
-			//hammer2_chain_unlock(chain);
-			//kprintf("WRITE PATH: Deleted a chain.\n");
-		//}
-		//ipdata = &ip->chain->data->ipdata;
-		//brelse(bp);
 	}
 }
 
