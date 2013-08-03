@@ -76,7 +76,7 @@ static void hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 static void hammer2_decompress_callback(struct bio *bio);
 static int not_zero_filled_block(int* block, int* lblksize);
 static void zero_check(struct buf *bp, hammer2_trans_t *trans,
-				hammer2_inode_t *ip,	hammer2_inode_data_t *ipdata,
+				hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp, hammer2_chain_t *chain,
 				hammer2_key_t* lbase);
 static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
@@ -175,7 +175,7 @@ not_zero_filled_block(int* block, int* lblksize)
 
 static
 void
-zero_check(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip
+zero_check(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
 	hammer2_inode_data_t *ipdata, hammer2_chain_t **parentp,
 	hammer2_chain_t *chain, hammer2_key_t* lbase)
 {
