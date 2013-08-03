@@ -179,11 +179,14 @@ zero_check(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
 	hammer2_inode_data_t *ipdata, hammer2_chain_t **parentp,
 	hammer2_chain_t *chain, hammer2_key_t* lbase)
 {
+	kprintf("WRITE PATH: Zero-filled block detected.\n");
 	hammer2_chain_t *parent;
 	parent = *parentp;
-	hammer2_chain_lock(*parentp, HAMMER2_RESOLVE_ALWAYS); /* extra lock */
-	chain = hammer2_chain_lookup(parentp, *lbase, *lbase, HAMMER2_LOOKUP_NODATA);
-	hammer2_chain_lookup_done(*parentp);
+	hammer2_chain_lock(parent, HAMMER2_RESOLVE_ALWAYS); /* extra lock */
+	chain = hammer2_chain_lookup(&parent,
+		*lbase, *lbase,
+		HAMMER2_LOOKUP_NODATA);
+	hammer2_chain_lookup_done(parent);
 	if (chain) {
 		kprintf("WRITE PATH: Found a chain.\n");
 		hammer2_chain_delete(trans, chain);
