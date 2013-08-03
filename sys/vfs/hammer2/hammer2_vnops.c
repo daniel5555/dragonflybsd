@@ -161,6 +161,7 @@ hammer2_decompress_callback(struct bio *bio)
 	bqrelse(bp);
 }
 
+/* Detect a zero-filled block for zero-checking. */
 static
 int
 not_zero_filled_block(int* block, int* lblksize)
@@ -173,6 +174,7 @@ not_zero_filled_block(int* block, int* lblksize)
 	return (0);
 }
 
+/* Handle a zero-filled block. */
 static
 void
 zero_check(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
@@ -206,7 +208,6 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error)
 {
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) {
-		kprintf("WRITE PATH: Not zero-filled block detected.\n");
 		int compressed_size;
 		int compressed_block_size = *lblksize;
 			
@@ -365,7 +366,6 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error)
 {
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) {
-		kprintf("WRITE PATH: Not zero-filled block detected.\n");
 		chain = hammer2_assign_physical(trans, ip, parentp,
 			*lbase, *lblksize, error); //to avoid a compiler warning
 		hammer2_just_write(bp, ip, ipdata, chain, ioflag, error);
