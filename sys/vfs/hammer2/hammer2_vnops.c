@@ -186,7 +186,6 @@ zero_check(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
 		*lbase, *lbase,
 		HAMMER2_LOOKUP_NODATA);
 	hammer2_chain_lookup_done(parent);
-	hammer2_chain_lookup_done(*parentp);
 	if (chain) {
 		hammer2_chain_delete(trans, chain);
 		hammer2_chain_unlock(chain);
