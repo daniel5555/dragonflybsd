@@ -357,8 +357,8 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 		hammer2_chain_lookup_done(parent);
 		if (chain) {
 			kprintf("WRITE PATH: Found a chain.\n");
-			hammer2_chain_unlock(chain);
 			hammer2_chain_delete(trans, chain);
+			hammer2_chain_unlock(chain);
 			kprintf("WRITE PATH: Deleted a chain.\n");
 		}
 		ipdata = &ip->chain->data->ipdata;
