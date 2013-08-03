@@ -349,13 +349,13 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	else {
 		kprintf("WRITE PATH: Zero-filled block detected.\n");
 		hammer2_chain_lock(parent, HAMMER2_RESOLVE_ALWAYS); /* extra lock */
-		chain = hammer2_chain_lookup(**parent,
-				     lbase, lbase,
+		chain = hammer2_chain_lookup(**parentp,
+				     *lbase, *lbase,
 				     HAMMER2_LOOKUP_NODATA);
 		if (chain) {
 			kprintf("WRITE PATH: Found a chain.\n");
 		}
-		hammer2_chain_lookup_done(*parent);
+		hammer2_chain_lookup_done(*parentp);
 		ipdata = &ip->chain->data->ipdata;
 		brelse(bp);
 	}
