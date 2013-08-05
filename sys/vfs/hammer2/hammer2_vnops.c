@@ -229,6 +229,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 			kprintf("WRITE PATH: Compression turned off.\n");
 		}
 		if (compressed_size == 0) { //compression failed
+			kprintf("WRITE PATH: Compression failed.\n");
 			compressed_size = *lblksize;
 			++(*fails);
 		}
