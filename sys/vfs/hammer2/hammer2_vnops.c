@@ -209,6 +209,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error,
 	int* fails)
 {
+	kprintf("WRITE PATH: Entering compresing write function.\n");
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) {
 		int compressed_size;
 		int compressed_block_size = *lblksize;
