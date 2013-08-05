@@ -229,7 +229,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		}
 		if (compressed_size == 0) { //compression failed
 			compressed_size = *lblksize;
-			++*fails;
+			++(*fails);
 		}
 		else {
 			*fails = 0;
