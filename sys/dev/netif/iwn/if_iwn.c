@@ -41,7 +41,6 @@
 #include <sys/taskqueue.h>
 #include <sys/libkern.h>
 
-#include <sys/bus.h>
 #include <sys/resource.h>
 #include <machine/clock.h>
 
@@ -76,7 +75,8 @@ static int	iwn_pci_attach(device_t);
 static const struct iwn_hal *iwn_hal_attach(struct iwn_softc *);
 static void	iwn_radiotap_attach(struct iwn_softc *);
 static struct ieee80211vap *iwn_vap_create(struct ieee80211com *,
-		    const char name[IFNAMSIZ], int unit, int opmode,
+		    const char name[IFNAMSIZ], int unit,
+		    enum ieee80211_opmode opmode,
 		    int flags, const uint8_t bssid[IEEE80211_ADDR_LEN],
 		    const uint8_t mac[IEEE80211_ADDR_LEN]);
 static void	iwn_vap_delete(struct ieee80211vap *);
@@ -803,7 +803,8 @@ iwn_radiotap_attach(struct iwn_softc *sc)
 
 static struct ieee80211vap *
 iwn_vap_create(struct ieee80211com *ic,
-	const char name[IFNAMSIZ], int unit, int opmode, int flags,
+	const char name[IFNAMSIZ], int unit,
+	enum ieee80211_opmode opmode, int flags,
 	const uint8_t bssid[IEEE80211_ADDR_LEN],
 	const uint8_t mac[IEEE80211_ADDR_LEN])
 {

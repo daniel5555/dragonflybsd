@@ -341,6 +341,10 @@ static int carp_suppress_preempt = 0;
 SYSCTL_INT(_net_inet_carp, OID_AUTO, suppress_preempt, CTLFLAG_RD,
     &carp_suppress_preempt, 0, "Preemption is suppressed");
 
+static int carp_prio_ad = 1;
+SYSCTL_INT(_net_inet_carp, OID_AUTO, prio_ad, CTLFLAG_RD,
+    &carp_prio_ad, 0, "Prioritize advertisement packet");
+
 static struct carpstats carpstats;
 SYSCTL_STRUCT(_net_inet_carp, CARPCTL_STATS, stats, CTLFLAG_RW,
     &carpstats, carpstats,
@@ -421,6 +425,7 @@ static void	carp_stop(struct carp_softc *, boolean_t);
 static void	carp_suspend(struct carp_softc *, boolean_t);
 static void	carp_ioctl_stop(struct carp_softc *);
 static int	carp_ioctl_setvh(struct carp_softc *, void *, struct ucred *);
+static void	carp_ioctl_ifcap(struct carp_softc *, int);
 static int	carp_ioctl_getvh(struct carp_softc *, void *, struct ucred *);
 static int	carp_ioctl_getdevname(struct carp_softc *, struct ifdrv *);
 static int	carp_ioctl_getvhaddr(struct carp_softc *, struct ifdrv *);
@@ -438,6 +443,7 @@ static void	carp_clone_destroy_dispatch(netmsg_t);
 static void	carp_init_dispatch(netmsg_t);
 static void	carp_ioctl_stop_dispatch(netmsg_t);
 static void	carp_ioctl_setvh_dispatch(netmsg_t);
+static void	carp_ioctl_ifcap_dispatch(netmsg_t);
 static void	carp_ioctl_getvh_dispatch(netmsg_t);
 static void	carp_ioctl_getdevname_dispatch(netmsg_t);
 static void	carp_ioctl_getvhaddr_dispatch(netmsg_t);
@@ -452,7 +458,8 @@ static struct if_clone carp_cloner =
 IF_CLONE_INITIALIZER(CARP_IFNAME, carp_clone_create, carp_clone_destroy,
 		     0, IF_MAXUNIT);
 
-static uint8_t	carp_etheraddr[ETHER_ADDR_LEN] = { 0, 0, 0x5e, 0, 1, 0 };
+static const uint8_t	carp_etheraddr[ETHER_ADDR_LEN] =
+	{ 0, 0, 0x5e, 0, 1, 0 };
 
 static eventhandler_tag carp_ifdetach_event;
 static eventhandler_tag carp_ifaddr_event;
@@ -645,6 +652,14 @@ carp_clone_create(struct if_clone *ifc, int unit, caddr_t param __unused)
 	ifp->if_init = carp_init;
 	ifp->if_ioctl = carp_ioctl;
 	ifp->if_start = carp_start;
+
+	ifp->if_capabilities = IFCAP_TXCSUM | IFCAP_TSO;
+	ifp->if_capenable = ifp->if_capabilities;
+	/*
+	 * Leave if_hwassist as it is; if_hwassist will be
+	 * setup when this carp interface has parent.
+	 */
+
 	ifq_set_maxlen(&ifp->if_snd, ifqmaxlen);
 	ifq_set_ready(&ifp->if_snd);
 
@@ -845,6 +860,7 @@ carp_detach(struct carp_softc *sc, boolean_t detach, boolean_t del_iaback)
 
 		sc->sc_carpdev = NULL;
 		sc->sc_ia = NULL;
+		sc->arpcom.ac_if.if_hwassist = 0;
 
 		/*
 		 * Make sure that all protocol threads see the
@@ -1349,6 +1365,8 @@ carp_send_ad(struct carp_softc *sc)
 		m->m_len = len;
 		MH_ALIGN(m, m->m_len);
 		m->m_flags |= M_MCAST;
+		if (carp_prio_ad)
+			m->m_flags |= M_PRIO;
 		ip = mtod(m, struct ip *);
 		ip->ip_v = IPVERSION;
 		ip->ip_hl = sizeof(*ip) >> 2;
@@ -2313,6 +2331,10 @@ carp_ioctl(struct ifnet *ifp, u_long cmd, caddr_t addr, struct ucred *cr)
 		}
 		break;
 
+	case SIOCSIFCAP:
+		carp_ioctl_ifcap(sc, ifr->ifr_reqcap);
+		break;
+
 	case SIOCSVH:
 		error = carp_ioctl_setvh(sc, ifr->ifr_data, cr);
 		break;
@@ -2489,6 +2511,61 @@ back:
 }
 
 static void
+carp_ioctl_ifcap_dispatch(netmsg_t msg)
+{
+	struct netmsg_carp *cmsg = (struct netmsg_carp *)msg;
+	struct carp_softc *sc = cmsg->nc_softc;
+	struct ifnet *ifp = &sc->arpcom.ac_if;
+	int reqcap = *((const int *)(cmsg->nc_data));
+	int mask;
+
+	mask = reqcap ^ ifp->if_capenable;
+	if (mask & IFCAP_TXCSUM) {
+		ifp->if_capenable ^= IFCAP_TXCSUM;
+		if ((ifp->if_capenable & IFCAP_TXCSUM) &&
+		    sc->sc_carpdev != NULL) {
+			ifp->if_hwassist |=
+			    (sc->sc_carpdev->if_hwassist &
+			     (CSUM_IP | CSUM_UDP | CSUM_TCP));
+		} else {
+			ifp->if_hwassist &= ~(CSUM_IP | CSUM_UDP | CSUM_TCP);
+		}
+	}
+	if (mask & IFCAP_TSO) {
+		ifp->if_capenable ^= IFCAP_TSO;
+		if ((ifp->if_capenable & IFCAP_TSO) &&
+		    sc->sc_carpdev != NULL) {
+			ifp->if_hwassist |=
+			    (sc->sc_carpdev->if_hwassist & CSUM_TSO);
+		} else {
+			ifp->if_hwassist &= ~CSUM_TSO;
+		}
+	}
+
+	lwkt_replymsg(&cmsg->base.lmsg, 0);
+}
+
+static void
+carp_ioctl_ifcap(struct carp_softc *sc, int reqcap)
+{
+	struct ifnet *ifp = &sc->arpcom.ac_if;
+	struct netmsg_carp cmsg;
+
+	ASSERT_IFNET_SERIALIZED_ALL(ifp);
+	ifnet_deserialize_all(ifp);
+
+	bzero(&cmsg, sizeof(cmsg));
+	netmsg_init(&cmsg.base, NULL, &curthread->td_msgport, 0,
+	    carp_ioctl_ifcap_dispatch);
+	cmsg.nc_softc = sc;
+	cmsg.nc_data = &reqcap;
+
+	lwkt_domsg(netisr_cpuport(0), &cmsg.base.lmsg, 0);
+
+	ifnet_serialize_all(ifp);
+}
+
+static void
 carp_ioctl_getvh_dispatch(netmsg_t msg)
 {
 	struct netmsg_carp *cmsg = (struct netmsg_carp *)msg;
@@ -2621,6 +2698,11 @@ carp_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
 
 	carpdev = sc->sc_carpdev;
 	if (carpdev != NULL) {
+		if (m->m_flags & M_MCAST)
+			IFNET_STAT_INC(ifp, omcasts, 1);
+		IFNET_STAT_INC(ifp, obytes, m->m_pkthdr.len + ETHER_HDR_LEN);
+		IFNET_STAT_INC(ifp, opackets, 1);
+
 		/*
 		 * NOTE:
 		 * CARP's ifp is passed to backing device's
@@ -2628,6 +2710,7 @@ carp_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
 		 */
 		carpdev->if_output(ifp, m, dst, rt);
 	} else {
+		IFNET_STAT_INC(ifp, oerrors, 1);
 		m_freem(m);
 		error = ENETUNREACH;
 	}
@@ -2807,6 +2890,13 @@ carp_activate_vhaddr(struct carp_softc *sc, struct carp_vhaddr *vha,
 
 	sc->sc_ia = ia_if;
 	sc->sc_carpdev = ifp;
+	sc->arpcom.ac_if.if_hwassist = 0;
+	if (sc->arpcom.ac_if.if_capenable & IFCAP_TXCSUM) {
+		sc->arpcom.ac_if.if_hwassist |=
+		    (ifp->if_hwassist & (CSUM_IP | CSUM_UDP | CSUM_TCP));
+	}
+	if (sc->arpcom.ac_if.if_capenable & IFCAP_TSO)
+		sc->arpcom.ac_if.if_hwassist |= (ifp->if_hwassist & CSUM_TSO);
 
 	/*
 	 * Make sure that all protocol threads see the sc_carpdev and

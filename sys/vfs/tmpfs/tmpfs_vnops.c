@@ -54,10 +54,12 @@
 #include <vm/vm_extern.h>
 #include <vm/vm_object.h>
 #include <vm/vm_page.h>
+#include <vm/vm_pageout.h>
 #include <vm/vm_pager.h>
 #include <vm/swap_pager.h>
 
 #include <sys/buf2.h>
+#include <vm/vm_page2.h>
 
 #include <vfs/fifofs/fifo.h>
 #include <vfs/tmpfs/tmpfs_vnops.h>
@@ -517,12 +519,12 @@ tmpfs_read (struct vop_read_args *ap)
 		/*
 		 * Use buffer cache I/O (via tmpfs_strategy)
 		 */
-		offset = (size_t)uio->uio_offset & BMASK;
+		offset = (size_t)uio->uio_offset & TMPFS_BLKMASK64;
 		base_offset = (off_t)uio->uio_offset - offset;
-		bp = getcacheblk(vp, base_offset, BSIZE, 0);
+		bp = getcacheblk(vp, base_offset, TMPFS_BLKSIZE, 0);
 		if (bp == NULL) {
 			lwkt_gettoken(&vp->v_mount->mnt_token);
-			error = bread(vp, base_offset, BSIZE, &bp);
+			error = bread(vp, base_offset, TMPFS_BLKSIZE, &bp);
 			if (error) {
 				brelse(bp);
 				lwkt_reltoken(&vp->v_mount->mnt_token);
@@ -543,11 +545,12 @@ tmpfs_read (struct vop_read_args *ap)
 			if (uio->uio_segflg != UIO_NOCOPY)
 				vm_wait_nominal();
 		}
+		bp->b_flags |= B_CLUSTEROK;
 
 		/*
 		 * Figure out how many bytes we can actually copy this loop.
 		 */
-		len = BSIZE - offset;
+		len = TMPFS_BLKSIZE - offset;
 		if (len > uio->uio_resid)
 			len = uio->uio_resid;
 		if (len > node->tn_size - uio->uio_offset)
@@ -586,6 +589,7 @@ tmpfs_write (struct vop_write_args *ap)
 	struct rlimit limit;
 	int trivial = 0;
 	int kflags = 0;
+	int seqcount;
 
 	error = 0;
 	if (uio->uio_resid == 0) {
@@ -596,6 +600,7 @@ tmpfs_write (struct vop_write_args *ap)
 
 	if (vp->v_type != VREG)
 		return (EINVAL);
+	seqcount = ap->a_ioflag >> 16;
 
 	lwkt_gettoken(&vp->v_mount->mnt_token);
 
@@ -636,11 +641,20 @@ tmpfs_write (struct vop_write_args *ap)
 
 	while (uio->uio_resid > 0) {
 		/*
+		 * Don't completely blow out running buffer I/O
+		 * when being hit from the pageout daemon.
+		 */
+		if (uio->uio_segflg == UIO_NOCOPY &&
+		    (ap->a_ioflag & IO_RECURSE) == 0) {
+			bwillwrite(TMPFS_BLKSIZE);
+		}
+
+		/*
 		 * Use buffer cache I/O (via tmpfs_strategy)
 		 */
-		offset = (size_t)uio->uio_offset & BMASK;
+		offset = (size_t)uio->uio_offset & TMPFS_BLKMASK64;
 		base_offset = (off_t)uio->uio_offset - offset;
-		len = BSIZE - offset;
+		len = TMPFS_BLKSIZE - offset;
 		if (len > uio->uio_resid)
 			len = uio->uio_resid;
 
@@ -660,7 +674,7 @@ tmpfs_write (struct vop_write_args *ap)
 		 *
 		 * So just use bread() to do the right thing.
 		 */
-		error = bread(vp, base_offset, BSIZE, &bp);
+		error = bread(vp, base_offset, TMPFS_BLKSIZE, &bp);
 		error = uiomovebp(bp, (char *)bp->b_data + offset, len, uio);
 		if (error) {
 			kprintf("tmpfs_write uiomove error %d\n", error);
@@ -686,18 +700,59 @@ tmpfs_write (struct vop_write_args *ap)
 		 * If we used bdwrite() the buffer cache would wind up
 		 * flushing the data to swap too quickly.
 		 *
+		 * But because tmpfs can seriously load the VM system we
+		 * fall-back to using bdwrite() when free memory starts
+		 * to get low.  This shifts the load away from the VM system
+		 * and makes tmpfs act more like a normal filesystem with
+		 * regards to disk activity.
+		 *
 		 * tmpfs pretty much fiddles directly with the VM
 		 * system, don't let it exhaust it or we won't play
 		 * nice with other processes.  Only do this if the
 		 * VOP is coming from a normal read/write.  The VM system
 		 * handles the case for UIO_NOCOPY.
 		 */
-		bp->b_flags |= B_AGE;
+		bp->b_flags |= B_CLUSTEROK;
 		if (uio->uio_segflg == UIO_NOCOPY) {
-			bawrite(bp);
+			/*
+			 * Flush from the pageout daemon, deal with
+			 * potentially very heavy tmpfs write activity
+			 * causing long stalls in the pageout daemon
+			 * before pages get to free/cache.
+			 *
+			 * (a) Under severe pressure setting B_DIRECT will
+			 *     cause a buffer release to try to free the
+			 *     underlying pages.
+			 *
+			 * (b) Under modest memory pressure the B_RELBUF
+			 *     alone is sufficient to get the pages moved
+			 *     to the cache.  We could also force this by
+			 *     setting B_NOTMETA but that might have other
+			 *     unintended side-effects (e.g. setting
+			 *     PG_NOTMETA on the VM page).
+			 *
+			 * Hopefully this will unblock the VM system more
+			 * quickly under extreme tmpfs write load.
+			 */
+			if (vm_page_count_min(vm_page_free_hysteresis))
+				bp->b_flags |= B_DIRECT;
+			bp->b_flags |= B_AGE | B_RELBUF;
+			bp->b_act_count = 0;	/* buffer->deactivate pgs */
+			cluster_awrite(bp);
+		} else if (vm_page_count_target()) {
+			/*
+			 * Normal (userland) write but we are low on memory,
+			 * run the buffer the buffer cache.
+			 */
+			bp->b_act_count = 0;	/* buffer->deactivate pgs */
+			bdwrite(bp);
 		} else {
+			/*
+			 * Otherwise run the buffer directly through to the
+			 * backing VM store.
+			 */
 			buwrite(bp);
-			vm_wait_nominal();
+			/*vm_wait_nominal();*/
 		}
 
 		if (bp->b_error) {
