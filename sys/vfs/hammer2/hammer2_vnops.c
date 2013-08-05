@@ -366,6 +366,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		chain = NULL; //to avoid a compiler warning
 		zero_check(bp, trans, ip, ipdata, parentp, chain, lbase);
 	}
+	kprintf("Value of fails is %d.\n", *fails);
 }
 
 /*
