@@ -82,7 +82,8 @@ static void zero_check(struct buf *bp, hammer2_trans_t *trans,
 static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp, hammer2_chain_t *chain,
-				hammer2_key_t* lbase, int *ioflag, int* lblksize, int* error);
+				hammer2_key_t* lbase, int *ioflag, int* lblksize, 
+				int* error, int* fails);
 static void hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp, hammer2_chain_t *chain, 
