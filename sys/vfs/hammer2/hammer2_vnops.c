@@ -1321,7 +1321,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 			hammer2_compress_and_write(bp, trans, ip, ipdata, parentp,
-				chain, &lbase, &ioflag, &lblksize, &error, &fails*);
+				chain, &lbase, &ioflag, &lblksize, &error, &fails);
 		}
 		else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
 			hammer2_zero_check_and_write(bp, trans, ip, ipdata, parentp,
