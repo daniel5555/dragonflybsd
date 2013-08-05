@@ -1387,6 +1387,7 @@ readrest:
 			 *	 writes to barf.
 			 */
 			if ((fs->first_object->type != OBJT_DEVICE) &&
+			    (fs->first_object->type != OBJT_MGTDEVICE) &&
 			    (behavior == MAP_ENTRY_BEHAV_SEQUENTIAL ||
                                 (behavior != MAP_ENTRY_BEHAV_RANDOM &&
 				 (fs->m->flags & PG_RAM)))
@@ -1881,6 +1882,39 @@ skip:
 }
 
 /*
+ * Hold each of the physical pages that are mapped by the specified range of
+ * virtual addresses, ["addr", "addr" + "len"), if those mappings are valid
+ * and allow the specified types of access, "prot".  If all of the implied
+ * pages are successfully held, then the number of held pages is returned
+ * together with pointers to those pages in the array "ma".  However, if any
+ * of the pages cannot be held, -1 is returned.
+ */
+int
+vm_fault_quick_hold_pages(vm_map_t map, vm_offset_t addr, vm_size_t len,
+    vm_prot_t prot, vm_page_t *ma, int max_count)
+{
+	vm_offset_t start, end;
+	int i, npages, error;
+
+	start = trunc_page(addr);
+	end = round_page(addr + len);
+
+	npages = howmany(end - start, PAGE_SIZE);
+
+	if (npages > max_count)
+		return -1;
+
+	for (i = 0; i < npages; i++) {
+		// XXX error handling
+		ma[i] = vm_fault_page_quick(start + (i * PAGE_SIZE),
+			prot,
+			&error);
+	}
+
+	return npages;
+}
+
+/*
  * Wire down a range of virtual addresses in a map.  The entry in question
  * should be marked in-transition and the map must be locked.  We must
  * release the map temporarily while faulting-in the page to avoid a
@@ -1907,7 +1941,8 @@ vm_fault_wire(vm_map_t map, vm_map_entry_t entry, boolean_t user_wire)
 	start = entry->start;
 	end = entry->end;
 	fictitious = entry->object.vm_object &&
-			(entry->object.vm_object->type == OBJT_DEVICE);
+			((entry->object.vm_object->type == OBJT_DEVICE) ||
+			 (entry->object.vm_object->type == OBJT_MGTDEVICE));
 	if (entry->eflags & MAP_ENTRY_KSTACK)
 		start += PAGE_SIZE;
 	map->timestamp++;
@@ -1969,7 +2004,8 @@ vm_fault_unwire(vm_map_t map, vm_map_entry_t entry)
 	start = entry->start;
 	end = entry->end;
 	fictitious = entry->object.vm_object &&
-			(entry->object.vm_object->type == OBJT_DEVICE);
+			((entry->object.vm_object->type == OBJT_DEVICE) ||
+			 (entry->object.vm_object->type == OBJT_MGTDEVICE));
 	if (entry->eflags & MAP_ENTRY_KSTACK)
 		start += PAGE_SIZE;
 
@@ -2114,7 +2150,8 @@ vm_fault_additional_pages(vm_page_t m, int rbehind, int rahead,
 	/*
 	 * we don't fault-ahead for device pager
 	 */
-	if (object->type == OBJT_DEVICE) {
+	if ((object->type == OBJT_DEVICE) ||
+	    (object->type == OBJT_MGTDEVICE)) {
 		*reqpage = 0;
 		marray[0] = m;
 		return 1;

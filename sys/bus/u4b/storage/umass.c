@@ -2679,16 +2679,14 @@ umass_cam_sense_cb(struct umass_softc *sc, union ccb *ccb, uint32_t residue,
 	case STATUS_CMD_FAILED:
 	{
 		int error, key, asc, ascq;
+		uint8_t sense_len;
 
-#if 0 /* XXX */
 		ccb->csio.sense_resid = residue;
 		sense_len = ccb->csio.sense_len - ccb->csio.sense_resid;
-		key = scsi_get_sense_key(&ccb->csio.sense_data, sense_len,
-					 /*show_errors*/ 1);
-#endif
-
-		scsi_extract_sense(&ccb->csio.sense_data, &error, &key, 
-		    &asc, &ascq);
+		scsi_extract_sense(&ccb->csio.sense_data,
+                                   &error,
+                                   &key,
+                                   &asc, &ascq);
 		if (ccb->csio.ccb_h.flags & CAM_CDB_POINTER) {
 			cmd = (uint8_t *)(ccb->csio.cdb_io.cdb_ptr);
 		} else {

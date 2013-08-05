@@ -383,8 +383,10 @@ MLINKS+=config_intrhook.9 config_intrhook_disestablish.9 \
 	config_intrhook.9 config_intrhook_establish.9
 MLINKS+=contigmalloc.9 contigfree.9
 MLINKS+=copy.9 copyin.9 \
+	copy.9 copyin_nofault.9 \
 	copy.9 copyinstr.9 \
 	copy.9 copyout.9 \
+	copy.9 copyout_nofault.9 \
 	copy.9 copystr.9
 MLINKS+=crit_enter.9 crit_enter_gd.9 \
 	crit_enter.9 crit_enter_id.9 \
@@ -448,6 +450,7 @@ MLINKS+=dsched.9 dsched_cancel_bio.9 \
 	dsched.9 DSCHED_THREAD_IO_UNLOCK.9 \
 	dsched.9 dsched_thread_io_unref.9 \
 	dsched.9 dsched_unregister.9
+MLINKS+=DRIVER_MODULE.9 DRIVER_MODULE_ORDERED.9
 MLINKS+=EVENTHANDLER.9 EVENTHANDLER_DECLARE.9 \
 	EVENTHANDLER.9 EVENTHANDLER_DEREGISTER.9 \
 	EVENTHANDLER.9 eventhandler_deregister.9 \
@@ -921,11 +924,15 @@ MLINKS+=systimer.9 systimer_adjust_periodic.9 \
 	systimer.9 systimers.9
 MLINKS+=taskqueue.9 TASK_INIT.9 \
 	taskqueue.9 taskqueue_block.9 \
+	taskqueue.9 taskqueue_cancel.9 \
+	taskqueue.9 taskqueue_cancel_timeout.9 \
 	taskqueue.9 taskqueue_create.9 \
 	taskqueue.9 taskqueue_drain.9 \
+	taskqueue.9 taskqueue_drain_timeout.9 \
 	taskqueue.9 TASKQUEUE_DECLARE.9 \
 	taskqueue.9 TASKQUEUE_DEFINE.9 \
 	taskqueue.9 taskqueue_enqueue.9 \
+	taskqueue.9 taskqueue_enqueue_timeout.9 \
 	taskqueue.9 taskqueue_find.9 \
 	taskqueue.9 taskqueue_free.9 \
 	taskqueue.9 taskqueue_run.9 \

@@ -91,6 +91,7 @@
 
 #include <machine/inttypes.h>
 #include <machine/md_var.h>
+#include <machine/specialreg.h>
 
 #include <vm/vm_page2.h>
 #include <sys/spinlock2.h>
@@ -203,6 +204,7 @@ vm_add_new_page(vm_paddr_t pa)
 	m->phys_addr = pa;
 	m->flags = 0;
 	m->pc = (pa >> PAGE_SHIFT) & PQ_L2_MASK;
+	m->pat_mode = PAT_WRITE_BACK;
 	/*
 	 * Twist for cpu localization in addition to page coloring, so
 	 * different cpus selecting by m->queue get different page colors.
@@ -524,6 +526,12 @@ rb_vm_page_compare(struct vm_page *p1, struct vm_page *p2)
 	if (p1->pindex > p2->pindex)
 		return(1);
 	return(0);
+}
+
+void
+vm_page_init(vm_page_t m)
+{
+	/* do nothing for now.  Called from pmap_page_init() */
 }
 
 /*

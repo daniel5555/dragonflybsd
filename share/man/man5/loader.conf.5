@@ -174,9 +174,37 @@ To change this to sio1 you must specify
 and
 .Va sio1.flags=0x10
 in addition to setting the console to the comconsole.
+You can also set the baud rate with (for example)
+.Va sio1.baud=115200
+or simply inherit the baud set in the boot code.
+Normally these must be set if you want to use a stock kernel in a
+IPMI environment.
+When setting the serial console you must specify the serial port
+with (for example)
+.Va sio1.port=0x3e8 .
+Typically sio0 is on 0x3f8 and sio1 is on 0x2f8, but IPMI consoles
+on sio1 are often on 0x3e8 (instead of sio2), which can be confusing.
+Be sure to specify the correct port
+if you want early kernel boot messages to work.
+If you do not specify the port the console will still operate on
+the serial port but only after the kernel has started init.
 .Pp
-If you want the boot code to be available on COM2 at 57600 baud instead
-of COM1, for example, you must set the variables
+Some IPMI environments do not enable sio1 during the BIOS boot,
+which can cause the loader to get confused and not pass RB_SERIAL
+to the kernel.
+Setting console=comconsole in this situation also does not work because
+then the loader is inacessible.  Instead, set the sioX fields as shown
+above and also add
+.Va set boot_serial="YES"
+to cause the kernel to use the serial port without also forcing the
+boot loader to use the serial port.
+.Pp
+The boot1/boot2 code uses BIOS calls to read and write the screen but also
+mirrors output to and monitors COM1 @ 9600.
+In an IPMI environment you do not usually have to adjust the boot code
+at all, instead using the IPMI feature to redirect the video output.
+In non-IPMI setups if you want the boot code to be available on
+COM2 at 57600 baud instead of COM1, for example, you must set the variables
 .Va BOOT_COMCONSOLE_PORT=0x2f8
 and
 .Va BOOT_COMCONSOLE_SPEED=57600
@@ -284,4 +312,4 @@ first appeared in
 .Fx 3.2 .
 .Sh AUTHORS
 This manual page was written by
-.An Daniel C. Sobral Aq dcs@FreeBSD.org .
+.An Daniel C. Sobral Aq Mt dcs@FreeBSD.org .

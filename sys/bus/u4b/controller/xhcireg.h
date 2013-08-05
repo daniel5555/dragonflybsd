@@ -34,6 +34,9 @@
 #define	PCI_USB_REV_3_0		0x30	/* USB 3.0 */
 #define	PCI_XHCI_FLADJ		0x61	/* RW frame length adjust */
 
+#define	PCI_XHCI_INTEL_XUSB2PR	0xD0	/* Intel USB2 Port Routing */
+#define	PCI_XHCI_INTEL_USB3_PSSEN 0xD8	/* Intel USB3 Port SuperSpeed Enable */
+
 /* XHCI capability registers */
 #define	XHCI_CAPLENGTH		0x00	/* RO capability */
 #define	XHCI_RESERVED		0x01	/* Reserved */
@@ -196,23 +199,25 @@
 #define	XHCI_ID_USB_LOCAL_MEM	0x0006
 
 /* XHCI register R/W wrappers */
+#define XBARR(sc) bus_space_barrier((sc)->sc_io_tag, (sc)->sc_io_hdl, 0, (sc)->sc_io_size, \
+                        BUS_SPACE_BARRIER_READ|BUS_SPACE_BARRIER_WRITE)
 #define	XREAD1(sc, what, a) \
-	bus_space_read_1((sc)->sc_io_tag, (sc)->sc_io_hdl, \
-		(a) + (sc)->sc_##what##_off)
+	(XBARR(sc), bus_space_read_1((sc)->sc_io_tag, (sc)->sc_io_hdl, \
+		(a) + (sc)->sc_##what##_off))
 #define	XREAD2(sc, what, a) \
-	bus_space_read_2((sc)->sc_io_tag, (sc)->sc_io_hdl, \
-		(a) + (sc)->sc_##what##_off)
+	(XBARR(sc), bus_space_read_2((sc)->sc_io_tag, (sc)->sc_io_hdl, \
+		(a) + (sc)->sc_##what##_off))
 #define	XREAD4(sc, what, a) \
-	bus_space_read_4((sc)->sc_io_tag, (sc)->sc_io_hdl, \
-		(a) + (sc)->sc_##what##_off)
+	(XBARR(sc), bus_space_read_4((sc)->sc_io_tag, (sc)->sc_io_hdl, \
+		(a) + (sc)->sc_##what##_off))
 #define	XWRITE1(sc, what, a, x) \
-	bus_space_write_1((sc)->sc_io_tag, (sc)->sc_io_hdl, \
-		(a) + (sc)->sc_##what##_off, (x))
+	do { XBARR(sc); bus_space_write_1((sc)->sc_io_tag, (sc)->sc_io_hdl, \
+		(a) + (sc)->sc_##what##_off, (x)); } while(0)
 #define	XWRITE2(sc, what, a, x) \
-	bus_space_write_2((sc)->sc_io_tag, (sc)->sc_io_hdl, \
-		(a) + (sc)->sc_##what##_off, (x))
+	do { XBARR(sc); bus_space_write_2((sc)->sc_io_tag, (sc)->sc_io_hdl, \
+		(a) + (sc)->sc_##what##_off, (x)); } while(0)
 #define	XWRITE4(sc, what, a, x) \
-	bus_space_write_4((sc)->sc_io_tag, (sc)->sc_io_hdl, \
-		(a) + (sc)->sc_##what##_off, (x))
+	do { XBARR(sc); bus_space_write_4((sc)->sc_io_tag, (sc)->sc_io_hdl, \
+		(a) + (sc)->sc_##what##_off, (x)); } while(0)
 
 #endif	/* _XHCIREG_H_ */

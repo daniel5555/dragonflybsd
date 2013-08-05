@@ -487,7 +487,9 @@ vm_pageout_object_deactivate_pages(vm_map_t map, vm_object_t object,
 	while (lobject) {
 		if (pmap_resident_count(vm_map_pmap(map)) <= desired)
 			break;
-		if (lobject->type == OBJT_DEVICE || lobject->type == OBJT_PHYS)
+		if (lobject->type == OBJT_DEVICE ||
+		    lobject->type == OBJT_MGTDEVICE ||
+		    lobject->type == OBJT_PHYS)
 			break;
 		if (lobject->paging_in_progress)
 			break;
@@ -1940,7 +1942,13 @@ vm_pageout_thread(void)
 			inactive_shortage += tmp;
 		}
 
-		if (avail_shortage > 0 || inactive_shortage > 0) {
+		/*
+		 * Only trigger on inactive shortage.  Triggering on
+		 * avail_shortage can starve the active queue with
+		 * unnecessary active->inactive transitions and destroy
+		 * performance.
+		 */
+		if (/*avail_shortage > 0 ||*/ inactive_shortage > 0) {
 			int delta;
 
 			for (q = 0; q < PQ_L2_SIZE; ++q) {

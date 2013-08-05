@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <libutil.h>
 
 #include "libaura/mem.h"
 #include "libaura/dict.h"
@@ -240,12 +241,14 @@ first_non_space_char_is(const char *line, char x)
 const char *
 capacity_to_string(long capacity)
 {
-	static char string[256];
+	static char string[6];
 
 	if (capacity < 0)
 		strlcpy(string, "*", 2);
 	else
-		snprintf(string, 255, "%ldM", capacity);
+		humanize_number(string, sizeof(string),
+		    (int64_t)capacity * 1024 * 1024, "",
+		    HN_AUTOSCALE, HN_B | HN_NOSPACE | HN_DECIMAL);
 
 	return(string);
 }
@@ -253,21 +256,21 @@ capacity_to_string(long capacity)
 int
 string_to_capacity(const char *string, long *capacity)
 {
-	char unit;
+	int error;
+	int64_t result;
 
-	unit = string[strlen(string) - 1];
 	if (!strcmp(string, "*")) {
 		*capacity = -1;
 		return(1);
-	} else if (unit == 'm' || unit == 'M') {
-		*capacity = strtol(string, NULL, 10);
-		return(1);
-	} else if (unit == 'g' || unit == 'G') {
-		*capacity = strtol(string, NULL, 10) * 1024;
-		return(1);
-	} else {
-		return(0);
 	}
+	error = dehumanize_number(string, &result);
+	if (error != 0)
+		return(0);
+	result /= 1024 * 1024;
+	if (result == 0)
+		return(0);
+	*capacity = result;
+	return(1);
 }
 
 /*

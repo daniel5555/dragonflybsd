@@ -582,6 +582,15 @@ pmap_init2(void)
 	zinitna(pvzone, &pvzone_obj, NULL, 0, entry_max, ZONE_INTERRUPT, 1);
 }
 
+/*
+ * Typically used to initialize a fictitious page by vm/device_pager.c
+ */
+void
+pmap_page_init(struct vm_page *m)
+{
+	vm_page_init(m);
+	TAILQ_INIT(&m->md.pv_list);
+}
 
 /***************************************************
  * Low level helper routines.....
@@ -3418,6 +3427,17 @@ pmap_unmapdev(vm_offset_t va, vm_size_t size)
 }
 
 /*
+ * Change the PAT attribute on an existing kernel memory map.  Caller
+ * must ensure that the virtual memory in question is not accessed
+ * during the adjustment.
+ */
+void
+pmap_change_attr(vm_offset_t va, vm_size_t count, int mode)
+{
+	/* XXX pmap_change_attr() not implemented on i386 */
+}
+
+/*
  * Perform the pmap work for mincore
  *
  * The caller must hold vm_token if the caller wishes a stable result,
@@ -3581,7 +3601,8 @@ vm_offset_t
 pmap_addr_hint(vm_object_t obj, vm_offset_t addr, vm_size_t size)
 {
 
-	if ((obj == NULL) || (size < NBPDR) || (obj->type != OBJT_DEVICE)) {
+	if ((obj == NULL) || (size < NBPDR) ||
+	    ((obj->type != OBJT_DEVICE) && (obj->type != OBJT_MGTDEVICE))) {
 		return addr;
 	}
 

@@ -695,7 +695,6 @@ dev/disk/vpo/vpo.c		optional vpo
 dev/disk/vpo/vpoio.c	optional vpo
 dev/crypto/rndtest/rndtest.c	optional rndtest
 dev/serial/rp/rp.c		optional nrp
-dev/serial/rp/rp_isa.c		optional nrp isa
 dev/serial/rp/rp_pci.c		optional nrp pci
 dev/crypto/safe/safe.c		optional safe
 dev/netif/sbsh/if_sbsh.c	optional sbsh
@@ -934,6 +933,7 @@ kern/sys_generic.c	standard
 kern/sys_pipe.c		standard
 kern/sys_process.c	standard
 kern/subr_rman.c	standard
+kern/subr_unit.c	standard
 kern/sys_mqueue.c	standard
 kern/sys_socket.c	standard
 kern/sysv_ipc.c		standard
@@ -1172,19 +1172,19 @@ netproto/atm/spans/spans_proto.c	optional atm_spans atm_core
 netproto/atm/spans/spans_subr.c	optional atm_spans atm_core
 netproto/atm/spans/spans_util.c	optional atm_spans atm_core
 spans_xdr.h			optional atm_spans atm_core	\
-        before-depend						\
-        dependency      "$S/netproto/atm/spans/spans_xdr.x"	\
-        compile-with    "rpcgen -h -C $S/netproto/atm/spans/spans_xdr.x | grep -v rpc/rpc.h > spans_xdr.h" \
-        clean           "spans_xdr.h"				\
-        no-obj no-implicit-rule
+	before-depend						\
+	dependency      "$S/netproto/atm/spans/spans_xdr.x"	\
+	compile-with    "rpcgen -h -C $S/netproto/atm/spans/spans_xdr.x | grep -v rpc/rpc.h > spans_xdr.h" \
+	clean           "spans_xdr.h"				\
+	no-obj no-implicit-rule
 spans_xdr.c			optional atm_spans atm_core	\
-        before-depend						\
-        dependency      "$S/netproto/atm/spans/spans_xdr.x"	\
-        compile-with    "rpcgen -c -C $S/netproto/atm/spans/spans_xdr.x | grep -v rpc/rpc.h > spans_xdr.c" \
-        clean           "spans_xdr.c"				\
-        no-obj no-implicit-rule local
+	before-depend						\
+	dependency      "$S/netproto/atm/spans/spans_xdr.x"	\
+	compile-with    "rpcgen -c -C $S/netproto/atm/spans/spans_xdr.x | grep -v rpc/rpc.h > spans_xdr.c" \
+	clean           "spans_xdr.c"				\
+	no-obj no-implicit-rule local
 spans_xdr.o			optional atm_spans atm_core	\
-        dependency      "$S/netproto/atm/spans/spans_xdr.x"	\
+	dependency      "$S/netproto/atm/spans/spans_xdr.x"	\
 	compile-with	"${NORMAL_C} ${WERROR}"		\
 	no-implicit-rule local
 netproto/atm/uni/q2110_sigaa.c	optional atm_uni atm_core
@@ -1831,6 +1831,7 @@ libkern/mcount.c			optional	profiling-routine
 libkern/memmove.c			standard
 libkern/memcchr.c			standard
 libkern/qsort.c				standard
+libkern/qsort_r.c			standard
 libkern/random.c			standard
 libkern/rindex.c			standard
 libkern/scanc.c				standard

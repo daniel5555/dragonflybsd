@@ -299,10 +299,7 @@ init_secondary(void)
 	wrmsr(MSR_SF_MASK, PSL_NT|PSL_T|PSL_I|PSL_C|PSL_D|PSL_IOPL);
 
 	pmap_set_opt();		/* PSE/4MB pages, etc */
-#if JGXXX
-	/* Initialize the PAT MSR. */
-	pmap_init_pat();
-#endif
+	pmap_init_pat();	/* Page Attribute Table */
 
 	/* set up CPU registers and state */
 	cpu_setregs();
@@ -866,6 +863,18 @@ void
 cpu_wbinvd_on_all_cpus_callback(void *arg)
 {
     wbinvd();
+}
+
+void
+smp_invlpg_range_cpusync(void *arg)
+{
+	vm_offset_t eva, sva, addr;
+	sva = ((struct smp_invlpg_range_cpusync_arg *)arg)->sva;
+	eva = ((struct smp_invlpg_range_cpusync_arg *)arg)->eva;
+
+	for (addr = sva; addr < eva; addr += PAGE_SIZE) {
+		cpu_invlpg((void *)addr);
+	}
 }
 
 /*

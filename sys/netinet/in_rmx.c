@@ -62,6 +62,7 @@
 #include <net/if_types.h>
 #endif
 #include <net/netmsg2.h>
+#include <net/netisr2.h>
 #include <netinet/in.h>
 #include <netinet/in_var.h>
 #include <netinet/ip_var.h>
@@ -456,7 +457,7 @@ in_ifadown_dispatch(netmsg_t msg)
 
 	nextcpu = cpu + 1;
 	if (nextcpu < ncpus)
-		lwkt_forwardmsg(rtable_portfn(nextcpu), &rmsg->base.lmsg);
+		lwkt_forwardmsg(netisr_cpuport(nextcpu), &rmsg->base.lmsg);
 	else
 		lwkt_replymsg(&rmsg->base.lmsg, 0);
 }
@@ -476,13 +477,11 @@ in_ifadown_force(struct ifaddr *ifa, int delete)
 	 * related to the interface are manipulated while we are
 	 * doing this the inconsistancy could trigger a panic.
 	 */
-	netmsg_init(&msg.base, NULL, &curthread->td_msgport, 0,
+	netmsg_init(&msg.base, NULL, &curthread->td_msgport, MSGF_PRIORITY,
 	    in_ifadown_dispatch);
 	msg.ifa = ifa;
 	msg.del = delete;
-	KASSERT(&curthread->td_msgport != rtable_portfn(0),
-	    ("in_ifadown in rtable thread"));
-	lwkt_domsg(rtable_portfn(0), &msg.base.lmsg, 0);
+	rt_domsg_global(&msg.base);
 
 	return 0;
 }

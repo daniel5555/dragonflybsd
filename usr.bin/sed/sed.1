@@ -30,7 +30,6 @@
 .\"
 .\"	@(#)sed.1	8.2 (Berkeley) 12/30/93
 .\" $FreeBSD: src/usr.bin/sed/sed.1,v 1.50 2009/05/25 21:29:06 brian Exp $
-.\" $DragonFly: src/usr.bin/sed/sed.1,v 1.6 2008/09/06 09:38:33 thomas Exp $
 .\"
 .Dd June 13, 2009
 .Dt SED 1
@@ -118,7 +117,7 @@ file boundaries, and the
 .Dq $
 address matches only the last line of the last file.
 (See
-.Sx "Sed Addresses" . )
+.Sx SED ADDRESSES . )
 That can lead to unexpected results in many cases of in-place editing,
 where using
 .Fl i
@@ -133,7 +132,7 @@ the
 address matches the last line of the current file,
 and address ranges are limited to the current file.
 (See
-.Sx "Sed Addresses" . )
+.Sx SED ADDRESSES . )
 The net result is as though each file were edited by a separate
 .Nm
 instance.
@@ -171,7 +170,7 @@ deletes the pattern space.
 Some of the functions use a
 .Em "hold space"
 to save all or part of the pattern space for subsequent retrieval.
-.Sh "Sed Addresses"
+.Sh SED ADDRESSES
 An address is not required, but if specified must have one of the
 following formats:
 .Bl -bullet -offset indent
@@ -230,7 +229,7 @@ Editing commands can be applied to non-selected pattern spaces by use
 of the exclamation character
 .Pq Dq \&!
 function.
-.Sh "Sed Regular Expressions"
+.Sh SED REGULAR EXPRESSIONS
 The regular expressions used in
 .Nm ,
 by default, are basic regular expressions (BREs, see
@@ -287,7 +286,7 @@ will substitute
 .Dq XXX
 for the pattern
 .Dq abc .
-.Sh "Sed Functions"
+.Sh SED FUNCTIONS
 In the following list of commands, the maximum number of permissible
 addresses for each command is indicated by [0addr], [1addr], or [2addr],
 representing zero, one, or two addresses.
@@ -616,7 +615,7 @@ command, written by
 appeared in
 .At v7 .
 .Sh AUTHORS
-.An "Diomidis D. Spinellis" Aq dds@FreeBSD.org
+.An Diomidis D. Spinellis Aq Mt dds@FreeBSD.org
 .Sh BUGS
 Multibyte characters containing a byte with value 0x5C
 .Tn ( ASCII

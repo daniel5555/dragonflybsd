@@ -82,6 +82,9 @@ vm_offset_t kmem_alloc3 (vm_map_t, vm_size_t, int flags);
 vm_offset_t kmem_alloc_nofault (vm_map_t, vm_size_t, vm_size_t);
 vm_offset_t kmem_alloc_pageable (vm_map_t, vm_size_t);
 vm_offset_t kmem_alloc_wait (vm_map_t, vm_size_t);
+vm_offset_t kmem_alloc_attr(vm_map_t map, vm_size_t size, int flags,
+			vm_paddr_t minaddr, vm_paddr_t maxaddr,
+			int pat_attr);
 void kmem_free (vm_map_t, vm_offset_t, vm_size_t);
 void kmem_free_wakeup (vm_map_t, vm_offset_t, vm_size_t);
 void kmem_init (void);
@@ -94,6 +97,8 @@ int vm_fault (vm_map_t, vm_offset_t, vm_prot_t, int);
 vm_page_t vm_fault_page (vm_map_t, vm_offset_t, vm_prot_t, int, int *);
 vm_page_t vm_fault_page_quick (vm_offset_t, vm_prot_t, int *);
 void vm_fault_copy_entry (vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t);
+int vm_fault_quick_hold_pages(vm_map_t map, vm_offset_t addr, vm_size_t len,
+    vm_prot_t prot, vm_page_t *ma, int max_count);
 void vm_fault_unwire (vm_map_t, vm_map_entry_t);
 int vm_fault_wire (vm_map_t, vm_map_entry_t, boolean_t);
 void vm_fork (struct proc *, struct proc *, int);
@@ -102,6 +107,7 @@ void vm_wait_nominal (void);
 void vm_init_limits(struct proc *);
 
 int vm_mmap (vm_map_t, vm_offset_t *, vm_size_t, vm_prot_t, vm_prot_t, int, void *, vm_ooffset_t);
+int vm_mmap_to_errno(int rv);
 vm_offset_t kmem_alloc_contig (vm_offset_t, vm_paddr_t, vm_paddr_t, vm_offset_t);
 void vm_set_page_size (void);
 struct vmspace *vmspace_alloc (vm_offset_t, vm_offset_t);

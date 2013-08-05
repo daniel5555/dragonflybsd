@@ -73,7 +73,6 @@
 #include <sys/vnode.h>
 #include <sys/buf.h>
 #include <sys/ucred.h>
-#include <sys/malloc.h>
 #include <sys/dsched.h>
 #include <sys/proc.h>
 #include <sys/sysctl.h>
@@ -88,8 +87,6 @@
 #include <vm/vm_extern.h>
 
 #include <sys/buf2.h>
-
-MALLOC_DEFINE(M_VMPGDATA, "VM pgdata", "XXX: VM pager private data");
 
 extern struct pagerops defaultpagerops;
 extern struct pagerops swappagerops;
@@ -158,6 +155,7 @@ struct pagerops *pagertab[] = {
 	&swappagerops,		/* OBJT_SWAP */
 	&vnodepagerops,		/* OBJT_VNODE */
 	&devicepagerops,	/* OBJT_DEVICE */
+	&devicepagerops,	/* OBJT_MGTDEVICE */
 	&physpagerops,		/* OBJT_PHYS */
 	&deadpagerops		/* OBJT_DEAD */
 };
@@ -276,25 +274,31 @@ vm_pager_deallocate(vm_object_t object)
  * vm_pager_page_removed() - inline, see vm/vm_pager.h
  */
 
-#if 0
 /*
- *	vm_pager_sync:
+ * Search the specified pager object list for an object with the
+ * specified handle.  If an object with the specified handle is found,
+ * increase its reference count and return it.  Otherwise, return NULL.
  *
- *	Called by pageout daemon before going back to sleep.
- *	Gives pagers a chance to clean up any completed async pageing 
- *	operations.
+ * The pager object list must be locked.
  */
-void
-vm_pager_sync(void)
+vm_object_t
+vm_pager_object_lookup(struct pagerlst *pg_list, void *handle)
 {
-	struct pagerops **pgops;
+	vm_object_t object;
 
-	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++)
-		if (pgops && ((*pgops)->pgo_sync != NULL))
-			(*(*pgops)->pgo_sync) ();
+	TAILQ_FOREACH(object, pg_list, pager_object_list) {
+		if (object->handle == handle) {
+			VM_OBJECT_LOCK(object);
+			if ((object->flags & OBJ_DEAD) == 0) {
+				vm_object_reference_locked(object);
+				VM_OBJECT_UNLOCK(object);
+				break;
+			}
+			VM_OBJECT_UNLOCK(object);
+		}
+	}
+	return (object);
 }
-
-#endif
 
 /*
  * Initialize a physical buffer.

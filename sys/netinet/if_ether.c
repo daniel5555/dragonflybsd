@@ -127,7 +127,6 @@ struct llinfo_arp {
 	LIST_ENTRY(llinfo_arp) la_le;
 	struct	rtentry *la_rt;
 	struct	mbuf *la_hold;	/* last packet until resolved/timeout */
-	struct	lwkt_port *la_msgport; /* last packet's msgport */
 	u_short	la_preempt;	/* countdown for pre-expiry arps */
 	u_short	la_asked;	/* #times we QUERIED following expiration */
 };
@@ -551,7 +550,6 @@ arpresolve(struct ifnet *ifp, struct rtentry *rt0, struct mbuf *m,
 	if (la->la_hold != NULL)
 		m_freem(la->la_hold);
 	la->la_hold = m;
-	la->la_msgport = netisr_curport();
 	if (rt->rt_expire || ((rt->rt_flags & RTF_STATIC) && !sdl->sdl_alen)) {
 		rt->rt_flags &= ~RTF_REJECT;
 		if (la->la_asked == 0 || rt->rt_expire != time_second) {
@@ -650,26 +648,6 @@ SYSCTL_INT(_net_link_ether_inet, OID_AUTO, log_arp_permanent_modify, CTLFLAG_RW,
 	   "Log arp replies from MACs different than the one "
 	   "in the permanent arp entry");
 
-
-static void
-arp_hold_output(netmsg_t msg)
-{
-	struct mbuf *m = msg->packet.nm_packet;
-	struct rtentry *rt;
-	struct ifnet *ifp;
-
-	rt = msg->lmsg.u.ms_resultp;
-	ifp = m->m_pkthdr.rcvif;
-	m->m_pkthdr.rcvif = NULL;
-
-	ifp->if_output(ifp, m, rt_key(rt), rt);
-
-	/* Drop the reference count bumped by the sender */
-	RTFREE(rt);
-
-	/* nmsg was embedded in the mbuf, do not reply! */
-}
-
 static void
 arp_update_oncpu(struct mbuf *m, in_addr_t saddr, boolean_t create,
 		 boolean_t generate_report, boolean_t dologging)
@@ -680,6 +658,9 @@ arp_update_oncpu(struct mbuf *m, in_addr_t saddr, boolean_t create,
 	struct sockaddr_dl *sdl;
 	struct rtentry *rt;
 	char hexstr[2][64];
+
+	KASSERT(curthread->td_type == TD_TYPE_NETISR,
+	    ("arp update not in netisr"));
 
 	la = arplookup(saddr, create, generate_report, FALSE);
 	if (la && (rt = la->la_rt) && (sdl = SDL(rt->rt_gateway))) {
@@ -798,33 +779,10 @@ arp_update_oncpu(struct mbuf *m, in_addr_t saddr, boolean_t create,
 		 */
 		if (la->la_hold != NULL) {
 			struct mbuf *m = la->la_hold;
-			struct lwkt_port *port = la->la_msgport;
-			struct netmsg_packet *pmsg;
 
 			la->la_hold = NULL;
-			la->la_msgport = NULL;
-
 			m_adj(m, sizeof(struct ether_header));
-
-			/*
-			 * Make sure that this rtentry will not be freed
-			 * before the packet is processed on the target
-			 * msgport.  The reference count will be dropped
-			 * in the handler associated with this packet.
-			 */
-			rt->rt_refcnt++;
-
-			pmsg = &m->m_hdr.mh_netmsg;
-			netmsg_init(&pmsg->base, NULL,
-				    &netisr_apanic_rport,
-				    MSGF_PRIORITY, arp_hold_output);
-			pmsg->nm_packet = m;
-
-			/* Record necessary information */
-			m->m_pkthdr.rcvif = ifp;
-			pmsg->base.lmsg.u.ms_resultp = rt;
-
-			lwkt_sendmsg(port, &pmsg->base.lmsg);
+			ifp->if_output(ifp, m, rt_key(rt), rt);
 		}
 	}
 }
@@ -841,7 +799,6 @@ in_arpinput(struct mbuf *m)
 	struct in_ifaddr_container *iac;
 	struct in_ifaddr *ia = NULL;
 	struct in_addr isaddr, itaddr, myaddr;
-	struct netmsg_inarp *msg;
 	uint8_t *enaddr = NULL;
 	int req_len;
 	char hexstr[64];
@@ -1026,16 +983,28 @@ match:
 	}
 
 	/*
-	 * Update all CPU's routing tables with this ARP packet
+	 * Update all CPU's routing tables with this ARP packet.
+	 *
+	 * However, we only need to generate rtmsg on CPU0.
 	 */
-	msg = &m->m_hdr.mh_arpmsg;
-	netmsg_init(&msg->base, NULL, &netisr_apanic_rport,
-	    0, arp_update_msghandler);
-	msg->m = m;
-	msg->saddr = isaddr.s_addr;
-	msg->taddr = itaddr.s_addr;
-	msg->myaddr = myaddr.s_addr;
-	lwkt_sendmsg(rtable_portfn(0), &msg->base.lmsg);
+	KASSERT(&curthread->td_msgport == netisr_cpuport(0),
+	    ("arp input not in netisr0, but on cpu%d", mycpuid));
+	arp_update_oncpu(m, isaddr.s_addr, itaddr.s_addr == myaddr.s_addr,
+	    RTL_REPORTMSG, TRUE);
+
+	if (ncpus > 1) {
+		struct netmsg_inarp *msg = &m->m_hdr.mh_arpmsg;
+
+		netmsg_init(&msg->base, NULL, &netisr_apanic_rport,
+		    0, arp_update_msghandler);
+		msg->m = m;
+		msg->saddr = isaddr.s_addr;
+		msg->taddr = itaddr.s_addr;
+		msg->myaddr = myaddr.s_addr;
+		lwkt_sendmsg(netisr_cpuport(1), &msg->base.lmsg);
+	} else {
+		goto reply;
+	}
 
 	/*
 	 * Just return here; after all CPUs's routing tables are
@@ -1063,15 +1032,16 @@ arp_update_msghandler(netmsg_t msg)
 	int nextcpu;
 
 	/*
-	 * This message handler will be called on all of the CPUs,
-	 * however, we only need to generate rtmsg on CPU0.
+	 * This message handler will be called on all of the APs;
+	 * no need to generate rtmsg on them.
 	 */
+	KASSERT(mycpuid > 0, ("arp update msg on cpu%d", mycpuid));
 	arp_update_oncpu(rmsg->m, rmsg->saddr, rmsg->taddr == rmsg->myaddr,
-	    mycpuid == 0 ? RTL_REPORTMSG : RTL_DONTREPORT, mycpuid == 0);
+	    RTL_DONTREPORT, FALSE);
 
 	nextcpu = mycpuid + 1;
 	if (nextcpu < ncpus) {
-		lwkt_forwardmsg(rtable_portfn(nextcpu), &rmsg->base.lmsg);
+		lwkt_forwardmsg(netisr_cpuport(nextcpu), &rmsg->base.lmsg);
 	} else {
 		struct mbuf *m = rmsg->m;
 		in_addr_t saddr = rmsg->saddr;

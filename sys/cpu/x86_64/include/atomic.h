@@ -185,6 +185,7 @@ atomic_readandclear_int(volatile u_int *addr)
 #if defined(KLD_MODULE)
 
 extern int atomic_swap_int(volatile int *addr, int value);
+extern void *atomic_swap_ptr(volatile void **addr, void *value);
 extern int atomic_poll_acquire_int(volatile u_int *p);
 extern void atomic_poll_release_int(volatile u_int *p);
 
@@ -194,6 +195,14 @@ static __inline int
 atomic_swap_int(volatile int *addr, int value)
 {
 	__asm __volatile("xchgl %0, %1" :
+	    "=r" (value), "=m" (*addr) : "0" (value) : "memory");
+	return (value);
+}
+
+static __inline void *
+atomic_swap_ptr(volatile void **addr, void *value)
+{
+	__asm __volatile("xchgq %0, %1" :
 	    "=r" (value), "=m" (*addr) : "0" (value) : "memory");
 	return (value);
 }
@@ -594,6 +603,9 @@ ATOMIC_STORE_LOAD(long, "cmpxchgq %0,%1",  "xchgq %1,%0");
 #define	atomic_cmpset_rel_32	atomic_cmpset_rel_int
 #define	atomic_readandclear_32	atomic_readandclear_int
 #define	atomic_fetchadd_32	atomic_fetchadd_int
+
+/* Operations on 64-bit quad words. */
+#define	atomic_load_acq_64	atomic_load_acq_long
 
 /* Operations on pointers. */
 #define atomic_set_ptr(p, v) \

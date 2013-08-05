@@ -24,7 +24,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * $FreeBSD: src/sys/dev/pci/pcivar.h,v 1.80.2.1.4.1 2009/04/15 03:14:26 kensmith Exp $
- *
  */
 
 #ifndef _PCIVAR_H_
@@ -499,6 +498,7 @@ pci_msix_count(device_t dev)
 device_t pci_find_bsf(uint8_t, uint8_t, uint8_t);
 device_t pci_find_dbsf(uint32_t, uint8_t, uint8_t, uint8_t);
 device_t pci_find_device(uint16_t, uint16_t);
+device_t pci_find_class(uint8_t class, uint8_t subclass);
 
 /* Can be used by drivers to manage the MSI-X table. */
 int	pci_pending_msix_vector(device_t dev, u_int index);
@@ -521,9 +521,9 @@ int	pci_alloc_1intr(device_t dev, int msi_enable, int *rid, u_int *flags);
 #endif	/* _SYS_BUS_H_ */
 
 /*
- * cdev switch for control device, initialised in generic PCI code
+ * device operations for control device, initialised in generic PCI code
  */
-extern struct cdevsw pcicdev;
+extern struct dev_ops pci_ops;
 
 /*
  * List of all PCI devices, generation count for the list.

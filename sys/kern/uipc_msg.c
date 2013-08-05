@@ -382,7 +382,7 @@ so_pru_sync(struct socket *so)
 
 void
 so_pru_send_async(struct socket *so, int flags, struct mbuf *m,
-	    struct sockaddr *addr0, struct mbuf *control, struct thread *td)
+    struct sockaddr *addr0, struct mbuf *control, struct thread *td)
 {
 	struct netmsg_pru_send *msg;
 	struct sockaddr *addr = NULL;
@@ -390,12 +390,20 @@ so_pru_send_async(struct socket *so, int flags, struct mbuf *m,
 	KASSERT(so->so_proto->pr_flags & PR_ASYNC_SEND,
 	    ("async pru_send is not supported"));
 
-	flags |= PRUS_NOREPLY;
 	if (addr0 != NULL) {
-		addr = kmalloc(addr0->sa_len, M_SONAME, M_WAITOK);
+		addr = kmalloc(addr0->sa_len, M_SONAME, M_NOWAIT);
+		if (addr == NULL) {
+			/*
+			 * Fail to allocate address w/o waiting;
+			 * fallback to synchronized pru_send.
+			 */
+			so_pru_send(so, flags, m, addr0, control, td);
+			return;
+		}
 		memcpy(addr, addr0, addr0->sa_len);
 		flags |= PRUS_FREEADDR;
 	}
+	flags |= PRUS_NOREPLY;
 
 	msg = &m->m_hdr.mh_sndmsg;
 	netmsg_init(&msg->base, so, &netisr_apanic_rport,
@@ -520,12 +528,22 @@ netmsg_so_notify(netmsg_t msg)
 	 */
 	tok = lwkt_token_pool_lookup(msg->base.nm_so);
 	lwkt_gettoken(tok);
+	atomic_set_int(&ssb->ssb_flags, SSB_MEVENT);
 	if (msg->notify.nm_predicate(&msg->notify)) {
+		if (TAILQ_EMPTY(&ssb->ssb_kq.ki_mlist))
+			atomic_clear_int(&ssb->ssb_flags, SSB_MEVENT);
 		lwkt_reltoken(tok);
 		lwkt_replymsg(&msg->base.lmsg,
 			      msg->base.lmsg.ms_error);
 	} else {
 		TAILQ_INSERT_TAIL(&ssb->ssb_kq.ki_mlist, &msg->notify, nm_list);
+		/*
+		 * NOTE:
+		 * If predict ever blocks, 'tok' will be released, so
+		 * SSB_MEVENT set beforehand could have been cleared
+		 * when we reach here.  In case that happens, we set
+		 * SSB_MEVENT again, after the notify has been queued.
+		 */
 		atomic_set_int(&ssb->ssb_flags, SSB_MEVENT);
 		lwkt_reltoken(tok);
 	}

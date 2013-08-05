@@ -775,7 +775,7 @@ if_rtdel_dispatch(netmsg_t msg)
 
 	nextcpu = cpu + 1;
 	if (nextcpu < ncpus)
-		lwkt_forwardmsg(rtable_portfn(nextcpu), &rmsg->base.lmsg);
+		lwkt_forwardmsg(netisr_cpuport(nextcpu), &rmsg->base.lmsg);
 	else
 		lwkt_replymsg(&rmsg->base.lmsg, 0);
 }
@@ -849,12 +849,10 @@ if_detach(struct ifnet *ifp)
 	/*
 	 * Delete all remaining routes using this interface
 	 */
-	netmsg_init(&msg.base, NULL, &curthread->td_msgport, 0,
+	netmsg_init(&msg.base, NULL, &curthread->td_msgport, MSGF_PRIORITY,
 	    if_rtdel_dispatch);
 	msg.ifp = ifp;
-	KASSERT(&curthread->td_msgport != rtable_portfn(0),
-	    ("if_detach in rtable thread"));
-	lwkt_domsg(rtable_portfn(0), &msg.base.lmsg, 0);
+	rt_domsg_global(&msg.base);
 
 	/* Announce that the interface is gone. */
 	rt_ifannouncemsg(ifp, IFAN_DEPARTURE);

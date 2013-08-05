@@ -168,11 +168,16 @@ vm_offset_t KvaSize;		/* max size of kernel virtual address space */
 static boolean_t pmap_initialized = FALSE;	/* Has pmap_init completed? */
 static int pgeflag;		/* PG_G or-in */
 static int pseflag;		/* PG_PS or-in */
+uint64_t PatMsr;
 
 static int ndmpdp;
 static vm_paddr_t dmaplimit;
 static int nkpt;
 vm_offset_t kernel_vm_end = VM_MIN_KERNEL_ADDRESS;
+
+#define PAT_INDEX_SIZE  8
+static pt_entry_t pat_pte_index[PAT_INDEX_SIZE];	/* PAT -> PG_ bits */
+/*static pt_entry_t pat_pde_index[PAT_INDEX_SIZE];*/	/* PAT -> PG_ bits */
 
 static uint64_t KPTbase;
 static uint64_t KPTphys;
@@ -864,6 +869,82 @@ pmap_bootstrap(vm_paddr_t *firstaddr)
 	}
 #endif
 	cpu_invltlb();
+
+	/* Initialize the PAT MSR */
+	pmap_init_pat();
+}
+
+/*
+ * Setup the PAT MSR.
+ */
+void
+pmap_init_pat(void)
+{
+	uint64_t pat_msr;
+	u_long cr0, cr4;
+
+	/*
+	 * Default values mapping PATi,PCD,PWT bits at system reset.
+	 * The default values effectively ignore the PATi bit by
+	 * repeating the encodings for 0-3 in 4-7, and map the PCD
+	 * and PWT bit combinations to the expected PAT types.
+	 */
+	pat_msr = PAT_VALUE(0, PAT_WRITE_BACK) |	/* 000 */
+		  PAT_VALUE(1, PAT_WRITE_THROUGH) |	/* 001 */
+		  PAT_VALUE(2, PAT_UNCACHED) |		/* 010 */
+		  PAT_VALUE(3, PAT_UNCACHEABLE) |	/* 011 */
+		  PAT_VALUE(4, PAT_WRITE_BACK) |	/* 100 */
+		  PAT_VALUE(5, PAT_WRITE_THROUGH) |	/* 101 */
+		  PAT_VALUE(6, PAT_UNCACHED) |		/* 110 */
+		  PAT_VALUE(7, PAT_UNCACHEABLE);	/* 111 */
+	pat_pte_index[PAT_WRITE_BACK]	= 0;
+	pat_pte_index[PAT_WRITE_THROUGH]= 0         | PG_NC_PWT;
+	pat_pte_index[PAT_UNCACHED]	= PG_NC_PCD;
+	pat_pte_index[PAT_UNCACHEABLE]	= PG_NC_PCD | PG_NC_PWT;
+	pat_pte_index[PAT_WRITE_PROTECTED] = pat_pte_index[PAT_UNCACHEABLE];
+	pat_pte_index[PAT_WRITE_COMBINING] = pat_pte_index[PAT_UNCACHEABLE];
+
+	if (cpu_feature & CPUID_PAT) {
+		/*
+		 * If we support the PAT then set-up entries for
+		 * WRITE_PROTECTED and WRITE_COMBINING using bit patterns
+		 * 4 and 5.
+		 */
+		pat_msr = (pat_msr & ~PAT_MASK(4)) |
+			  PAT_VALUE(4, PAT_WRITE_PROTECTED);
+		pat_msr = (pat_msr & ~PAT_MASK(5)) |
+			  PAT_VALUE(5, PAT_WRITE_COMBINING);
+		pat_pte_index[PAT_WRITE_PROTECTED] = PG_PTE_PAT | 0;
+		pat_pte_index[PAT_WRITE_COMBINING] = PG_PTE_PAT | PG_NC_PWT;
+
+		/*
+		 * Then enable the PAT
+		 */
+
+		/* Disable PGE. */
+		cr4 = rcr4();
+		load_cr4(cr4 & ~CR4_PGE);
+
+		/* Disable caches (CD = 1, NW = 0). */
+		cr0 = rcr0();
+		load_cr0((cr0 & ~CR0_NW) | CR0_CD);
+
+		/* Flushes caches and TLBs. */
+		wbinvd();
+		cpu_invltlb();
+
+		/* Update PAT and index table. */
+		wrmsr(MSR_PAT, pat_msr);
+
+		/* Flush caches and TLBs again. */
+		wbinvd();
+		cpu_invltlb();
+
+		/* Restore caches and PGE. */
+		load_cr0(cr0);
+		load_cr4(cr4);
+		PatMsr = pat_msr;
+	}
 }
 
 /*
@@ -949,6 +1030,15 @@ pmap_init2(void)
 	zinitna(pvzone, &pvzone_obj, NULL, 0, entry_max, ZONE_INTERRUPT, 1);
 }
 
+/*
+ * Typically used to initialize a fictitious page by vm/device_pager.c
+ */
+void
+pmap_page_init(struct vm_page *m)
+{
+	vm_page_init(m);
+	TAILQ_INIT(&m->md.pv_list);
+}
 
 /***************************************************
  * Low level helper routines.....
@@ -1191,6 +1281,56 @@ pmap_map(vm_offset_t *virtp, vm_paddr_t start, vm_paddr_t end, int prot)
 	return va_start;
 }
 
+#define PMAP_CLFLUSH_THRESHOLD  (2 * 1024 * 1024)
+
+/*
+ * Remove the specified set of pages from the data and instruction caches.
+ *
+ * In contrast to pmap_invalidate_cache_range(), this function does not
+ * rely on the CPU's self-snoop feature, because it is intended for use
+ * when moving pages into a different cache domain.
+ */
+void
+pmap_invalidate_cache_pages(vm_page_t *pages, int count)
+{
+	vm_offset_t daddr, eva;
+	int i;
+
+	if (count >= PMAP_CLFLUSH_THRESHOLD / PAGE_SIZE ||
+	    (cpu_feature & CPUID_CLFSH) == 0)
+		wbinvd();
+	else {
+		cpu_mfence();
+		for (i = 0; i < count; i++) {
+			daddr = PHYS_TO_DMAP(VM_PAGE_TO_PHYS(pages[i]));
+			eva = daddr + PAGE_SIZE;
+			for (; daddr < eva; daddr += cpu_clflush_line_size)
+				clflush(daddr);
+		}
+		cpu_mfence();
+	}
+}
+
+void
+pmap_invalidate_cache_range(vm_offset_t sva, vm_offset_t eva)
+{
+	KASSERT((sva & PAGE_MASK) == 0,
+	    ("pmap_invalidate_cache_range: sva not page-aligned"));
+	KASSERT((eva & PAGE_MASK) == 0,
+	    ("pmap_invalidate_cache_range: eva not page-aligned"));
+
+	if (cpu_feature & CPUID_SS) {
+		; /* If "Self Snoop" is supported, do nothing. */
+	} else {
+		/* Globally invalidate caches */
+		cpu_wbinvd_on_all_cpus();
+	}
+}
+void
+pmap_invalidate_range(pmap_t pmap, vm_offset_t sva, vm_offset_t eva)
+{
+	smp_invlpg_range(pmap->pm_active, sva, eva);
+}
 
 /*
  * Add a list of wired pages to the kva
@@ -1211,7 +1351,8 @@ pmap_qenter(vm_offset_t va, vm_page_t *m, int count)
 		pt_entry_t *pte;
 
 		pte = vtopte(va);
-		*pte = VM_PAGE_TO_PHYS(*m) | PG_RW | PG_V | pgeflag;
+		*pte = VM_PAGE_TO_PHYS(*m) | PG_RW | PG_V |
+			pat_pte_index[(*m)->pat_mode] | pgeflag;
 		cpu_invlpg((void *)va);
 		va += PAGE_SIZE;
 		m++;
@@ -1680,6 +1821,9 @@ retry:
 	 * We currently allow any type of object to use this optimization.
 	 * The object itself does NOT have to be sized to a multiple of the
 	 * segment size, but the memory mapping does.
+	 *
+	 * XXX don't handle devices currently, because VM_PAGE_TO_PHYS()
+	 *     won't work as expected.
 	 */
 	if (entry == NULL ||
 	    pmap_mmu_optimize == 0 ||			/* not enabled */
@@ -1687,6 +1831,8 @@ retry:
 	    entry->inheritance != VM_INHERIT_SHARE ||	/* not shared */
 	    entry->maptype != VM_MAPTYPE_NORMAL ||	/* weird map type */
 	    entry->object.vm_object == NULL ||		/* needs VM object */
+	    entry->object.vm_object->type == OBJT_DEVICE ||	/* ick */
+	    entry->object.vm_object->type == OBJT_MGTDEVICE ||	/* ick */
 	    (entry->offset & SEG_MASK) ||		/* must be aligned */
 	    (entry->start & SEG_MASK)) {
 		return(pmap_allocpte(pmap, ptepindex, pvpp));
@@ -2123,6 +2269,10 @@ pmap_remove_pv_pte(pv_entry_t pv, pv_entry_t pvp, struct pmap_inval_info *info)
 		 *
 		 * NOTE: pv's must be locked bottom-up to avoid deadlocking.
 		 *	 pv is a pte_pv so we can safely lock pt_pv.
+		 *
+		 * NOTE: FICTITIOUS pages may have multiple physical mappings
+		 *	 so PHYS_TO_VM_PAGE() will not necessarily work for
+		 *	 terminal ptes.
 		 */
 		vm_pindex_t pt_pindex;
 		pt_entry_t *ptep;
@@ -2163,8 +2313,13 @@ pmap_remove_pv_pte(pv_entry_t pv, pv_entry_t pvp, struct pmap_inval_info *info)
 				pte, pv->pv_pindex,
 				pv->pv_pindex < pmap_pt_pindex(0));
 		}
+		/* PHYS_TO_VM_PAGE() will not work for FICTITIOUS pages */
 		/*KKASSERT((pte & (PG_MANAGED|PG_V)) == (PG_MANAGED|PG_V));*/
-		p = PHYS_TO_VM_PAGE(pte & PG_FRAME);
+		if (pte & PG_DEVICE)
+			p = pv->pv_m;
+		else
+			p = PHYS_TO_VM_PAGE(pte & PG_FRAME);
+		/* p = pv->pv_m; */
 
 		if (pte & PG_M) {
 			if (pmap_track_modified(ptepindex))
@@ -3270,6 +3425,7 @@ pmap_remove_callback(pmap_t pmap, struct pmap_scan_info *info,
 		if (info->doinval)
 			pmap_inval_deinterlock(&info->inval, pmap);
 		atomic_add_long(&pmap->pm_stats.resident_count, -1);
+		KKASSERT((pte & PG_DEVICE) == 0);
 		if (vm_page_unwire_quick(PHYS_TO_VM_PAGE(pte & PG_FRAME)))
 			panic("pmap_remove: shared pgtable1 bad wirecount");
 		if (vm_page_unwire_quick(pt_pv->pv_m))
@@ -3290,7 +3446,7 @@ pmap_remove_all(vm_page_t m)
 	struct pmap_inval_info info;
 	pv_entry_t pv;
 
-	if (!pmap_initialized || (m->flags & PG_FICTITIOUS))
+	if (!pmap_initialized /* || (m->flags & PG_FICTITIOUS)*/)
 		return;
 
 	pmap_inval_init(&info);
@@ -3375,16 +3531,22 @@ again:
 	if (pte_pv) {
 		m = NULL;
 		if (pbits & PG_A) {
-			m = PHYS_TO_VM_PAGE(pbits & PG_FRAME);
-			KKASSERT(m == pte_pv->pv_m);
-			vm_page_flag_set(m, PG_REFERENCED);
+			if ((pbits & PG_DEVICE) == 0) {
+				m = PHYS_TO_VM_PAGE(pbits & PG_FRAME);
+				KKASSERT(m == pte_pv->pv_m);
+				vm_page_flag_set(m, PG_REFERENCED);
+			}
 			cbits &= ~PG_A;
 		}
 		if (pbits & PG_M) {
 			if (pmap_track_modified(pte_pv->pv_pindex)) {
-				if (m == NULL)
-					m = PHYS_TO_VM_PAGE(pbits & PG_FRAME);
-				vm_page_dirty(m);
+				if ((pbits & PG_DEVICE) == 0) {
+					if (m == NULL) {
+						m = PHYS_TO_VM_PAGE(pbits &
+								    PG_FRAME);
+					}
+					vm_page_dirty(m);
+				}
 				cbits &= ~PG_M;
 			}
 		}
@@ -3396,6 +3558,10 @@ again:
 		 * When asked to protect something in a shared page table
 		 * page we just unmap the page table page.  We have to
 		 * invalidate the tlb in this situation.
+		 *
+		 * XXX Warning, shared page tables will not be used for
+		 * OBJT_DEVICE or OBJT_MGTDEVICE (PG_FICTITIOUS) mappings
+		 * so PHYS_TO_VM_PAGE() should be safe here.
 		 */
 		pte = pte_load_clear(ptep);
 		pmap_inval_invltlb(&info->inval);
@@ -3489,7 +3655,7 @@ pmap_enter(pmap_t pmap, vm_offset_t va, vm_page_t m, vm_prot_t prot,
 		pte_pv = NULL;
 		pt_pv = NULL;
 		ptep = vtopte(va);
-	} else if (m->flags & (PG_FICTITIOUS | PG_UNMANAGED)) { /* XXX */
+	} else if (m->flags & (/*PG_FICTITIOUS |*/ PG_UNMANAGED)) { /* XXX */
 		pte_pv = NULL;
 		if (va >= VM_MAX_USER_ADDRESS) {
 			pt_pv = NULL;
@@ -3532,6 +3698,9 @@ pmap_enter(pmap_t pmap, vm_offset_t va, vm_page_t m, vm_prot_t prot,
 		newpte |= PG_MANAGED;
 	if (pmap == &kernel_pmap)
 		newpte |= pgeflag;
+	newpte |= pat_pte_index[m->pat_mode];
+	if (m->flags & PG_FICTITIOUS)
+		newpte |= PG_DEVICE;
 
 	/*
 	 * It is possible for multiple faults to occur in threaded
@@ -4342,41 +4511,44 @@ i386_protection_init(void)
  * routine is intended to be used for mapping device memory,
  * NOT real memory.
  *
- * NOTE: we can't use pgeflag unless we invalidate the pages one at
- * a time.
+ * NOTE: We can't use pgeflag unless we invalidate the pages one at
+ *	 a time.
+ *
+ * NOTE: The PAT attributes {WRITE_BACK, WRITE_THROUGH, UNCACHED, UNCACHEABLE}
+ *	 work whether the cpu supports PAT or not.  The remaining PAT
+ *	 attributes {WRITE_PROTECTED, WRITE_COMBINING} only work if the cpu
+ *	 supports PAT.
  */
 void *
 pmap_mapdev(vm_paddr_t pa, vm_size_t size)
 {
-	vm_offset_t va, tmpva, offset;
-	pt_entry_t *pte;
-
-	offset = pa & PAGE_MASK;
-	size = roundup(offset + size, PAGE_SIZE);
-
-	va = kmem_alloc_nofault(&kernel_map, size, PAGE_SIZE);
-	if (va == 0)
-		panic("pmap_mapdev: Couldn't alloc kernel virtual memory");
-
-	pa = pa & ~PAGE_MASK;
-	for (tmpva = va; size > 0;) {
-		pte = vtopte(tmpva);
-		*pte = pa | PG_RW | PG_V; /* | pgeflag; */
-		size -= PAGE_SIZE;
-		tmpva += PAGE_SIZE;
-		pa += PAGE_SIZE;
-	}
-	cpu_invltlb();
-	smp_invltlb();
-
-	return ((void *)(va + offset));
+	return(pmap_mapdev_attr(pa, size, PAT_WRITE_BACK));
 }
 
 void *
 pmap_mapdev_uncacheable(vm_paddr_t pa, vm_size_t size)
 {
+	return(pmap_mapdev_attr(pa, size, PAT_UNCACHEABLE));
+}
+
+void *
+pmap_mapbios(vm_paddr_t pa, vm_size_t size)
+{
+	return (pmap_mapdev_attr(pa, size, PAT_WRITE_BACK));
+}
+
+/*
+ * Map a set of physical memory pages into the kernel virtual
+ * address space. Return a pointer to where it is mapped. This
+ * routine is intended to be used for mapping device memory,
+ * NOT real memory.
+ */
+void *
+pmap_mapdev_attr(vm_paddr_t pa, vm_size_t size, int mode)
+{
 	vm_offset_t va, tmpva, offset;
 	pt_entry_t *pte;
+	vm_size_t tmpsize;
 
 	offset = pa & PAGE_MASK;
 	size = roundup(offset + size, PAGE_SIZE);
@@ -4386,15 +4558,16 @@ pmap_mapdev_uncacheable(vm_paddr_t pa, vm_size_t size)
 		panic("pmap_mapdev: Couldn't alloc kernel virtual memory");
 
 	pa = pa & ~PAGE_MASK;
-	for (tmpva = va; size > 0;) {
+	for (tmpva = va, tmpsize = size; tmpsize > 0;) {
 		pte = vtopte(tmpva);
-		*pte = pa | PG_RW | PG_V | PG_N; /* | pgeflag; */
-		size -= PAGE_SIZE;
+		*pte = pa | PG_RW | PG_V | /* pgeflag | */
+		       pat_pte_index[mode];
+		tmpsize -= PAGE_SIZE;
 		tmpva += PAGE_SIZE;
 		pa += PAGE_SIZE;
 	}
-	cpu_invltlb();
-	smp_invltlb();
+	pmap_invalidate_range(&kernel_pmap, va, va + size);
+	pmap_invalidate_cache_range(va, va + size);
 
 	return ((void *)(va + offset));
 }
@@ -4409,6 +4582,43 @@ pmap_unmapdev(vm_offset_t va, vm_size_t size)
 	size = roundup(offset + size, PAGE_SIZE);
 	pmap_qremove(va, size >> PAGE_SHIFT);
 	kmem_free(&kernel_map, base, size);
+}
+
+/*
+ * Change the PAT attribute on an existing kernel memory map.  Caller
+ * must ensure that the virtual memory in question is not accessed
+ * during the adjustment.
+ */
+void
+pmap_change_attr(vm_offset_t va, vm_size_t count, int mode)
+{
+	pt_entry_t *pte;
+	vm_offset_t base;
+	int changed = 0;
+
+	if (va == 0)
+		panic("pmap_change_attr: va is NULL");
+	base = trunc_page(va);
+
+	while (count) {
+		pte = vtopte(va);
+		*pte = (*pte & ~(pt_entry_t)(PG_PTE_PAT | PG_NC_PCD |
+					     PG_NC_PWT)) |
+		       pat_pte_index[mode];
+		--count;
+		va += PAGE_SIZE;
+	}
+
+	changed = 1;	/* XXX: not optimal */
+
+	/*
+	 * Flush CPU caches if required to make sure any data isn't cached that
+	 * shouldn't be, etc.
+	 */
+	if (changed) {
+		pmap_invalidate_range(&kernel_pmap, base, va);
+		pmap_invalidate_cache_range(base, va);
+	}
 }
 
 /*
@@ -4433,7 +4643,10 @@ pmap_mincore(pmap_t pmap, vm_offset_t addr)
 
 		pa = pte & PG_FRAME;
 
-		m = PHYS_TO_VM_PAGE(pa);
+		if (pte & PG_DEVICE)
+			m = NULL;
+		else
+			m = PHYS_TO_VM_PAGE(pa);
 
 		/*
 		 * Modified by us
@@ -4443,7 +4656,7 @@ pmap_mincore(pmap_t pmap, vm_offset_t addr)
 		/*
 		 * Modified by someone
 		 */
-		else if (m->dirty || pmap_is_modified(m))
+		else if (m && (m->dirty || pmap_is_modified(m)))
 			val |= MINCORE_MODIFIED_OTHER;
 		/*
 		 * Referenced by us
@@ -4454,7 +4667,8 @@ pmap_mincore(pmap_t pmap, vm_offset_t addr)
 		/*
 		 * Referenced by someone
 		 */
-		else if ((m->flags & PG_REFERENCED) || pmap_ts_referenced(m)) {
+		else if (m && ((m->flags & PG_REFERENCED) ||
+				pmap_ts_referenced(m))) {
 			val |= MINCORE_REFERENCED_OTHER;
 			vm_page_flag_set(m, PG_REFERENCED);
 		}
@@ -4563,7 +4777,8 @@ vm_offset_t
 pmap_addr_hint(vm_object_t obj, vm_offset_t addr, vm_size_t size)
 {
 
-	if ((obj == NULL) || (size < NBPDR) || (obj->type != OBJT_DEVICE)) {
+	if ((obj == NULL) || (size < NBPDR) ||
+	    ((obj->type != OBJT_DEVICE) && (obj->type != OBJT_MGTDEVICE))) {
 		return addr;
 	}
 
@@ -4577,7 +4792,10 @@ pmap_addr_hint(vm_object_t obj, vm_offset_t addr, vm_size_t size)
 vm_page_t
 pmap_kvtom(vm_offset_t va)
 {
-	return(PHYS_TO_VM_PAGE(*vtopte(va) & PG_FRAME));
+	pt_entry_t *ptep = vtopte(va);
+
+	KKASSERT((*ptep & PG_DEVICE) == 0);
+	return(PHYS_TO_VM_PAGE(*ptep & PG_FRAME));
 }
 
 /*

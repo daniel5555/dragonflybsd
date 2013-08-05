@@ -163,7 +163,7 @@ struct vm_page {
 	u_short	pc;			/* page color */
 	u_char	act_count;		/* page usage count */
 	u_char	busy;			/* page busy count */
-	u_char	unused01;
+	u_char	pat_mode;		/* hardware page attribute */
 	u_char	unused02;
 	u_int32_t flags;		/* see below */
 	u_int	wire_count;		/* wired down maps refs (P) */
@@ -431,6 +431,7 @@ void vm_page_queue_spin_unlock(vm_page_t);
 void vm_page_queues_spin_unlock(u_short);
 void vm_page_and_queue_spin_unlock(vm_page_t m);
 
+void vm_page_init(vm_page_t m);
 void vm_page_io_finish(vm_page_t m);
 void vm_page_io_start(vm_page_t m);
 void vm_page_need_commit(vm_page_t m);

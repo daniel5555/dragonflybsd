@@ -414,7 +414,8 @@ soclose(struct socket *so, int fflag)
 	funsetown(&so->so_sigio);
 	if (!use_soclose_fast ||
 	    (so->so_proto->pr_flags & PR_SYNC_PORT) ||
-	    (so->so_options & SO_LINGER)) {
+	    ((so->so_state & SS_ISCONNECTED) &&
+	     (so->so_options & SO_LINGER))) {
 		error = soclose_sync(so, fflag);
 	} else {
 		soclose_fast(so);
@@ -450,6 +451,73 @@ sodiscard(struct socket *so)
 	if (so->so_state & SS_NOFDREF)
 		panic("soclose: NOFDREF");
 	sosetstate(so, SS_NOFDREF);	/* take ref */
+}
+
+void
+soinherit(struct socket *so, struct socket *so_inh)
+{
+	TAILQ_HEAD(, socket) comp, incomp;
+	struct socket *sp;
+	int qlen, incqlen;
+
+	KASSERT(so->so_options & SO_ACCEPTCONN,
+	    ("so does not accept connection"));
+	KASSERT(so_inh->so_options & SO_ACCEPTCONN,
+	    ("so_inh does not accept connection"));
+
+	TAILQ_INIT(&comp);
+	TAILQ_INIT(&incomp);
+
+	lwkt_getpooltoken(so);
+	lwkt_getpooltoken(so_inh);
+
+	/*
+	 * Save completed queue and incompleted queue
+	 */
+	TAILQ_CONCAT(&comp, &so->so_comp, so_list);
+	qlen = so->so_qlen;
+	so->so_qlen = 0;
+
+	TAILQ_CONCAT(&incomp, &so->so_incomp, so_list);
+	incqlen = so->so_incqlen;
+	so->so_incqlen = 0;
+
+	/*
+	 * Append the saved completed queue and incompleted
+	 * queue to the socket inherits them.
+	 *
+	 * XXX
+	 * This may temporarily break the inheriting socket's
+	 * so_qlimit.
+	 */
+	TAILQ_FOREACH(sp, &comp, so_list) {
+		sp->so_head = so_inh;
+		crfree(sp->so_cred);
+		sp->so_cred = crhold(so_inh->so_cred);
+	}
+
+	TAILQ_FOREACH(sp, &incomp, so_list) {
+		sp->so_head = so_inh;
+		crfree(sp->so_cred);
+		sp->so_cred = crhold(so_inh->so_cred);
+	}
+
+	TAILQ_CONCAT(&so_inh->so_comp, &comp, so_list);
+	so_inh->so_qlen += qlen;
+
+	TAILQ_CONCAT(&so_inh->so_incomp, &incomp, so_list);
+	so_inh->so_incqlen += incqlen;
+
+	lwkt_relpooltoken(so_inh);
+	lwkt_relpooltoken(so);
+
+	if (qlen) {
+		/*
+		 * "New" connections have arrived
+		 */
+		sorwakeup(so_inh);
+		wakeup(&so_inh->so_timeo);
+	}
 }
 
 static int

@@ -1135,8 +1135,10 @@ in_losing(struct inpcb *inp)
 		rtinfo.rti_info[RTAX_NETMASK] = rt_mask(rt);
 		rtinfo.rti_flags = rt->rt_flags;
 		rt_missmsg(RTM_LOSING, &rtinfo, rt->rt_flags, 0);
-		if (rt->rt_flags & RTF_DYNAMIC)
-			rtrequest1_global(RTM_DELETE, &rtinfo, NULL, NULL);
+		if (rt->rt_flags & RTF_DYNAMIC) {
+			rtrequest(RTM_DELETE, rt_key(rt), rt->rt_gateway,
+			    rt_mask(rt), rt->rt_flags, NULL);
+		}
 		inp->inp_route.ro_rt = NULL;
 		rtfree(rt);
 		/*
@@ -1237,6 +1239,46 @@ in_pcblookup_local(struct inpcbinfo *pcbinfo, struct in_addr laddr,
 	return (match);
 }
 
+struct inpcb *
+in_pcblocalgroup_last(const struct inpcbinfo *pcbinfo,
+    const struct inpcb *inp)
+{
+	const struct inp_localgrphead *hdr;
+	const struct inp_localgroup *grp;
+	int i;
+
+	if (pcbinfo->localgrphashbase == NULL)
+		return NULL;
+
+	hdr = &pcbinfo->localgrphashbase[
+	    INP_PCBLOCALGRPHASH(inp->inp_lport, pcbinfo->localgrphashmask)];
+
+	LIST_FOREACH(grp, hdr, il_list) {
+		if (grp->il_vflag == inp->inp_vflag &&
+		    grp->il_lport == inp->inp_lport &&
+		    memcmp(&grp->il_dependladdr,
+			&inp->inp_inc.inc_ie.ie_dependladdr,
+			sizeof(grp->il_dependladdr)) == 0) {
+			break;
+		}
+	}
+	if (grp == NULL || grp->il_inpcnt == 1)
+		return NULL;
+
+	KASSERT(grp->il_inpcnt >= 2,
+	    ("invalid localgroup inp count %d", grp->il_inpcnt));
+	for (i = 0; i < grp->il_inpcnt; ++i) {
+		if (grp->il_inp[i] == inp) {
+			int last = grp->il_inpcnt - 1;
+
+			if (i == last)
+				last = grp->il_inpcnt - 2;
+			return grp->il_inp[last];
+		}
+	}
+	return NULL;
+}
+
 static struct inpcb *
 inp_localgroup_lookup(const struct inpcbinfo *pcbinfo,
     struct in_addr laddr, uint16_t lport, uint32_t pkt_hash)
@@ -1247,7 +1289,9 @@ inp_localgroup_lookup(const struct inpcbinfo *pcbinfo,
 
 	hdr = &pcbinfo->localgrphashbase[
 	    INP_PCBLOCALGRPHASH(lport, pcbinfo->localgrphashmask)];
+#ifdef INP_LOCALGROUP_HASHTHR
 	pkt_hash >>= ncpus2_shift;
+#endif
 
 	/*
 	 * Order of socket selection:
@@ -1266,10 +1310,19 @@ inp_localgroup_lookup(const struct inpcbinfo *pcbinfo,
 		if (grp->il_lport == lport) {
 			int idx;
 
+#ifdef INP_LOCALGROUP_HASHTHR
 			idx = pkt_hash / grp->il_factor;
 			KASSERT(idx < grp->il_inpcnt && idx >= 0,
 			    ("invalid hash %04x, cnt %d or fact %d",
 			     pkt_hash, grp->il_inpcnt, grp->il_factor));
+#else
+			/*
+			 * Modulo-N is used here, which greatly reduces
+			 * completion queue token contention, thus more
+			 * cpu time is saved.
+			 */
+			idx = pkt_hash % grp->il_inpcnt;
+#endif
 
 			if (grp->il_laddr.s_addr == laddr.s_addr)
 				return grp->il_inp[idx];

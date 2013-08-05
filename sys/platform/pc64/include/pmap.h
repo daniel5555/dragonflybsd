@@ -305,14 +305,6 @@ typedef struct pv_entry {
 
 #ifdef	_KERNEL
 
-#define NPPROVMTRR		8
-#define PPRO_VMTRRphysBase0	0x200
-#define PPRO_VMTRRphysMask0	0x201
-struct ppro_vmtrr {
-	u_int64_t base, mask;
-};
-extern struct ppro_vmtrr PPro_vmtrr[NPPROVMTRR];
-
 extern caddr_t	CADDR1;
 extern pt_entry_t *CMAP1;
 extern vm_paddr_t dump_avail[];
@@ -325,12 +317,19 @@ extern char *ptvmmap;		/* poor name! */
 void	pmap_release(struct pmap *pmap);
 void	pmap_interlock_wait (struct vmspace *);
 void	pmap_bootstrap (vm_paddr_t *);
+void	*pmap_mapbios(vm_paddr_t, vm_size_t);
 void	*pmap_mapdev (vm_paddr_t, vm_size_t);
+void	*pmap_mapdev_attr(vm_paddr_t, vm_size_t, int);
 void	*pmap_mapdev_uncacheable(vm_paddr_t, vm_size_t);
 void	pmap_unmapdev (vm_offset_t, vm_size_t);
 struct vm_page *pmap_use_pt (pmap_t, vm_offset_t);
 void	pmap_set_opt (void);
+void	pmap_init_pat(void);
 vm_paddr_t pmap_kextract(vm_offset_t);
+void	pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
+typedef struct vm_page *vm_page_t;
+void	pmap_invalidate_cache_pages(vm_page_t *pages, int count);
+void	pmap_invalidate_cache_range(vm_offset_t sva, vm_offset_t eva);
 
 #endif /* _KERNEL */
 

@@ -88,6 +88,20 @@ MODULE_DEPEND(xhci, usb, 1, 1, 1);
 static const char *
 xhci_pci_match(device_t self)
 {
+	uint32_t device_id = pci_get_devid(self);
+
+	switch (device_id) {
+	case 0x70231b6f:
+		return ("Etron EJ168 USB 3.0 Host Controller");
+	case 0x01941033:
+		return ("NEC uPD720200 USB 3.0 controller");
+	case 0x1e318086:
+		return ("Intel Panther Point USB 3.0 controller");
+	case 0x8c318086:
+		return ("Intel Lynx Point USB 3.0 controller");
+	default:
+		break;
+	}
 	if ((pci_get_class(self) == PCIC_SERIALBUS)
 	    && (pci_get_subclass(self) == PCIS_SERIALBUS_USB)
 	    && (pci_get_progif(self) == PCIP_SERIALBUS_USB_XHCI)) {
@@ -154,6 +168,7 @@ xhci_pci_attach(device_t self)
 
 	err = bus_setup_intr(self, sc->sc_irq_res, INTR_MPSAFE,
 	    (driver_intr_t *)xhci_interrupt, sc, &sc->sc_intr_hdl, NULL);
+	
 	if (err) {
 		device_printf(self, "Could not setup IRQ, err=%d\n", err);
 		sc->sc_intr_hdl = NULL;
@@ -222,6 +237,7 @@ static int
 xhci_pci_take_controller(device_t self)
 {
 	struct xhci_softc *sc = device_get_softc(self);
+	uint32_t device_id = pci_get_devid(self);
 	uint32_t cparams;
 	uint32_t eecp;
 	uint32_t eec;
@@ -245,12 +261,15 @@ xhci_pci_take_controller(device_t self)
 			continue;
 		device_printf(sc->sc_bus.bdev, "waiting for BIOS "
 		    "to give up control\n");
-		XWRITE1(sc, capa, eecp +
+
+		XWRITE1(sc, capa, eecp + 
 		    XHCI_XECP_OS_SEM, 1);
+			
 		to = 500;
 		while (1) {
 			bios_sem = XREAD1(sc, capa, eecp +
 			    XHCI_XECP_BIOS_SEM);
+			
 			if (bios_sem == 0)
 				break;
 
@@ -261,6 +280,14 @@ xhci_pci_take_controller(device_t self)
 			}
 			usb_pause_mtx(NULL, hz / 100);	/* wait 10ms */
 		}
+	}
+
+	/* On Intel chipsets reroute ports from EHCI to XHCI controller. */
+	if (device_id == 0x1e318086 /* Panther Point */ ||
+	    device_id == 0x8c318086 /* Lynx Point */) {
+		uint32_t temp = xhci_get_port_route();
+		pci_write_config(self, PCI_XHCI_INTEL_USB3_PSSEN, temp, 4);
+		pci_write_config(self, PCI_XHCI_INTEL_XUSB2PR, temp, 4);
 	}
 	return (0);
 }

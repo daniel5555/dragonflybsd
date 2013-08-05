@@ -435,6 +435,16 @@ create_pagetables(vm_paddr_t *firstaddr, int64_t ptov_offset)
 }
 
 /*
+ * Typically used to initialize a fictitious page by vm/device_pager.c
+ */
+void
+pmap_page_init(struct vm_page *m)
+{
+	vm_page_init(m);
+	TAILQ_INIT(&m->md.pv_list);
+}
+
+/*
  *	Bootstrap the system enough to run with virtual memory.
  *
  *	On the i386 this is called after mapping has already been enabled
@@ -3126,6 +3136,17 @@ i386_protection_init(void)
 			*kp |= VPTE_X;
 		++kp;
 	}
+}
+
+/*
+ * Change the PAT attribute on an existing kernel memory map.  Caller
+ * must ensure that the virtual memory in question is not accessed
+ * during the adjustment.
+ */
+void
+pmap_change_attr(vm_offset_t va, vm_size_t count, int mode)
+{
+	/* This is a vkernel, do nothing */
 }
 
 /*

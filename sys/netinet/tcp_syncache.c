@@ -296,9 +296,11 @@ syncache_free(struct syncache *sc)
 		 * If this is the only reference to a protocol-cloned
 		 * route, remove it immediately.
 		 */
-		if ((rt->rt_flags & RTF_WASCLONED) && rt->rt_refcnt == 1)
+		if ((rt->rt_flags & (RTF_WASCLONED | RTF_LLINFO)) ==
+		    RTF_WASCLONED && rt->rt_refcnt == 1) {
 			rtrequest(RTM_DELETE, rt_key(rt), rt->rt_gateway,
 				  rt_mask(rt), rt->rt_flags, NULL);
+		}
 		RTFREE(rt);
 	}
 	kfree(sc, M_SYNCACHE);
@@ -416,7 +418,7 @@ syncache_insert(struct syncache *sc, struct syncache_head *sch)
 }
 
 void
-syncache_destroy(struct tcpcb *tp)
+syncache_destroy(struct tcpcb *tp, struct tcpcb *tp_inh)
 {
 	struct tcp_syncache_percpu *syncache_percpu;
 	struct syncache_head *bucket;
@@ -430,7 +432,7 @@ syncache_destroy(struct tcpcb *tp)
 		bucket = &syncache_percpu->hashbase[i];
 		TAILQ_FOREACH(sc, &bucket->sch_bucket, sc_hash) {
 			if (sc->sc_tp == tp)
-				sc->sc_tp = NULL;
+				sc->sc_tp = tp_inh;
 		}
 	}
 }

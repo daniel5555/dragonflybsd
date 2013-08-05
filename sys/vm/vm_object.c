@@ -89,6 +89,8 @@
 #include <vm/vm_extern.h>
 #include <vm/vm_zone.h>
 
+#include <machine/specialreg.h>
+
 #define EASY_SCAN_FACTOR	8
 
 static void	vm_object_qcollapse(vm_object_t object,
@@ -418,6 +420,7 @@ _vm_object_allocate(objtype_t type, vm_pindex_t size, vm_object_t object)
 	object->type = type;
 	object->size = size;
 	object->ref_count = 1;
+	object->memattr = VM_MEMATTR_DEFAULT;
 	object->hold_count = 0;
 	object->flags = 0;
 	if ((object->type == OBJT_DEFAULT) || (object->type == OBJT_SWAP))

@@ -331,7 +331,6 @@ struct rt_addrinfo {
 #define	rti_mpls3	rti_info[RTAX_MPLS3]
 
 extern struct radix_node_head *rt_tables[MAXCPU][AF_MAX+1];
-extern struct lwkt_port *rt_ports[MAXCPU];
 
 struct ifmultiaddr;
 struct proc;
@@ -397,15 +396,19 @@ int	 rtrequest (int, struct sockaddr *,
 int	 rtrequest_global (int, struct sockaddr *,
 	    struct sockaddr *, struct sockaddr *, int);
 int	 rtrequest1 (int, struct rt_addrinfo *, struct rtentry **);
-int	 rtrequest1_global (int, struct rt_addrinfo *, rtrequest1_callback_func_t, void *);
+int	 rtrequest1_global (int, struct rt_addrinfo *,
+	    rtrequest1_callback_func_t, void *, boolean_t);
 
 #define RTS_EXACTMATCH		TRUE
 #define RTS_NOEXACTMATCH	FALSE
 
-int	 rtsearch_global(int, struct rt_addrinfo *,
-	    rtsearch_callback_func_t, void *, boolean_t);
+#define RTREQ_PRIO_HIGH		TRUE
+#define RTREQ_PRIO_NORM		FALSE
 
-int	 rtmask_add_global(struct sockaddr *);
+int	 rtsearch_global(int, struct rt_addrinfo *,
+	    rtsearch_callback_func_t, void *, boolean_t, boolean_t);
+
+int	 rtmask_add_global(struct sockaddr *, boolean_t);
 
 struct sockaddr *_rtmask_lookup(struct sockaddr *, boolean_t);
 
@@ -427,6 +430,9 @@ void	rt_print(struct rt_addrinfo *, struct rtentry *);
 void	rt_addrinfo_print(int cmd, struct rt_addrinfo *);
 void	sockaddr_print(struct sockaddr *);
 
+struct netmsg_base;
+int	rt_domsg_global(struct netmsg_base *);
+
 #ifndef _SYS_GLOBALDATA_H_
 #include <sys/globaldata.h>
 #endif
@@ -442,13 +448,6 @@ RTFREE(struct rtentry *rt)
 	} else {
 		rtfree_remote(rt);
 	}
-}
-
-static __inline
-struct lwkt_port *
-rtable_portfn(int cpu)
-{  
-        return (rt_ports[cpu]);
 }
 
 int	in_inithead(void **, int);
