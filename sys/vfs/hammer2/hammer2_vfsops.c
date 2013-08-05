@@ -150,7 +150,7 @@ SYSCTL_LONG(_vfs_hammer2, OID_AUTO, ioa_volu_write, CTLFLAG_RW,
 	   &hammer2_ioa_volu_write, 0, "");
 
 static int hammer2_vfs_init(struct vfsconf *conf);
-static int hammer2_vfs_uninit();
+static int hammer2_vfs_uninit(struct vfsconf *vfsp);
 static int hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 				struct ucred *cred);
 static int hammer2_remount(struct mount *, char *, struct vnode *,
@@ -244,7 +244,7 @@ hammer2_vfs_init(struct vfsconf *conf)
 
 static
 int
-hammer2_vfs_uninit()
+hammer2_vfs_uninit(struct vfsconf *vfsp __unused)
 {
 	objcache_destroy(cache_buffer_read);
 	objcache_destroy(cache_buffer_write);
