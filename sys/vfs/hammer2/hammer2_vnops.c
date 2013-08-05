@@ -190,7 +190,7 @@ zero_check(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
 		HAMMER2_LOOKUP_NODATA);
 	hammer2_chain_lookup_done(parent);
 	if (chain) {
-		hammer2_chain_delete(trans, chain);
+		hammer2_chain_delete(trans, chain, 0);
 		hammer2_chain_unlock(chain);
 	}
 	ipdata = &ip->chain->data->ipdata;
