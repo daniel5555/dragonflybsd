@@ -205,7 +205,8 @@ void
 hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 	hammer2_chain_t **parentp, hammer2_chain_t *chain, 
-	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error)
+	hammer2_key_t* lbase, int* ioflag, int* lblksize, int* error,
+	int* fails)
 {
 	if (not_zero_filled_block((int*)bp->b_data, lblksize)) {
 		int compressed_size;
@@ -216,12 +217,20 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 
 		compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 			
-		compressed_size = LZ4_compress_limitedOutput(bp->b_data,
-			&compressed_buffer[sizeof(int)], *lblksize, *lblksize/2 - sizeof(int));
+		if (*fails < 8) {
+			compressed_size = LZ4_compress_limitedOutput(bp->b_data,
+				&compressed_buffer[sizeof(int)], *lblksize,
+				*lblksize/2 - sizeof(int));
+		}
+		else { //TODO: turn off compression entirely later
+			compressed_size = 0;
+		}
 		if (compressed_size == 0) { //compression failed
 			compressed_size = *lblksize;
+			++*fails;
 		}
 		else {
+			*fails = 0;
 			if (compressed_size <= 1024 - sizeof(int)) {
 				compressed_block_size = 1024;
 			}
@@ -1203,6 +1212,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		int lblksize;
 		int loff;
 		int n;
+		int fails = 0;
 
 		/*
 		 * Don't allow the buffer build to blow out the buffer
@@ -1309,7 +1319,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 
 		if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
 			hammer2_compress_and_write(bp, trans, ip, ipdata, parentp,
-				chain, &lbase, &ioflag, &lblksize, &error);
+				chain, &lbase, &ioflag, &lblksize, &error, &fails);
 		}
 		else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
 			hammer2_zero_check_and_write(bp, trans, ip, ipdata, parentp,
