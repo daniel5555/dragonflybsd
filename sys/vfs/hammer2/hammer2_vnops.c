@@ -231,7 +231,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		if (compressed_size == 0) { //compression failed
 			kprintf("WRITE PATH: Compression failed.\n");
 			compressed_size = *lblksize;
-			(*fails)++;
+			++(*fails);
 		}
 		else {
 			*fails = 0;
@@ -1205,6 +1205,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	}
 	KKASSERT(ipdata->type != HAMMER2_OBJTYPE_HARDLINK);
 	
+	int fails = 0;
+	
 	/*
 	 * UIO write loop
 	 */
@@ -1216,7 +1218,6 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		int lblksize;
 		int loff;
 		int n;
-		int fails = 0;
 
 		/*
 		 * Don't allow the buffer build to blow out the buffer
