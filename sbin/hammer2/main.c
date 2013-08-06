@@ -388,9 +388,9 @@ main(int ac, char **av)
 		} else {
 			cmd_show(av[1], 1);
 		}
-	} else if (strcmp(av[0], "setcmp") == 0) {
+	} else if (strcmp(av[0], "setcomp") == 0) {
 		if (ac < 3 || ac > 4) {
-			fprintf(stderr, "setcmp: requires compression method and directory/file path\n");
+			fprintf(stderr, "setcomp: requires compression method and directory/file path\n");
 			usage(1);
 		} else {
 			if (ac == 3) {//no option specified, no recursion by default
@@ -435,7 +435,7 @@ main(int ac, char **av)
 					set_files = 1;
 				}
 				else {
-					printf("setcmp: Unrecognized option.\n");
+					printf("setcomp: Unrecognized option.\n");
 					exit(1);
 				}
 				int comp_method;
@@ -461,7 +461,7 @@ main(int ac, char **av)
 					exit(3);
 				}
 				if (inode.ip_data.type != HAMMER2_OBJTYPE_DIRECTORY) {
-					printf("setcmp: the specified object is not a directory, nothing changed.\n");
+					printf("setcomp: the specified object is not a directory, nothing changed.\n");
 					exit(1);
 				}
 				printf("Attention: recursive compression mode setting demanded, this may take a while...\n");
