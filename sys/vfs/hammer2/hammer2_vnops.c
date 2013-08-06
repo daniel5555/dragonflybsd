@@ -1331,8 +1331,6 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		hammer2_zero_check_and_write(bp, trans, ip,
 				    ipdata, parentp, lbase,
 				    ioflag, lblksize, errorp);
-		//bp->b_flags |= B_AGE;
-		//bdwrite(bp);
 	} else {
 		/*
 		 * We have to assign physical storage to the buffer
