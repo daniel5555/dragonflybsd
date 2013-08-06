@@ -390,6 +390,7 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	if (test_block_not_zeros(bp->b_data, lblksize)) {
 		chain = hammer2_assign_physical(trans, ip, parentp,
 						lbase, lblksize, errorp);
+		hammer2_write_bp(chain, bp, ioflag);
 		if (chain)
 			hammer2_chain_unlock(chain);
 	} else {
@@ -1330,8 +1331,8 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		hammer2_zero_check_and_write(bp, trans, ip,
 				    ipdata, parentp, lbase,
 				    ioflag, lblksize, errorp);
-		bp->b_flags |= B_AGE;
-		bdwrite(bp);
+		//bp->b_flags |= B_AGE;
+		//bdwrite(bp);
 	} else {
 		/*
 		 * We have to assign physical storage to the buffer
@@ -1340,11 +1341,6 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		 *
 		 * This can return NOOFFSET for inode-embedded data.
 		 * The strategy code will take care of it in that case.
-		 */
-		/* 
-		 * The hammer2_assing_physical() is out of
-		 * hammer2_just_write() in order to avoid a compiler
-		 * warning.
 		 */
 		chain = hammer2_assign_physical(trans, ip, parentp,
 						lbase, lblksize,
