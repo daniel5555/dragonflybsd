@@ -99,8 +99,8 @@ static void hammer2_zero_check_and_write(struct buf *bp,
 				hammer2_key_t lbase,
 				int ioflag, int lblksize, int* error);
 
-static struct objcache *cache_buffer_read;
-static struct objcache *cache_buffer_write;
+struct objcache *cache_buffer_read;
+struct objcache *cache_buffer_write;
 
 /* 
  * Callback used in read path in case that a block is compressed.
@@ -155,10 +155,16 @@ hammer2_decompress_callback(struct bio *bio)
 		buffer = bp->b_data + loff;
 		compressed_size = (int*)buffer;
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
+		KKASSERT((unsigned int)*compressed_size <= 65536);
 		int result = LZ4_decompress_safe(&buffer[sizeof(int)],
 			compressed_buffer, *compressed_size, obp->b_bufsize);
-		if (result < 0)
-			kprintf("READ PATH: Error during decompression.\n");
+		if (result < 0) {
+			kprintf("READ PATH: Error during decompression."
+				"bio %016jx/%d loff=%d\n",
+				(intmax_t)bio->bio_offset, bio->bio_buf->b_bufsize, loff);
+			/* make sure it isn't random garbage */
+			bzero(compressed_buffer, obp->b_bufsize);
+		}
 		
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
 		objcache_put(cache_buffer_read, compressed_buffer);
@@ -226,7 +232,6 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 {
 	hammer2_chain_t *chain;
 
-	kprintf("WRITE PATH: Entering compresing write function.\n");
 	if (test_block_not_zeros(bp->b_data, lblksize)) {
 		int compressed_size;
 		int compressed_block_size = lblksize;
@@ -234,6 +239,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		char *compressed_buffer;
 		int *c_size;
 
+		KKASSERT(lblksize / 2 - sizeof(int) <= 32768);
 		compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 			
 		if (*fails < 8) {
@@ -242,10 +248,8 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				lblksize/2 - sizeof(int));
 		} else { //TODO: turn off compression entirely later
 			compressed_size = 0;
-			kprintf("WRITE PATH: Compression turned off.\n");
 		}
 		if (compressed_size == 0) { //compression failed
-			kprintf("WRITE PATH: Compression failed.\n");
 			compressed_size = lblksize;
 			++(*fails);
 		} else {
@@ -369,7 +373,6 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 	} else {
 		zero_write(bp, trans, ip, ipdata, parentp, lbase);
 	}
-	kprintf("Value of fails is %d.\n", *fails);
 }
 
 /*
@@ -2668,7 +2671,8 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			psize = hammer2_devblksize(chain->bytes);
 			pmask = (hammer2_off_t)psize - 1;
 			pbase = bref->data_off & ~pmask;
-			loff = (int)((bref->data_off & ~HAMMER2_OFF_MASK_RADIX) - pbase);
+			loff = (int)((bref->data_off &
+				      ~HAMMER2_OFF_MASK_RADIX) - pbase);
 			nbio->bio_caller_info3.value = loff;
 			breadcb(chain->hmp->devvp, pbase, psize,
 				hammer2_decompress_callback, nbio);

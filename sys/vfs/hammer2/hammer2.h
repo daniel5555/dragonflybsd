@@ -572,6 +572,9 @@ extern long hammer2_ioa_indr_write;
 extern long hammer2_ioa_fmap_write;
 extern long hammer2_ioa_volu_write;
 
+extern struct objcache *cache_buffer_read;
+extern struct objcache *cache_buffer_write;
+
 /*
  * hammer2_subr.c
  */

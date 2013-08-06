@@ -53,9 +53,6 @@
 
 MALLOC_DEFINE(M_OBJCACHE, "objcache", "Object Cache");
 
-extern struct objcache *cache_buffer_read;
-extern struct objcache *cache_buffer_write;
-
 struct hammer2_sync_info {
 	hammer2_trans_t trans;
 	int error;
