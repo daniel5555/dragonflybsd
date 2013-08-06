@@ -670,7 +670,6 @@ hammer2_inode_data_t *hammer2_chain_modify_ip(hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_chain_t **chainp,
 				int flags);
 void hammer2_chain_resize(hammer2_trans_t *trans, hammer2_inode_t *ip,
-				struct buf *bp,
 				hammer2_chain_t *parent,
 				hammer2_chain_t **chainp,
 				int nradix, int flags);
