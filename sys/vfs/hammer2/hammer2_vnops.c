@@ -395,6 +395,8 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 			hammer2_chain_unlock(chain);
 	} else {
 		zero_write(bp, trans, ip, ipdata, parentp, lbase);
+		bp->b_flags |= B_AGE;
+		bdwrite(bp);
 	}
 }
 
