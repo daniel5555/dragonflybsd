@@ -335,12 +335,18 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 						+ HAMMER2_ENC_CHECK(temp_check);
 					bcopy(compressed_buffer, dbp->b_data + boff,
 						compressed_block_size); //need to copy the whole block
-				}
-				else {
+				} else {
 					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE)
 						+ HAMMER2_ENC_CHECK(temp_check);
 					bcopy(bp->b_data, dbp->b_data + boff, compressed_size);
-				}				
+				}
+
+				/*
+				 * Device buffer is now valid, chain is no
+				 * longer in the initial state.
+				 */
+				atomic_clear_int(&chain->flags,
+						 HAMMER2_CHAIN_INITIAL);
 
 				/* Now write the related bdp. */
 				if (ioflag & IO_SYNC) {
@@ -1366,7 +1372,12 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 	size_t boff;
 	size_t psize;
 
+	/*
+	 * Device buffer is now valid, chain is no
+	 * longer in the initial state.
+	 */
 	KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
+	atomic_clear_int(&chain->flags, HAMMER2_CHAIN_INITIAL);
 
 	switch(chain->bref.type) {
 	case HAMMER2_BREF_TYPE_INODE:
