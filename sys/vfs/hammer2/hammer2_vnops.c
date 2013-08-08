@@ -1372,12 +1372,7 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 	size_t boff;
 	size_t psize;
 
-	/*
-	 * Device buffer is now valid, chain is no
-	 * longer in the initial state.
-	 */
 	KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
-	//atomic_clear_int(&chain->flags, HAMMER2_CHAIN_INITIAL);
 
 	switch(chain->bref.type) {
 	case HAMMER2_BREF_TYPE_INODE:
@@ -1397,6 +1392,10 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 		dbp = getblk(chain->hmp->devvp, pbase, psize, 0, 0);
 		bcopy(bp->b_data, dbp->b_data + boff, chain->bytes);
 		
+		/*
+		 * Device buffer is now valid, chain is no
+		 * longer in the initial state.
+	     */
 		atomic_clear_int(&chain->flags, HAMMER2_CHAIN_INITIAL);
 
 		if (ioflag & IO_SYNC) {
