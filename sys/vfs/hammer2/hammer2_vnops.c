@@ -248,6 +248,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				lblksize/2 - sizeof(int));
 		} else { //TODO: turn off compression entirely later
 			compressed_size = 0;
+			kprintf("WRITE PATH: Compression turned off."\n);
 		}
 		if (compressed_size == 0) { //compression failed
 			compressed_size = lblksize;
