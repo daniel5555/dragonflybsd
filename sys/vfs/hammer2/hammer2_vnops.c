@@ -1028,6 +1028,8 @@ hammer2_vop_write(struct vop_write_args *ap)
 	int error;
 	int seqcount;
 	int bigwrite;
+	
+	kprintf("Executing hammer2_vop_write.\n");
 
 	/*
 	 * Read operations supported on this vnode?
