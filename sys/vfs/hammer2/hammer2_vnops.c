@@ -243,18 +243,22 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 			
 		if (*fails < 8) {
+			kprintf("WRITE PATH: fails < 8.\n");
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data,
 				&compressed_buffer[sizeof(int)], lblksize,
 				lblksize/2 - sizeof(int));
 		} else { //TODO: turn off compression entirely later
+			kprintf("WRITE PATH: fails >= 8.\n");
 			compressed_size = 0;
 			kprintf("WRITE PATH: Compression turned off.\n");
 		}
 		if (compressed_size == 0) { //compression failed
 			compressed_size = lblksize;
 			++(*fails);
+			kprintf("WRITE PATH: fails increased. The current value is %d.\n", *fails);
 		} else {
 			*fails = 0;
+			kprintf("WRITE PATH: fails reinitialized, fails = %d.\n", *fails);
 			if (compressed_size <= 1024 - sizeof(int)) {
 				compressed_block_size = 1024;
 			}
@@ -1181,6 +1185,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	KKASSERT(ipdata->type != HAMMER2_OBJTYPE_HARDLINK);
 	
 	int fails = 0;
+	kprintf("WRITE PATH: fails created and equals to 0.\n");
 	
 	/*
 	 * UIO write loop
