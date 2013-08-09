@@ -637,6 +637,7 @@ retry:
 	
 	/* Inherit parent's inode compression mode. */
 	nipdata->comp_algo = dipdata->comp_algo;
+	nipdata->reserved85 = 0;
 	
 	nipdata->version = HAMMER2_INODE_VERSION_ONE;
 	hammer2_update_time(&nipdata->ctime);

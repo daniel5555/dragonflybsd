@@ -238,27 +238,29 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 			
 		char *compressed_buffer;
 		int *c_size;
+		
+		*fails = 0; //Delete fail variable later...
 
 		KKASSERT(lblksize / 2 - sizeof(int) <= 32768);
 		compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 			
-		if (*fails < 8) {
-			kprintf("WRITE PATH: fails < 8.\n");
+		if (ipdata->reserved85 < 8) {
+			kprintf("WRITE PATH: reserved85 < 8.\n");
 			compressed_size = LZ4_compress_limitedOutput(bp->b_data,
 				&compressed_buffer[sizeof(int)], lblksize,
 				lblksize/2 - sizeof(int));
 		} else { //TODO: turn off compression entirely later
-			kprintf("WRITE PATH: fails >= 8.\n");
+			kprintf("WRITE PATH: reserved85 >= 8.\n");
 			compressed_size = 0;
 			kprintf("WRITE PATH: Compression turned off.\n");
 		}
 		if (compressed_size == 0) { //compression failed
 			compressed_size = lblksize;
-			++(*fails);
-			kprintf("WRITE PATH: fails increased. The current value is %d.\n", *fails);
+			++(ipdata->reserved85);
+			kprintf("WRITE PATH: fails increased. The current value is %d.\n", ipdata->reserved85);
 		} else {
-			*fails = 0;
-			kprintf("WRITE PATH: fails reinitialized, fails = %d.\n", *fails);
+			ipdata->reserved85 = 0;
+			kprintf("WRITE PATH: fails reinitialized, reserved85 = %d.\n", ipdata->reserved85);
 			if (compressed_size <= 1024 - sizeof(int)) {
 				compressed_block_size = 1024;
 			}
