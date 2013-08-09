@@ -1391,7 +1391,7 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag,
 		boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
 		peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
 		
-		if (psize == lblksize) { //use the size that fits compressed info
+		if (psize == lblksize) {
 			dbp = getblk(chain->hmp->devvp, pbase,
 				psize, 0, 0);
 		} else {
