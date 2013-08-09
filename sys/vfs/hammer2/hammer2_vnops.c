@@ -1029,7 +1029,7 @@ hammer2_vop_write(struct vop_write_args *ap)
 	int seqcount;
 	int bigwrite;
 	
-	kprintf("Executing hammer2_vop_write.\n");
+	kprintf("WRITE PATH: Executing hammer2_vop_write.\n");
 
 	/*
 	 * Read operations supported on this vnode?
@@ -1057,6 +1057,7 @@ hammer2_vop_write(struct vop_write_args *ap)
 	    uio->uio_offset + uio->uio_resid >
 	     td->td_proc->p_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		lwpsignal(td->td_proc, td->td_lwp, SIGXFSZ);
+		kprintf("WRITE PATH: Executed lwpsignal.\n");
 		return (EFBIG);
 	}
 
@@ -2763,9 +2764,6 @@ static
 int
 hammer2_strategy_write(struct vop_strategy_args *ap)
 {
-	
-	kprintf("WRITE PATH: Executing strategy write.\n");
-	
 	/*
 	 * XXX temporary because all write handling is currently
 	 * in the vop_write path (which is incorrect and won't catch
