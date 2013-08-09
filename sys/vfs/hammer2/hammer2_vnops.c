@@ -2336,6 +2336,8 @@ hammer2_vop_nsymlink(struct vop_nsymlink_args *ap)
 	const uint8_t *name;
 	size_t name_len;
 	int error;
+	
+	kprintf("Executing hammer2_vop_nsymlink.\n");
 
 	dip = VTOI(ap->a_dvp);
 	if (dip->pmp->ronly)
