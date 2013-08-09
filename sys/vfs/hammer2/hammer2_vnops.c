@@ -1203,7 +1203,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		int loff;
 		int n;
 		
-		kprintf("WRITE PATH: uio_resid = %D.\n", uio->uio_resid);
+		kprintf("WRITE PATH: uio_resid = %d.\n", uio->uio_resid);
 
 		/*
 		 * Don't allow the buffer build to blow out the buffer
