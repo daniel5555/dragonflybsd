@@ -70,7 +70,7 @@ static void hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_key_t lbase, int ioflag, int lblksize,
 				int *errorp, int *fails);
 static void hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp,
-				int ioflag);
+				int ioflag, int lblksize);
 static hammer2_chain_t *hammer2_assign_physical(hammer2_trans_t *trans,
 				hammer2_inode_t *ip, hammer2_chain_t **parentp,
 				hammer2_key_t lbase, int pblksize,
@@ -396,7 +396,7 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 	if (test_block_not_zeros(bp->b_data, lblksize)) {
 		chain = hammer2_assign_physical(trans, ip, parentp,
 						lbase, lblksize, errorp);
-		hammer2_write_bp(chain, bp, ioflag);
+		hammer2_write_bp(chain, bp, ioflag, lblksize);
 		if (chain)
 			hammer2_chain_unlock(chain);
 	} else {
@@ -1351,7 +1351,7 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		chain = hammer2_assign_physical(trans, ip, parentp,
 						lbase, lblksize,
 						errorp);
-		hammer2_write_bp(chain, bp, ioflag);
+		hammer2_write_bp(chain, bp, ioflag, lblksize);
 		if (chain)
 			hammer2_chain_unlock(chain);
 	}
@@ -1363,7 +1363,8 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
  */
 static
 void
-hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
+hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag,
+				int lblksize)
 {
 	hammer2_off_t pbase;
 	hammer2_off_t pmask;
@@ -1371,6 +1372,7 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 	struct buf *dbp;
 	size_t boff;
 	size_t psize;
+	int error;
 
 	KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
 
@@ -1388,8 +1390,18 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag)
 		pbase = chain->bref.data_off & ~pmask;
 		boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
 		peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
+		
+		if (psize == lblksize) { //use the size that fits compressed info
+			dbp = getblk(chain->hmp->devvp, pbase,
+				psize, 0, 0);
+		} else {
+			error = bread(chain->hmp->devvp, pbase, psize, &dbp);
+			if (error) {
+				kprintf("WRITE PATH: An error ocurred while bread().\n");
+				break;
+			}
+		}
 
-		dbp = getblk(chain->hmp->devvp, pbase, psize, 0, 0);
 		bcopy(bp->b_data, dbp->b_data + boff, chain->bytes);
 		
 		/*
