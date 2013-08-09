@@ -68,7 +68,7 @@ static void hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase, int ioflag, int lblksize,
-				int *errorp, int *fails);
+				int *errorp/*, int *fails*/);
 static void hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp,
 				int ioflag, int lblksize);
 static hammer2_chain_t *hammer2_assign_physical(hammer2_trans_t *trans,
@@ -91,7 +91,7 @@ static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase, int ioflag,
-				int lblksize, int *errorp, int *fails);
+				int lblksize, int *errorp/*, int *fails*/);
 static void hammer2_zero_check_and_write(struct buf *bp,
 				hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_inode_data_t *ipdata,
@@ -228,7 +228,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 	hammer2_chain_t **parentp,
 	hammer2_key_t lbase, int ioflag, int lblksize,
-	int *errorp, int *fails)
+	int *errorp/*, int *fails*/)
 {
 	hammer2_chain_t *chain;
 
@@ -239,7 +239,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		char *compressed_buffer;
 		int *c_size;
 		
-		*fails = 0; //Delete fail variable later...
+		//*fails = 0; //Delete fail variable later...
 
 		KKASSERT(lblksize / 2 - sizeof(int) <= 32768);
 		compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
@@ -256,11 +256,11 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		}
 		if (compressed_size == 0) { //compression failed
 			compressed_size = lblksize;
-			++(ipdata->reserved85);
-			kprintf("WRITE PATH: fails increased. The current value is %d.\n", ipdata->reserved85);
+			if (ipdata->reserved85 < 8) ++(ipdata->reserved85);
+			kprintf("WRITE PATH: number of fails increased. The current value is %d.\n", ipdata->reserved85);
 		} else {
 			ipdata->reserved85 = 0;
-			kprintf("WRITE PATH: fails reinitialized, reserved85 = %d.\n", ipdata->reserved85);
+			kprintf("WRITE PATH: number of fails reinitialized, reserved85 = %d.\n", ipdata->reserved85);
 			if (compressed_size <= 1024 - sizeof(int)) {
 				compressed_block_size = 1024;
 			}
@@ -1189,8 +1189,8 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	}
 	KKASSERT(ipdata->type != HAMMER2_OBJTYPE_HARDLINK);
 	
-	int fails = 0;
-	kprintf("WRITE PATH: fails created and equals to 0.\n");
+	//int fails = 0;
+	//kprintf("WRITE PATH: fails created and equals to 0.\n");
 	
 	/*
 	 * UIO write loop
@@ -1307,7 +1307,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		}
 		hammer2_write_file_core(bp, trans, ip, ipdata, parentp,
 					lbase, ioflag,
-					lblksize, &error, &fails);
+					lblksize, &error/*, &fails*/);
 		ipdata = &ip->chain->data->ipdata;	/* reload */
 		if (error)
 			break;
@@ -1335,7 +1335,7 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 			hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 			hammer2_chain_t **parentp,
 			hammer2_key_t lbase, int ioflag, int lblksize,
-			int *errorp, int *fails)
+			int *errorp/*, int *fails*/)
 {
 	hammer2_chain_t *chain;
 
@@ -1343,7 +1343,7 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		hammer2_compress_and_write(bp, trans, ip,
 					   ipdata, parentp,
 					   lbase, ioflag,
-					   lblksize, errorp, fails);
+					   lblksize, errorp/*, fails*/);
 		bp->b_flags |= B_AGE;
 		bdwrite(bp);
 	} else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
@@ -1582,11 +1582,11 @@ hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	int error;
 	int oblksize;
 	int nblksize;
-	int fails;
+	//int fails;
 
 	bp = NULL;
 	error = 0;
-	fails = 0;
+	//fails = 0;
 	ipdata = hammer2_chain_modify_ip(trans, ip, parentp, 0);
 
 	/*
@@ -1632,7 +1632,7 @@ hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 
 		hammer2_write_file_core(bp, trans, ip, ipdata, &parent,
 					lbase, 0,
-					nblksize, &error, &fails);
+					nblksize, &error/*, &fails*/);
 #if 0
 		chain = hammer2_chain_lookup(&parent, lbase, lbase,
 					     HAMMER2_LOOKUP_NODATA);
