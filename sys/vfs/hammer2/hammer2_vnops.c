@@ -2764,6 +2764,9 @@ static
 int
 hammer2_strategy_write(struct vop_strategy_args *ap)
 {
+	
+	kprintf("WRITE PATH: executing hammer2_strategy_write.\n");
+	
 	/*
 	 * XXX temporary because all write handling is currently
 	 * in the vop_write path (which is incorrect and won't catch
