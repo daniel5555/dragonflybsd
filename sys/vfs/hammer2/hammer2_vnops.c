@@ -246,13 +246,13 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		
 		kprintf("WRITE PATH: rem_size = %d.\n", *rem_size);
 		
-		*rem_size = 0;
+		//*rem_size = 0;
 			
 		if (ipdata->reserved85 < 8) {
 			kprintf("WRITE PATH: reserved85 < 8.\n");
 			if (*rem_size) {
 				compressed_size = LZ4_compress_limitedOutput(bp->b_data,
-					&compressed_buffer[sizeof(int)], rem_size,
+					&compressed_buffer[sizeof(int)], *rem_size,
 					lblksize/2 - sizeof(int));
 			}
 			else {
