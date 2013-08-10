@@ -236,7 +236,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		int compressed_size;
 		int compressed_block_size = lblksize;
 			
-		char *compressed_buffer;
+		char *compressed_buffer = NULL; //to avoid a compiler warning
 		int *c_size;
 		char objcache_present = 0;
 
