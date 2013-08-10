@@ -238,11 +238,14 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 			
 		char *compressed_buffer;
 		int *c_size;
+		char objcache_present = 0;
 
 		KKASSERT(lblksize / 2 - sizeof(int) <= 32768);
-		compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
+		//compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 		
 		if (ipdata->reserved85 < 8) {
+			compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
+			objcache_present = 1;
 			if (*rem_size) {
 				compressed_size = LZ4_compress_limitedOutput(bp->b_data,
 					&compressed_buffer[sizeof(int)], *rem_size,
@@ -253,10 +256,10 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 					&compressed_buffer[sizeof(int)], lblksize,
 					lblksize/2 - sizeof(int));
 			}
-		} else { //TODO: turn off compression entirely later
+		} else {
 			compressed_size = 0;
 		}
-		if (compressed_size == 0) { //compression failed
+		if (compressed_size == 0) { //compression failed or turned off
 			compressed_size = lblksize;
 			if (ipdata->reserved85 < 8) ++(ipdata->reserved85);
 		} else {
@@ -294,7 +297,8 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		if (*errorp) {
 			kprintf("WRITE PATH: An error occurred while "
 				"assigning physical space.\n");
-			objcache_put(cache_buffer_write, compressed_buffer);
+			if (objcache_present)
+				objcache_put(cache_buffer_write, compressed_buffer);
 			KKASSERT(chain == NULL);
 		} else {
 			/* Get device offset */
@@ -379,8 +383,9 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 			/* NOT REACHED */
 				break;
 			}
-				
-			objcache_put(cache_buffer_write, compressed_buffer);
+			
+			if (objcache_present)
+				objcache_put(cache_buffer_write, compressed_buffer);
 			hammer2_chain_unlock(chain);
 		}
 	} else {
