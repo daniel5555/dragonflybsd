@@ -68,7 +68,7 @@ static void hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase, int ioflag, int lblksize,
-				int *errorp/*, int *fails*/);
+				int *errorp, int *rem_size/*, int *fails*/);
 static void hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp,
 				int ioflag, int lblksize);
 static hammer2_chain_t *hammer2_assign_physical(hammer2_trans_t *trans,
@@ -91,7 +91,7 @@ static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase, int ioflag,
-				int lblksize, int *errorp/*, int *fails*/);
+				int lblksize, int *errorp, int *rem_size/*, int *fails*/);
 static void hammer2_zero_check_and_write(struct buf *bp,
 				hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_inode_data_t *ipdata,
@@ -228,7 +228,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 	hammer2_chain_t **parentp,
 	hammer2_key_t lbase, int ioflag, int lblksize,
-	int *errorp/*, int *fails*/)
+	int *errorp, int *rem_size/*, int *fails*/)
 {
 	hammer2_chain_t *chain;
 
@@ -243,12 +243,21 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 
 		KKASSERT(lblksize / 2 - sizeof(int) <= 32768);
 		compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
+		
+		krpintf("WRITE PATH: rem_size = %d.\n", *rem_size);
 			
 		if (ipdata->reserved85 < 8) {
 			kprintf("WRITE PATH: reserved85 < 8.\n");
-			compressed_size = LZ4_compress_limitedOutput(bp->b_data,
-				&compressed_buffer[sizeof(int)], lblksize,
-				lblksize/2 - sizeof(int));
+			if (*rem_size) {
+				compressed_size = LZ4_compress_limitedOutput(bp->b_data,
+					&compressed_buffer[sizeof(int)], rem_size,
+					lblksize/2 - sizeof(int));
+			}
+			else {
+				compressed_size = LZ4_compress_limitedOutput(bp->b_data,
+					&compressed_buffer[sizeof(int)], lblksize,
+					lblksize/2 - sizeof(int));
+			}
 		} else { //TODO: turn off compression entirely later
 			kprintf("WRITE PATH: reserved85 >= 8.\n");
 			compressed_size = 0;
@@ -1202,6 +1211,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		int lblksize;
 		int loff;
 		int n;
+		int rem_size;
 		
 		kprintf("WRITE PATH: uio_resid = %d.\n", uio->uio_resid);
 
@@ -1232,6 +1242,13 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		lblksize = hammer2_calc_logical(ip, uio->uio_offset,
 						&lbase, &leof);
 		loff = (int)(uio->uio_offset - lbase);
+		
+		if (uio->uio_resid < lblksize) {
+			rem_size = (int)uio->uio_resid;
+		}
+		else {
+			rem_size = 0;
+		}
 		
 		KKASSERT(lblksize <= 65536);
 
@@ -1309,7 +1326,7 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 		}
 		hammer2_write_file_core(bp, trans, ip, ipdata, parentp,
 					lbase, ioflag,
-					lblksize, &error/*, &fails*/);
+					lblksize, &error, &rem_size/*, &fails*/);
 		ipdata = &ip->chain->data->ipdata;	/* reload */
 		if (error)
 			break;
@@ -1337,7 +1354,7 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 			hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 			hammer2_chain_t **parentp,
 			hammer2_key_t lbase, int ioflag, int lblksize,
-			int *errorp/*, int *fails*/)
+			int *errorp, int *rem_size/*, int *fails*/)
 {
 	hammer2_chain_t *chain;
 
@@ -1345,7 +1362,7 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		hammer2_compress_and_write(bp, trans, ip,
 					   ipdata, parentp,
 					   lbase, ioflag,
-					   lblksize, errorp/*, fails*/);
+					   lblksize, errorp, rem_size/*, fails*/);
 		bp->b_flags |= B_AGE;
 		bdwrite(bp);
 	} else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
