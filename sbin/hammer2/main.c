@@ -64,7 +64,6 @@ set_comp_mode_recursive(char *directory, int comp_method, int set_files)
 		 (strcmp(dent->d_name, "..") != 0)) {
 			strncpy(name + lenght, dent->d_name, HAMMER2_INODE_MAXNAME - lenght);
 			int fd = hammer2_ioctl_handle(name);
-			//printf("got inode with fd = %d\n", fd);
 			hammer2_ioc_inode_t inode;
 			int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
 			if (res < 0) {
@@ -409,7 +408,6 @@ main(int ac, char **av)
 					exit(1);
 				}
 				int fd = hammer2_ioctl_handle(av[2]);
-				printf("got inode with fd = %d\n", fd);
 				hammer2_ioc_inode_t inode;
 				int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
 				if (res < 0) {
@@ -453,7 +451,6 @@ main(int ac, char **av)
 					exit(1);
 				}
 				int fd = hammer2_ioctl_handle(av[3]);
-				printf("got inode with fd = %d\n", fd);
 				hammer2_ioc_inode_t inode;
 				int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
 				if (res < 0) {
@@ -486,7 +483,6 @@ main(int ac, char **av)
 			printf("Printing the inode's contents of directory/file %s\n", av[1]);
 			int fd = hammer2_ioctl_handle(av[1]);
 			if (fd != -1) {
-				printf("got inode with fd = %d\n", fd);
 				hammer2_ioc_inode_t inode;
 				int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
 				hammer2_inode_data_t inode_data;
