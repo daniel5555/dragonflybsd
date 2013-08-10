@@ -1648,10 +1648,12 @@ hammer2_truncate_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 	if (loff && bp) {
 		allocbuf(bp, nblksize);
 		bzero(bp->b_data + loff, nblksize - loff);
+		
+		int empty = 0; //to use intead of rem_size
 
 		hammer2_write_file_core(bp, trans, ip, ipdata, &parent,
 					lbase, 0,
-					nblksize, &error/*, &fails*/);
+					nblksize, &error, &empty/*, &fails*/);
 #if 0
 		chain = hammer2_chain_lookup(&parent, lbase, lbase,
 					     HAMMER2_LOOKUP_NODATA);
