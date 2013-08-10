@@ -244,7 +244,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		KKASSERT(lblksize / 2 - sizeof(int) <= 32768);
 		compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 		
-		krpintf("WRITE PATH: rem_size = %d.\n", *rem_size);
+		kprintf("WRITE PATH: rem_size = %d.\n", *rem_size);
 			
 		if (ipdata->reserved85 < 8) {
 			kprintf("WRITE PATH: reserved85 < 8.\n");
