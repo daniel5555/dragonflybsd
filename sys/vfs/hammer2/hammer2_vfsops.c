@@ -614,7 +614,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	
 	bioq_init(bioq);
 	
-	destroy = 0;
+	counter = 0;
 	
 	/*
 	 * Launch test threads.
@@ -632,17 +632,14 @@ static void
 hammer2_write_thread(void *arg)
 {
 	hammer2_mount_t* hmp;
-	struct bio *bio;
 	
 	hmp = arg;
 	
-	bioq_insert_tail(bioq, bio);
-	
 	kprintf("Executing write thread.\n");
-	tsleep(&destroy, 0, "write_sleep", 0);
-	
-	bioq_remove(bioq, bio);
-	
+	while(destroy == 0) {
+		tsleep(&counter, 0, "write_sleep", 0);
+		++counter;
+	}	
 	kprintf("Write thread: Value of destroy is %d.\n", destroy);
 	kprintf("Write thread exiting.\n");
 
@@ -654,16 +651,11 @@ static void
 hammer2_read_thread(void *arg)
 {
 	hammer2_mount_t* hmp;
-	struct bio *bio;
 	
 	hmp = arg;
-	
-	bioq_insert_tail(bioq, bio);
 
 	kprintf("Executing read thread.\n");	
 	tsleep(&destroy, 0, "read_sleep", 0);
-	
-	bioq_remove(bioq, bio);
 		
 	kprintf("Read thread: Value of destroy is %d.\n", destroy);	
 	kprintf("Read thread exiting.\n");
@@ -848,6 +840,7 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	
 	destroy = 1;
 	
+	wakeup(&counter);	
 	wakeup(&destroy);
 
 	return (error);
