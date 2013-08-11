@@ -293,14 +293,6 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 		chain = hammer2_assign_physical(trans, ip, parentp,
 						lbase, compressed_block_size,
 						errorp);
-		if (ipdata->reserved85 >= 8) {
-			int temp_check = HAMMER2_DEC_CHECK(chain->bref.methods);
-			chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE)
-						+ HAMMER2_ENC_CHECK(temp_check);
-			hammer2_write_bp(chain, bp, ioflag, lblksize);
-			ipdata = &ip->chain->data->ipdata;	/* RELOAD */
-		}
-		else { //ATTENTION: just a quick test 
 		ipdata = &ip->chain->data->ipdata;	/* RELOAD */
 			
 		if (*errorp) {
@@ -396,7 +388,6 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 			if (objcache_present)
 				objcache_put(cache_buffer_write, compressed_buffer);
 			hammer2_chain_unlock(chain);
-		}
 		}
 	} else {
 		zero_write(bp, trans, ip, ipdata, parentp, lbase);
