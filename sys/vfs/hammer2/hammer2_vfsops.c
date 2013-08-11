@@ -171,6 +171,9 @@ static int hammer2_install_volume_header(hammer2_mount_t *hmp);
 static int hammer2_sync_scan1(struct mount *mp, struct vnode *vp, void *data);
 static int hammer2_sync_scan2(struct mount *mp, struct vnode *vp, void *data);
 
+static void hammer2_write_thread(void *arg);
+static void hammer2_read_thread(void *arg);
+
 static int hammer2_rcvdmsg(kdmsg_msg_t *msg);
 static void hammer2_autodmsg(kdmsg_msg_t *msg);
 
@@ -296,6 +299,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	dev = NULL;
 	label = NULL;
 	devvp = NULL;
+	
 
 	kprintf("hammer2_mount\n");
 
@@ -605,8 +609,48 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	 * Initial statfs to prime mnt_stat.
 	 */
 	hammer2_vfs_statfs(mp, &mp->mnt_stat, cred);
+	
+	/*
+	 * Launch test threads.
+	 */
+	lwkt_create(hammer2_write_thread, hmp,
+		    NULL, NULL, 0, -1, "hammer2-write");
+	lwkt_create(hammer2_read_thread, hmp,
+		    NULL, NULL, 0, -1, "hammer2-read");
 
 	return 0;
+}
+
+/* Just an empty thread for now. */
+static void
+hammer2_write_thread(void *arg)
+{
+	hammer_mount_t hmp;
+
+	hmp = arg;
+	
+	kprintf("Executing write thread.");
+
+	lwkt_gettoken(&hmp->fs_token);
+
+	lwkt_reltoken(&hmp->fs_token);
+	lwkt_exit();
+}
+
+/* Another empty thread. */
+static void
+hammer2_read_thread(void *arg)
+{
+	hammer_mount_t hmp;
+
+	hmp = arg;
+	
+	kprintf("Executing read thread.");
+
+	lwkt_gettoken(&hmp->fs_token);
+
+	lwkt_reltoken(&hmp->fs_token);
+	lwkt_exit();
 }
 
 static
