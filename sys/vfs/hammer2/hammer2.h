@@ -575,6 +575,8 @@ extern long hammer2_ioa_volu_write;
 extern struct objcache *cache_buffer_read;
 extern struct objcache *cache_buffer_write;
 
+extern struct bio_queue_head *bioq;
+
 /*
  * hammer2_subr.c
  */
