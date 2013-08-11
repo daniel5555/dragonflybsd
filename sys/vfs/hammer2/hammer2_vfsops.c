@@ -629,7 +629,7 @@ hammer2_write_thread(void *arg)
 
 	hmp = arg;
 	
-	kprintf("Executing write thread.");
+	kprintf("Executing write thread.\n");
 
 	lwkt_exit();
 }
@@ -642,7 +642,7 @@ hammer2_read_thread(void *arg)
 
 	hmp = arg;
 	
-	kprintf("Executing read thread.");
+	kprintf("Executing read thread.\n");
 
 	lwkt_exit();
 }
