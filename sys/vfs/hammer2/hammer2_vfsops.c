@@ -637,6 +637,8 @@ hammer2_write_thread(void *arg)
 	
 	tsleep(&destroy, 0, "write_sleep", 0);
 	
+	kprintf("Write thread: Value of destroy is %d.\n", destroy);
+	
 	kprintf("Write thread exiting.\n");
 
 	lwkt_exit();
@@ -653,6 +655,8 @@ hammer2_read_thread(void *arg)
 	kprintf("Executing read thread.\n");
 	
 	tsleep(&destroy, 0, "read_sleep", 0);
+	
+	kprintf("Read thread: Value of destroy is %d.\n", destroy);
 	
 	kprintf("Read thread exiting.\n");
 
@@ -833,6 +837,8 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 		kfree(hmp, M_HAMMER2);
 	}
 	lockmgr(&hammer2_mntlk, LK_RELEASE);
+	
+	destroy = 1;
 	
 	wakeup(&destroy);
 
