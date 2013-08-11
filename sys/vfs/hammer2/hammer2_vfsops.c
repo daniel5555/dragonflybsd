@@ -634,6 +634,8 @@ hammer2_write_thread(void *arg)
 	kprintf("Executing write thread.\n");
 	
 	while (destroy == 0) { }
+	
+	kprintf("Write thread exiting.\n");
 
 	lwkt_exit();
 }
@@ -649,6 +651,8 @@ hammer2_read_thread(void *arg)
 	kprintf("Executing read thread.\n");
 	
 	while (destroy == 0) { }
+	
+	kprintf("Read thread exiting.\n");
 
 	lwkt_exit();
 }
