@@ -612,6 +612,8 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	 */
 	hammer2_vfs_statfs(mp, &mp->mnt_stat, cred);
 	
+	destroy = 0;
+	
 	/*
 	 * Launch test threads.
 	 */
@@ -633,7 +635,7 @@ hammer2_write_thread(void *arg)
 	
 	kprintf("Executing write thread.\n");
 	
-	while (destroy == 0) { }
+	tsleep(&destroy, 0, "write_sleep", 0);
 	
 	kprintf("Write thread exiting.\n");
 
@@ -650,7 +652,7 @@ hammer2_read_thread(void *arg)
 	
 	kprintf("Executing read thread.\n");
 	
-	while (destroy == 0) { }
+	tsleep(&destroy, 0, "read_sleep", 0);
 	
 	kprintf("Read thread exiting.\n");
 
@@ -832,7 +834,7 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	}
 	lockmgr(&hammer2_mntlk, LK_RELEASE);
 	
-	destroy = 1;
+	wakeup(&destroy);
 
 	return (error);
 }
