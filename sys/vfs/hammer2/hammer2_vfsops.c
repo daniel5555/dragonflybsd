@@ -614,7 +614,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	
 	bioq_init(bioq);
 	
-	counter = 0;
+	counter_write = 0;
 	
 	/*
 	 * Launch test threads.
