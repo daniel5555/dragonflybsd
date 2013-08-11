@@ -294,6 +294,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 						lbase, compressed_block_size,
 						errorp);
 		if (ipdata->reserved85 >= 8) {
+			int temp_check = HAMMER2_DEC_CHECK(chain->bref.methods);
 			chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE)
 						+ HAMMER2_ENC_CHECK(temp_check);
 			hammer2_write_bp(chain, bp, ioflag, lblksize);
