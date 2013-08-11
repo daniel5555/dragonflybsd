@@ -614,6 +614,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	
 	bioq_init(bioq);
 	
+	destroy = 0;
 	counter_write = 0;
 	
 	/*
@@ -636,7 +637,7 @@ hammer2_write_thread(void *arg)
 	hmp = arg;
 	
 	kprintf("Executing write thread.\n");
-	while(destroy == 0) {
+	while (destroy == 0) {
 		tsleep(&counter_write, 0, "write_sleep", 0);
 		++counter_write;
 		kprintf("Write thread: Value of counter_write is %d.\n",
