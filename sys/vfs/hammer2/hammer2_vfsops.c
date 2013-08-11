@@ -637,8 +637,10 @@ hammer2_write_thread(void *arg)
 	
 	kprintf("Executing write thread.\n");
 	while(destroy == 0) {
-		tsleep(&counter, 0, "write_sleep", 0);
-		++counter;
+		tsleep(&counter_write, 0, "write_sleep", 0);
+		++counter_write;
+		kprintf("Write thread: Value of counter_write is %d.\n",
+			counter_write);
 	}	
 	kprintf("Write thread: Value of destroy is %d.\n", destroy);
 	kprintf("Write thread exiting.\n");
@@ -840,7 +842,7 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	
 	destroy = 1;
 	
-	wakeup(&counter);	
+	wakeup(&counter_write);	
 	wakeup(&destroy);
 
 	return (error);
