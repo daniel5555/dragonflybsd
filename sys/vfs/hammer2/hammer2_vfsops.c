@@ -177,6 +177,8 @@ static void hammer2_read_thread(void *arg);
 static int hammer2_rcvdmsg(kdmsg_msg_t *msg);
 static void hammer2_autodmsg(kdmsg_msg_t *msg);
 
+int destroy;
+
 /*
  * HAMMER2 vfs operations.
  */
@@ -630,6 +632,8 @@ hammer2_write_thread(void *arg)
 	hmp = arg;
 	
 	kprintf("Executing write thread.\n");
+	
+	while (destroy == 0) { }
 
 	lwkt_exit();
 }
@@ -643,6 +647,8 @@ hammer2_read_thread(void *arg)
 	hmp = arg;
 	
 	kprintf("Executing read thread.\n");
+	
+	while (destroy == 0) { }
 
 	lwkt_exit();
 }
@@ -821,6 +827,8 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 		kfree(hmp, M_HAMMER2);
 	}
 	lockmgr(&hammer2_mntlk, LK_RELEASE);
+	
+	destroy = 1;
 
 	return (error);
 }
