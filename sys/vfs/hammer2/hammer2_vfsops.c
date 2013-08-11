@@ -625,7 +625,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 static void
 hammer2_write_thread(void *arg)
 {
-	hammer2_mount_t hmp;
+	hammer2_mount_t* hmp;
 
 	hmp = arg;
 	
