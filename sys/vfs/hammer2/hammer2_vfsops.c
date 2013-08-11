@@ -631,9 +631,6 @@ hammer2_write_thread(void *arg)
 	
 	kprintf("Executing write thread.");
 
-	lwkt_gettoken(&hmp->fs_token);
-
-	lwkt_reltoken(&hmp->fs_token);
 	lwkt_exit();
 }
 
@@ -641,15 +638,12 @@ hammer2_write_thread(void *arg)
 static void
 hammer2_read_thread(void *arg)
 {
-	hammer2_mount_t hmp;
+	hammer2_mount_t* hmp;
 
 	hmp = arg;
 	
 	kprintf("Executing read thread.");
 
-	lwkt_gettoken(&hmp->fs_token);
-
-	lwkt_reltoken(&hmp->fs_token);
 	lwkt_exit();
 }
 
