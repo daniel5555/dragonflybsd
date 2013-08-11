@@ -98,6 +98,7 @@ static void hammer2_zero_check_and_write(struct buf *bp,
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase,
 				int ioflag, int lblksize, int* error);
+static void test_thread(void *arg);
 
 struct objcache *cache_buffer_read;
 struct objcache *cache_buffer_write;
@@ -2607,6 +2608,13 @@ done:
 	return (error);
 }
 
+static void
+test_thread(void *arg)
+{
+	kprintf("Executing the test thread.\n");
+	lwkt_exit();
+}
+
 /*
  * Strategy code
  *
@@ -2775,6 +2783,9 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 {
 	
 	kprintf("WRITE PATH: executing hammer2_strategy_write.\n");
+	
+	lwkt_create(test_thread, NULL,
+		    NULL, NULL, 0, -1, "test-thread");
 	
 	/*
 	 * XXX temporary because all write handling is currently
