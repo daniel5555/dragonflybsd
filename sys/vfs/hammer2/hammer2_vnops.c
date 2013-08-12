@@ -996,6 +996,7 @@ static
 int
 hammer2_vop_read(struct vop_read_args *ap)
 {
+	kprintf("Executing vop read.\n");
 	struct vnode *vp;
 	hammer2_inode_t *ip;
 	struct uio *uio;
@@ -1028,6 +1029,7 @@ static
 int
 hammer2_vop_write(struct vop_write_args *ap)
 {
+	kprintf("Executing vop write.\n");
 	hammer2_inode_t *ip;
 	hammer2_trans_t trans;
 	hammer2_chain_t *parent;
@@ -2655,6 +2657,7 @@ static
 int
 hammer2_strategy_read(struct vop_strategy_args *ap)
 {
+	kprintf("Executing strategy read.\n");
 	struct buf *bp;
 	struct bio *bio;
 	struct bio *nbio;
