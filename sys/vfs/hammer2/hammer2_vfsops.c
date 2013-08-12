@@ -646,8 +646,11 @@ hammer2_write_thread(void *arg)
 
 	while (destroy == 0) {
 		tsleep(&write, 0, "write_sleep", 0);
-		bio = bioq_first(bioq_write);
-		biodone(bio);
+		while (write > 0) {
+			bio = bioq_takefirst(bioq_write);
+			--write;
+			biodone(bio);
+		}
 	}
 
 	lwkt_exit();

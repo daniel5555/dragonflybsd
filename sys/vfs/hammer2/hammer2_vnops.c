@@ -2788,6 +2788,7 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	ap->a_bio->bio_buf->b_error = 0;
 	//biodone(ap->a_bio);
 	bioq_insert_tail(bioq_write, ap->a_bio);
+	++write;
 	wakeup_one(&write);
 	return(0);
 	KKASSERT(0);
