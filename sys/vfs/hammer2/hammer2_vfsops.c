@@ -621,6 +621,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	bioq_init(bioq_write);
 	
 	destroy = 0;
+	write = 0;
 	counter_write = 0;
 	
 	/*
@@ -639,11 +640,14 @@ static void
 hammer2_write_thread(void *arg)
 {
 	hammer2_mount_t* hmp;
+	struct bio *bio;
 	
 	hmp = arg;
 
 	while (destroy == 0) {
-		tsleep(&destroy, 0, "write_sleep", 0);
+		tsleep(&write, 0, "write_sleep", 0);
+		bio = bioq_first(bioq_write);
+		biodone(bio);
 	}
 
 	lwkt_exit();
