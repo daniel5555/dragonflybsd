@@ -102,7 +102,7 @@ static void hammer2_zero_check_and_write(struct buf *bp,
 struct objcache *cache_buffer_read;
 struct objcache *cache_buffer_write;
 
-struct bio_queue_head *bioq;
+struct bio_queue_head *bioq_write;
 
 /* 
  * Callback used in read path in case that a block is compressed.

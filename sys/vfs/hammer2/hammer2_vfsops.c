@@ -93,6 +93,9 @@ MALLOC_DEFINE(C_BUFFER, "compbuffer", "Buffer used for compression.");
 MALLOC_DECLARE(D_BUFFER);
 MALLOC_DEFINE(D_BUFFER, "decompbuffer", "Buffer used for decompression.");
 
+MALLOC_DECLARE(W_BIOQUEUE);
+MALLOC_DEFINE(W_BIOQUEUE, "wbioqueue", "Writing bio queue.");
+
 SYSCTL_NODE(_vfs, OID_AUTO, hammer2, CTLFLAG_RW, 0, "HAMMER2 filesystem");
 
 SYSCTL_INT(_vfs_hammer2, OID_AUTO, debug, CTLFLAG_RW,
@@ -614,6 +617,9 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	 */
 	hammer2_vfs_statfs(mp, &mp->mnt_stat, cred);
 	
+	bioq_write = kmalloc(sizeof(*bioq_write), W_BIOQUEUE, M_INTWAIT);
+	bioq_init(bioq_write);
+	
 	destroy = 0;
 	counter_write = 0;
 	
@@ -847,6 +853,8 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	
 	wakeup(&write);	
 	wakeup(&destroy);
+	
+	kfree(bioq_write, W_BIOQUEUE);
 
 	return (error);
 }
