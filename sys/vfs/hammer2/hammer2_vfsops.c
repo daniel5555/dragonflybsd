@@ -647,9 +647,11 @@ hammer2_write_thread(void *arg)
 	while (destroy == 0) {
 		tsleep(&write, 0, "write_sleep", 0);
 		while (write > 0) {
+			kprintf("Executing write thread.\n");
 			bio = bioq_takefirst(bioq_write);
 			--write;
 			biodone(bio);
+			kprintf("Write value is %d.\n", write);
 		}
 	}
 

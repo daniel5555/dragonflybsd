@@ -2784,11 +2784,13 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	 * logical->physical work and have the vop_write path just do
 	 * normal operations on the logical buffer.
 	 */
+	kprintf("Executing strategy write.\n");
 	ap->a_bio->bio_buf->b_resid = 0;
 	ap->a_bio->bio_buf->b_error = 0;
 	//biodone(ap->a_bio);
 	bioq_insert_tail(bioq_write, ap->a_bio);
 	++write;
+	kprintf("About to wake up write thread: write value is %d.\n", write);
 	wakeup_one(&write);
 	return(0);
 	KKASSERT(0);
