@@ -641,16 +641,10 @@ hammer2_write_thread(void *arg)
 	hammer2_mount_t* hmp;
 	
 	hmp = arg;
-	
-	kprintf("Executing write thread.\n");
+
 	while (destroy == 0) {
 		tsleep(&destroy, 0, "write_sleep", 0);
-		++counter_write;
-		kprintf("Write thread: Value of counter_write is %d.\n",
-			counter_write);
-	}	
-	kprintf("Write thread: Value of destroy is %d.\n", destroy);
-	kprintf("Write thread exiting.\n");
+	}
 
 	lwkt_exit();
 }
@@ -663,13 +657,9 @@ hammer2_read_thread(void *arg)
 	
 	hmp = arg;
 
-	kprintf("Executing read thread.\n");	
 	while (destroy == 0) {
 		tsleep(&destroy, 0, "read_sleep", 0);
 	}
-		
-	kprintf("Read thread: Value of destroy is %d.\n", destroy);	
-	kprintf("Read thread exiting.\n");
 
 	lwkt_exit();
 }
