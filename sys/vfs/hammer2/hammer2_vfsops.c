@@ -178,7 +178,7 @@ static int hammer2_rcvdmsg(kdmsg_msg_t *msg);
 static void hammer2_autodmsg(kdmsg_msg_t *msg);
 
 int destroy;
-const int write;
+int write;
 int counter_write;
 
 /*
@@ -640,7 +640,7 @@ hammer2_write_thread(void *arg)
 	
 	kprintf("Executing write thread.\n");
 	while (destroy == 0) {
-		tsleep(&write, 0, "write_sleep", 0);
+		tsleep(&destroy, 0, "write_sleep", 0);
 		++counter_write;
 		kprintf("Write thread: Value of counter_write is %d.\n",
 			counter_write);
