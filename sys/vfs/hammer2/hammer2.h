@@ -577,7 +577,7 @@ extern struct objcache *cache_buffer_write;
 
 extern struct bio_queue_head *bioq;
 
-extern int counter_write;
+extern int write;
 
 /*
  * hammer2_subr.c
