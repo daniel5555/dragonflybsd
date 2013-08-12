@@ -178,7 +178,7 @@ static int hammer2_rcvdmsg(kdmsg_msg_t *msg);
 static void hammer2_autodmsg(kdmsg_msg_t *msg);
 
 int destroy;
-int write;
+const int write;
 int counter_write;
 
 /*

@@ -576,7 +576,6 @@ extern struct objcache *cache_buffer_read;
 extern struct objcache *cache_buffer_write;
 
 extern struct bio_queue_head *bioq;
-
 extern int write;
 
 /*
