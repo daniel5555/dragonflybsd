@@ -103,7 +103,6 @@ struct objcache *cache_buffer_read;
 struct objcache *cache_buffer_write;
 
 struct bio_queue_head *bioq;
-int counter_write;
 
 /* 
  * Callback used in read path in case that a block is compressed.
