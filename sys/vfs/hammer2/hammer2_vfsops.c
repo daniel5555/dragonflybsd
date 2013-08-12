@@ -614,8 +614,6 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	 */
 	hammer2_vfs_statfs(mp, &mp->mnt_stat, cred);
 	
-	//bioq_init(bioq);
-	
 	destroy = 0;
 	counter_write = 0;
 	
