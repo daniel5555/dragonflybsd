@@ -2824,6 +2824,7 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 		 * ensure that ip->chain is stable.  Chain modification
 		 * status is handled by the caller.
 		 */
+		kprintf("NOOFFSET is detected.\n");
 		KKASSERT(ip->chain->flags & HAMMER2_CHAIN_MODIFIED);
 		//KKASSERT(bio->bio_offset == 0);
 		KKASSERT(ip->chain && ip->chain->data);
