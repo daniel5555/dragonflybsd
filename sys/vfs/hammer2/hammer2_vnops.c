@@ -2824,7 +2824,7 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 		 * status is handled by the caller.
 		 */
 		KKASSERT(ip->chain->flags & HAMMER2_CHAIN_MODIFIED);
-		KKASSERT(bio->bio_offset == 0);
+		//KKASSERT(bio->bio_offset == 0);
 		KKASSERT(ip->chain && ip->chain->data);
 		bcopy(bp->b_data, chain->data->ipdata.u.data,
 		      HAMMER2_EMBEDDED_BYTES);
