@@ -1374,6 +1374,7 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		//hammer2_write_bp(chain, bp, ioflag, lblksize);
 		//if (chain)
 			//hammer2_chain_unlock(chain);
+		bdwrite(bp);
 	}
 	ipdata = &ip->chain->data->ipdata;	/* reload */
 }
