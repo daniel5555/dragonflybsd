@@ -688,7 +688,7 @@ hammer2_write_thread(void *arg)
 
 				psize = hammer2_devblksize(bp->b_bufsize);
 				pmask = (hammer2_off_t)psize - 1;
-				pbase = chain->bref.data_off & ~pmask;
+				pbase = bio->bio_offset & ~pmask;
 				boff = /*bp*/bio->bio_offset & (HAMMER2_OFF_MASK & pmask); //maybe loff here?
 				peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
 		
