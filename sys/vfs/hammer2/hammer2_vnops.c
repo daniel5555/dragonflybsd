@@ -2817,7 +2817,7 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	//ap->a_bio->bio_buf->b_resid = 0;
 	//ap->a_bio->bio_buf->b_error = 0;
 	//biodone(ap->a_bio);
-	if (bio->bio_offset == NOOFFSET) {
+	if (/*n*/bio->bio_offset == NOOFFSET) {
 		/*
 		 * The data is embedded in the inode.  Note that strategy
 		 * calls for embedded data are synchronous in order to
@@ -2832,7 +2832,7 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 		      HAMMER2_EMBEDDED_BYTES);
 		bp->b_resid = 0;
 		bp->b_error = 0;
-		biodone(nbio);
+		biodone(/*n*/bio);
 	}
 	else {
 		atomic_clear_int(&chain->flags, HAMMER2_CHAIN_INITIAL);
