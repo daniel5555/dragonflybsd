@@ -684,7 +684,7 @@ hammer2_write_thread(void *arg)
 				size_t psize;
 				int error;
 
-				KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
+				//KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
 
 				psize = hammer2_devblksize(bp->b_bufsize);
 				pmask = (hammer2_off_t)psize - 1;
@@ -692,16 +692,16 @@ hammer2_write_thread(void *arg)
 				boff = /*bp*/bio->bio_offset & (HAMMER2_OFF_MASK & pmask); //maybe loff here?
 				peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
 		
-				if (psize == lblksize) {
-					dbp = getblk(hmp->devvp, pbase,
-						psize, 0, 0);
-				} else {
+				//if (psize == lblksize) {
+					//dbp = getblk(hmp->devvp, pbase,
+						//psize, 0, 0);
+				//} else {
 					error = bread(hmp->devvp, pbase, psize, &dbp);
 					if (error) {
 						kprintf("WRITE PATH: An error ocurred while bread().\n");
 						break;
 					}
-				}
+				//}
 
 				bcopy(bp->b_data, dbp->b_data + boff, bp->b_bufsize);
 		
@@ -711,22 +711,22 @@ hammer2_write_thread(void *arg)
 				 */
 				//atomic_clear_int(&chain->flags, HAMMER2_CHAIN_INITIAL);
 
-				if (ioflag & IO_SYNC) {
-				/*
-				 * Synchronous I/O requested.
-				 */
-					bwrite(dbp);
-				/*
-				} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
+				//if (ioflag & IO_SYNC) {
+				///*
+				 //* Synchronous I/O requested.
+				 //*/
+					//bwrite(dbp);
+				///*
+				//} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
+					//bdwrite(dbp);
+				 //*/
+				//} else if (ioflag & IO_ASYNC) {
+					//bawrite(dbp);
+				//} else if (hammer2_cluster_enable) {
+					//cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
+				//} else {
 					bdwrite(dbp);
-				 */
-				} else if (ioflag & IO_ASYNC) {
-					bawrite(dbp);
-				} else if (hammer2_cluster_enable) {
-					cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
-				} else {
-					bdwrite(dbp);
-				}
+				//}
 				bp->b_flags |= B_AGE;
 				bdwrite(bp);
 			}
