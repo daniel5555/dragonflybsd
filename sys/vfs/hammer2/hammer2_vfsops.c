@@ -627,132 +627,40 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	/*
 	 * Launch test threads.
 	 */
-	lwkt_create(hammer2_write_thread, hmp,
-		    NULL, NULL, 0, -1, "hammer2-write");
-	lwkt_create(hammer2_read_thread, hmp,
-		    NULL, NULL, 0, -1, "hammer2-read");
+	//lwkt_create(hammer2_write_thread, hmp,
+		    //NULL, NULL, 0, -1, "hammer2-write");
+	//lwkt_create(hammer2_read_thread, hmp,
+		    //NULL, NULL, 0, -1, "hammer2-read");
 
 	return 0;
 }
 
 /* Just an empty thread for now. */
-static void
-hammer2_write_thread(void *arg)
-{
-	hammer2_mount_t* hmp;
-	struct bio *bio;
+//static void
+//hammer2_write_thread(void *arg)
+//{
+	//hammer2_mount_t* hmp;
+	//struct bio *bio;
 	
-	hmp = arg;
+	//hmp = arg;
 
-	while (destroy == 0) {
-		tsleep(&write, 0, "write_sleep", 0);
-		while (write > 0) {
-			kprintf("Executing write thread.\n");
-			bio = bioq_takefirst(bioq_write);
-			--write;
-			
-			/* Testing area. */
-			struct buf *bp = bio->bio_buf;
-			struct buf *obp;
-			struct bio *obio;
-			int loff;
-
-			if ((bio->bio_flags & BIO_DONE) == 0)
-				bpdone(bp, 0);
-			bio->bio_flags &= ~(BIO_DONE | BIO_SYNC);
-
-			obio = bio->bio_caller_info1.ptr;
-			obp = obio->bio_buf;
-			loff = obio->bio_caller_info3.value;
-			
-			if (bp->b_flags & B_ERROR) {
-				obp->b_flags |= B_ERROR;
-				obp->b_error = bp->b_error;
-			} else if (obio->bio_caller_info2.index &&
-					obio->bio_caller_info1.uvalue32 !=
-					crc32(bp->b_data, bp->b_bufsize)) {
-				obp->b_flags |= B_ERROR;
-				obp->b_error = EIO;
-			} else {
-				KKASSERT(obp->b_bufsize <= 65536);
-		
-				hammer2_off_t pbase;
-				hammer2_off_t pmask;
-				hammer2_off_t peof;
-				struct buf *dbp;
-				size_t boff;
-				size_t psize;
-				int error;
-
-				//KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
-
-				psize = hammer2_devblksize(bp->b_bufsize);
-				pmask = (hammer2_off_t)psize - 1;
-				pbase = bio->bio_offset & ~pmask;
-				boff = /*bp*/bio->bio_offset & (HAMMER2_OFF_MASK & pmask); //maybe loff here?
-				peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
-		
-				//if (psize == lblksize) {
-					//dbp = getblk(hmp->devvp, pbase,
-						//psize, 0, 0);
-				//} else {
-					error = bread(hmp->devvp, pbase, psize, &dbp);
-					if (error) {
-						kprintf("WRITE PATH: An error ocurred while bread().\n");
-						break;
-					}
-				//}
-
-				bcopy(bp->b_data, dbp->b_data + boff, bp->b_bufsize);
-		
-				/*
-				 * Device buffer is now valid, chain is no
-				 * longer in the initial state.
-				 */
-				//atomic_clear_int(&chain->flags, HAMMER2_CHAIN_INITIAL);
-
-				//if (ioflag & IO_SYNC) {
-				///*
-				 //* Synchronous I/O requested.
-				 //*/
-					//bwrite(dbp);
-				///*
-				//} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
-					//bdwrite(dbp);
-				 //*/
-				//} else if (ioflag & IO_ASYNC) {
-					//bawrite(dbp);
-				//} else if (hammer2_cluster_enable) {
-					//cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
-				//} else {
-					bdwrite(dbp);
-				//}
-				bp->b_flags |= B_AGE;
-				bdwrite(bp);
-			}
-			/* Testing area end. */
-			biodone(bio);
-			kprintf("Write value is %d.\n", write);
-		}
-	}
-
-	lwkt_exit();
-}
+	//lwkt_exit();
+//}
 
 /* Another empty thread. */
-static void
-hammer2_read_thread(void *arg)
-{
-	hammer2_mount_t* hmp;
+//static void
+//hammer2_read_thread(void *arg)
+//{
+	//hammer2_mount_t* hmp;
 	
-	hmp = arg;
+	//hmp = arg;
 
-	while (destroy == 0) {
-		tsleep(&destroy, 0, "read_sleep", 0);
-	}
+	//while (destroy == 0) {
+		//tsleep(&destroy, 0, "read_sleep", 0);
+	//}
 
-	lwkt_exit();
-}
+	//lwkt_exit();
+//}
 
 static
 int
@@ -931,8 +839,8 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	
 	destroy = 1;
 	
-	wakeup(&write);	
-	wakeup(&destroy);
+	//wakeup(&write);	
+	//wakeup(&destroy);
 	
 	kfree(bioq_write, W_BIOQUEUE);
 

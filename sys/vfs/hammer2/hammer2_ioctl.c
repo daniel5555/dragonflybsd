@@ -620,39 +620,3 @@ hammer2_ioctl_inode_set(hammer2_inode_t *ip, void *data)
 
 	return (error);
 }
-
-//need to recompile the kernel to use this
-/*static int
-hammer2_ioctl_comp_set(hammer2_inode_t *ip, void *data)
-{
-	hammer2_inode_data_t *ipdata;
-	hammer2_ioc_inode_t *ino = data;
-	hammer2_chain_t *parent;
-	hammer2_trans_t trans;
-
-	hammer2_trans_init(&trans, ip->pmp, 0);
-	parent = hammer2_inode_lock_ex(ip);
-	ipdata = hammer2_chain_modify_ip(&trans, ip, &parent,
-						  HAMMER2_MODIFY_ASSERTNOCOPY);
-	ip->chain->data->ipdata = ino->ip_data;
-	ino->kdata = ip;
-	
-	hammer2_trans_done(&trans);
-	hammer2_inode_unlock_ex(ip, parent);
-
-	return (0);
-}*/
-
-//future recursive ioctl
-/*static int
-hammer2_ioctl_comp_rec_set(hammer2_inode_t *ip, void *data)
-{
-	return (0);
-}*/
-
-//future recursive ioctl with files
-/*static int
-hammer2_ioctl_comp_rec_set2(hammer2_inode_t *ip, void *data)
-{
-	return (0);
-}*/
