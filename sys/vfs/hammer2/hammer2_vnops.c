@@ -1374,8 +1374,8 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		//hammer2_write_bp(chain, bp, ioflag, lblksize);
 		//if (chain)
 			//hammer2_chain_unlock(chain);
-		bp->b_flags |= B_AGE;
-		bdwrite(bp);
+		// bp->b_flags |= B_AGE;
+		// bdwrite(bp);
 	}
 	ipdata = &ip->chain->data->ipdata;	/* reload */
 }
@@ -2788,7 +2788,7 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	 */
 	struct buf *bp;
 	struct bio *bio;
-	struct bio *nbio;
+	//struct bio *nbio;
 	hammer2_chain_t *chain;
 	hammer2_mount_t *hmp;
 	hammer2_inode_t *ip;
@@ -2802,7 +2802,7 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	bio = ap->a_bio;
 	bp = bio->bio_buf;
 	ip = VTOI(ap->a_vp);
-	nbio = push_bio(bio);
+	//nbio = push_bio(bio);
 	chain = ip->chain;
 	
 	bref = &chain->bref;
@@ -2817,7 +2817,7 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	//ap->a_bio->bio_buf->b_resid = 0;
 	//ap->a_bio->bio_buf->b_error = 0;
 	//biodone(ap->a_bio);
-	if (nbio->bio_offset == NOOFFSET) {
+	if (bio->bio_offset == NOOFFSET) {
 		/*
 		 * The data is embedded in the inode.  Note that strategy
 		 * calls for embedded data are synchronous in order to
