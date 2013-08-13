@@ -174,8 +174,8 @@ static int hammer2_install_volume_header(hammer2_mount_t *hmp);
 static int hammer2_sync_scan1(struct mount *mp, struct vnode *vp, void *data);
 static int hammer2_sync_scan2(struct mount *mp, struct vnode *vp, void *data);
 
-static void hammer2_write_thread(void *arg);
-static void hammer2_read_thread(void *arg);
+//static void hammer2_write_thread(void *arg);
+//static void hammer2_read_thread(void *arg);
 
 static int hammer2_rcvdmsg(kdmsg_msg_t *msg);
 static void hammer2_autodmsg(kdmsg_msg_t *msg);
