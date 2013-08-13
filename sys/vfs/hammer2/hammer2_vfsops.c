@@ -650,6 +650,87 @@ hammer2_write_thread(void *arg)
 			kprintf("Executing write thread.\n");
 			bio = bioq_takefirst(bioq_write);
 			--write;
+			
+			/* Testing area. */
+			struct buf *bp = bio->bio_buf;
+			struct buf *obp;
+			struct bio *obio;
+			int loff;
+
+			if ((bio->bio_flags & BIO_DONE) == 0)
+				bpdone(bp, 0);
+			bio->bio_flags &= ~(BIO_DONE | BIO_SYNC);
+
+			obio = bio->bio_caller_info1.ptr;
+			obp = obio->bio_buf;
+			loff = obio->bio_caller_info3.value;
+			
+			if (bp->b_flags & B_ERROR) {
+				obp->b_flags |= B_ERROR;
+				obp->b_error = bp->b_error;
+			} else if (obio->bio_caller_info2.index &&
+					obio->bio_caller_info1.uvalue32 !=
+					crc32(bp->b_data, bp->b_bufsize)) {
+				obp->b_flags |= B_ERROR;
+				obp->b_error = EIO;
+			} else {
+				KKASSERT(obp->b_bufsize <= 65536);
+		
+				hammer2_off_t pbase;
+				hammer2_off_t pmask;
+				hammer2_off_t peof;
+				struct buf *dbp;
+				size_t boff;
+				size_t psize;
+				int error;
+
+				KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
+
+				psize = hammer2_devblksize(bp->b_bufsize);
+				pmask = (hammer2_off_t)psize - 1;
+				pbase = chain->bref.data_off & ~pmask;
+				boff = /*bp*/bio->bio_offset & (HAMMER2_OFF_MASK & pmask); //maybe loff here?
+				peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
+		
+				if (psize == lblksize) {
+					dbp = getblk(hmp->devvp, pbase,
+						psize, 0, 0);
+				} else {
+					error = bread(hmp->devvp, pbase, psize, &dbp);
+					if (error) {
+						kprintf("WRITE PATH: An error ocurred while bread().\n");
+						break;
+					}
+				}
+
+				bcopy(bp->b_data, dbp->b_data + boff, bp->b_bufsize);
+		
+				/*
+				 * Device buffer is now valid, chain is no
+				 * longer in the initial state.
+				 */
+				//atomic_clear_int(&chain->flags, HAMMER2_CHAIN_INITIAL);
+
+				if (ioflag & IO_SYNC) {
+				/*
+				 * Synchronous I/O requested.
+				 */
+					bwrite(dbp);
+				/*
+				} else if ((ioflag & IO_DIRECT) && loff + n == lblksize) {
+					bdwrite(dbp);
+				 */
+				} else if (ioflag & IO_ASYNC) {
+					bawrite(dbp);
+				} else if (hammer2_cluster_enable) {
+					cluster_write(dbp, peof, HAMMER2_PBUFSIZE, 4/*XXX*/);
+				} else {
+					bdwrite(dbp);
+				}
+				bp->b_flags |= B_AGE;
+				bdwrite(bp);
+			}
+			/* Testing area end. */
 			biodone(bio);
 			kprintf("Write value is %d.\n", write);
 		}

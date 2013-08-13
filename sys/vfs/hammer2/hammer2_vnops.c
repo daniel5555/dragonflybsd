@@ -1368,12 +1368,12 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		 * This can return NOOFFSET for inode-embedded data.
 		 * The strategy code will take care of it in that case.
 		 */
-		chain = hammer2_assign_physical(trans, ip, parentp,
-						lbase, lblksize,
-						errorp);
-		hammer2_write_bp(chain, bp, ioflag, lblksize);
-		if (chain)
-			hammer2_chain_unlock(chain);
+		//chain = hammer2_assign_physical(trans, ip, parentp,
+						//lbase, lblksize,
+						//errorp);
+		//hammer2_write_bp(chain, bp, ioflag, lblksize);
+		//if (chain)
+			//hammer2_chain_unlock(chain);
 	}
 	ipdata = &ip->chain->data->ipdata;	/* reload */
 }
@@ -2784,14 +2784,59 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	 * logical->physical work and have the vop_write path just do
 	 * normal operations on the logical buffer.
 	 */
+	struct buf *bp;
+	struct bio *bio;
+	struct bio *nbio;
+	hammer2_chain_t *chain;
+	hammer2_mount_t *hmp;
+	hammer2_inode_t *ip;
+	
+	hammer2_blockref_t *bref;
+	hammer2_off_t pbase;
+	hammer2_off_t pmask;
+	size_t psize;				
+	
+	bio = ap->a_bio;
+	bp = bio->bio_buf;
+	ip = VTOI(ap->a_vp);
+	nbio = push_bio(bio);
+	chain = ip->chain;
+	
+	bref = &chain->bref;
+	psize = hammer2_devblksize(chain->bytes);
+	pmask = (hammer2_off_t)psize - 1;
+	pbase = bref->data_off & ~pmask;
+	loff = (int)((bref->data_off &
+			~HAMMER2_OFF_MASK_RADIX) - pbase);
+	bio->bio_caller_info3.value = loff;
+	
 	kprintf("Executing strategy write.\n");
-	ap->a_bio->bio_buf->b_resid = 0;
-	ap->a_bio->bio_buf->b_error = 0;
+	//ap->a_bio->bio_buf->b_resid = 0;
+	//ap->a_bio->bio_buf->b_error = 0;
 	//biodone(ap->a_bio);
-	bioq_insert_tail(bioq_write, ap->a_bio);
-	++write;
-	kprintf("About to wake up write thread: write value is %d.\n", write);
-	wakeup_one(&write);
+	if (nbio->bio_offset == NOOFFSET) {
+		/*
+		 * The data is embedded in the inode.  Note that strategy
+		 * calls for embedded data are synchronous in order to
+		 * ensure that ip->chain is stable.  Chain modification
+		 * status is handled by the caller.
+		 */
+		KKASSERT(ip->chain->flags & HAMMER2_CHAIN_MODIFIED);
+		KKASSERT(bio->bio_offset == 0);
+		KKASSERT(ip->chain && ip->chain->data);
+		bcopy(bp->b_data, chain->data->ipdata.u.data,
+		      HAMMER2_EMBEDDED_BYTES);
+		bp->b_resid = 0;
+		bp->b_error = 0;
+		biodone(nbio);
+	}
+	else {
+		atomic_clear_int(&chain->flags, HAMMER2_CHAIN_INITIAL);
+		bioq_insert_tail(bioq_write, bio);
+		++write;
+		kprintf("About to wake up write thread: write value is %d.\n", write);
+		wakeup_one(&write);
+	}
 	return(0);
 	KKASSERT(0);
 #if 0
