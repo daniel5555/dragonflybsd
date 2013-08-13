@@ -2794,7 +2794,8 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	hammer2_blockref_t *bref;
 	hammer2_off_t pbase;
 	hammer2_off_t pmask;
-	size_t psize;				
+	size_t psize;			
+	int loff;	
 	
 	bio = ap->a_bio;
 	bp = bio->bio_buf;
