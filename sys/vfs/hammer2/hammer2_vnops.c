@@ -1076,12 +1076,12 @@ hammer2_vop_write(struct vop_write_args *ap)
 	 * ip must be marked modified, particularly because the write
 	 * might wind up being copied into the embedded data area.
 	 */
-	hammer2_trans_init(&trans, ip->pmp, 0);
-	parent = hammer2_inode_lock_ex(ip);
+	hammer2_trans_init(&trans, ip->pmp, 0); //- May transfer this to thread, trans is undefined and we have vnode
+	parent = hammer2_inode_lock_ex(ip); //- May transfer this to thread, we cand obtain ip from vnode
 	error = hammer2_write_file(&trans, ip, &parent,
-				   uio, ap->a_ioflag, seqcount);
-	hammer2_inode_unlock_ex(ip, parent);
-	hammer2_trans_done(&trans);
+				   uio, ap->a_ioflag, seqcount); // Should fill logical buffer
+	hammer2_inode_unlock_ex(ip, parent); //- May transfet this
+	hammer2_trans_done(&trans); //- May transfer this
 
 	return (error);
 }
