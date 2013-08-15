@@ -1314,9 +1314,10 @@ hammer2_write_file(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			brelse(bp);
 			break;
 		}
-		hammer2_write_file_core(bp, trans, ip, ipdata, parentp,
-					lbase, ioflag,
-					lblksize, &error, &rem_size);
+		//hammer2_write_file_core(bp, trans, ip, ipdata, parentp,
+					//lbase, ioflag,
+					//lblksize, &error, &rem_size);
+		bdwrite(bp);
 		ipdata = &ip->chain->data->ipdata;	/* reload */
 		if (error)
 			break;

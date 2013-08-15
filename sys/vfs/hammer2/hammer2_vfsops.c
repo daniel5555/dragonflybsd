@@ -689,6 +689,7 @@ hammer2_write_thread(void *arg)
 	
 	while (destroy == 0) {
 		while (write > 0) {
+			tsleep(&write, 0, "write_thread_sleep", 0)
 			bio = bioq_takefirst(bioq_write);
 			--write;
 			
@@ -712,6 +713,8 @@ hammer2_write_thread(void *arg)
 			ipdata = &ip->chain->data->ipdata;	/* reload */
 			if (error)
 				break;
+			hammer2_inode_unlock_ex(ip, parent);
+			hammer2_trans_done(&trans);
 		}
 	}
 
