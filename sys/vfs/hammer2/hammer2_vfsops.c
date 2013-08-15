@@ -227,7 +227,7 @@ int destroy;
 int write;
 int counter_write;
 
-struct mtx thread_protect;
+struct mtx_t* thread_protect;
 
 /*
  * HAMMER2 vfs operations.
