@@ -715,6 +715,9 @@ hammer2_write_thread(void *arg)
 			if (bp->b_resid < lblksize) {
 				rem_size = bp->b_resid;
 			}
+			else {
+				rem_size = 0;
+			}
 			
 			hammer2_write_file_core_t(bp, &trans, ip, ipdata, parentp,
 						lbase, IO_ASYNC,
