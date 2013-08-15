@@ -286,16 +286,6 @@ hammer2_vfs_init(struct vfsconf *conf)
 	bioq_write = kmalloc(sizeof(*bioq_write), W_BIOQUEUE, M_INTWAIT);
 	bioq_init(bioq_write);
 	
-	destroy = 0;
-	write = 0;
-	counter_write = 0;
-	
-	/*
-	 * Launch test threads.
-	 */
-	lwkt_create(hammer2_write_thread, hmp,
-		    NULL, NULL, 0, -1, "hammer2-write");
-
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
 	TAILQ_INIT(&hammer2_mntlist);
 
@@ -310,6 +300,7 @@ hammer2_vfs_uninit(struct vfsconf *vfsp __unused)
 	objcache_destroy(cache_buffer_write);
 	destroy = 1;
 	wakeup(&write);	
+	kfree(bioq_write, W_BIOQUEUE);
 	return 0;
 }
 
@@ -675,15 +666,15 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	//bioq_write = kmalloc(sizeof(*bioq_write), W_BIOQUEUE, M_INTWAIT);
 	//bioq_init(bioq_write);
 	
-	//destroy = 0;
-	//write = 0;
-	//counter_write = 0;
+	destroy = 0;
+	write = 0;
+	counter_write = 0;
 	
-	///*
-	 //* Launch test threads.
-	 //*/
-	//lwkt_create(hammer2_write_thread, hmp,
-		    //NULL, NULL, 0, -1, "hammer2-write");
+	/*
+	 * Launch test threads.
+	 */
+	lwkt_create(hammer2_write_thread, hmp,
+		    NULL, NULL, 0, -1, "hammer2-write");
 	//lwkt_create(hammer2_read_thread, hmp,
 		    //NULL, NULL, 0, -1, "hammer2-read");
 
@@ -747,8 +738,6 @@ hammer2_write_thread(void *arg)
 			biodone(bio);
 		}
 	}
-	
-	kfree(bioq_write, W_BIOQUEUE);
 
 	lwkt_exit();
 }
