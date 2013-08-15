@@ -230,7 +230,7 @@ int destroy;
 int write;
 int counter_write;
 
-mtx_t* thread_protect;
+mtx_t thread_protect;
 
 /*
  * HAMMER2 vfs operations.
@@ -294,8 +294,8 @@ hammer2_vfs_init(struct vfsconf *conf)
 	bioq_write = kmalloc(sizeof(*bioq_write), W_BIOQUEUE, M_INTWAIT);
 	bioq_init(bioq_write);
 	
-	thread_protect = kmalloc(sizeof(mtx), W_MTX, M_INTWAIT);
-	mtx_init(*thread_protect);
+	thread_protect = kmalloc(sizeof(mtx_t), W_MTX, M_INTWAIT);
+	mtx_init(thread_protect);
 	
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
 	TAILQ_INIT(&hammer2_mntlist);
@@ -715,10 +715,10 @@ hammer2_write_thread(void *arg)
 	while (destroy == 0) {
 		tsleep(&write, 0, "write_thread_sleep", 0);
 		while (write > 0) {
-			mtx_lock(*thread_protect);
+			mtx_lock(thread_protect);
 			bio = bioq_takefirst(bioq_write);
 			--write;
-			mtx_unlock(*thread_protect);
+			mtx_unlock(thread_protect);
 			
 			error = 0;
 			bp = bio->bio_buf;
@@ -751,7 +751,7 @@ hammer2_write_thread(void *arg)
 		}
 	}
 	
-	mtx_uninit(*thread_protect);
+	mtx_uninit(thread_protect);
 	kfree(thread_protect, W_MTX);
 	kfree(bioq_write, W_BIOQUEUE);
 
