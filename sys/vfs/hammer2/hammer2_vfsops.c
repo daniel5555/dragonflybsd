@@ -294,7 +294,7 @@ hammer2_vfs_init(struct vfsconf *conf)
 	bioq_write = kmalloc(sizeof(*bioq_write), W_BIOQUEUE, M_INTWAIT);
 	bioq_init(bioq_write);
 	
-	thread_protect = kmalloc(sizeof(*thread_protect), W_MTX, M_INTWAIT);
+	thread_protect = kmalloc(sizeof(thread_protect), W_MTX, M_INTWAIT);
 	mtx_init(*thread_protect);
 	
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
