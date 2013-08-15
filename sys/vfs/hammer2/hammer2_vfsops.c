@@ -697,8 +697,8 @@ hammer2_write_thread(void *arg)
 	hmp = arg;
 	
 	while (destroy == 0) {
+		tsleep(&write, 0, "write_thread_sleep", 0);
 		while (write > 0) {
-			tsleep(&write, 0, "write_thread_sleep", 0);
 			bio = bioq_takefirst(bioq_write);
 			--write;
 			
