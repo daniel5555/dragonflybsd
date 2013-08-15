@@ -313,8 +313,14 @@ hammer2_vfs_uninit(struct vfsconf *vfsp __unused)
 	objcache_destroy(cache_buffer_write);
 	//destroy = 1;
 	//wakeup(&write);
-	kfree(thread_protect, W_MTX);
-	kfree(bioq_write, W_BIOQUEUE);
+	if (safe_to_unload) {
+		kfree(thread_protect, W_MTX);
+		kfree(bioq_write, W_BIOQUEUE);
+	}
+	else {
+		kprintf("Unsafe to unload, thread is still executing.\n");
+		return -1;
+	}
 	return 0;
 }
 
@@ -757,6 +763,8 @@ hammer2_write_thread(void *arg)
 			biodone(bio);
 		}
 	}
+	
+	safe_to_unload = 1;
 
 	lwkt_exit();
 }
