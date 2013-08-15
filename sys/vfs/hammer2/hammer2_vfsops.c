@@ -1243,6 +1243,10 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	int ronly = ((mp->mnt_flag & MNT_RDONLY) != 0);
 	int dumpcnt;
 	struct vnode *devvp;
+	
+	destroy = 1;
+	
+	wakeup(&write);
 
 	pmp = MPTOPMP(mp);
 	cluster = pmp->mount_cluster;
@@ -1398,9 +1402,6 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	}
 	lockmgr(&hammer2_mntlk, LK_RELEASE);
 	
-	destroy = 1;
-	
-	wakeup(&write);
 	//wakeup(&destroy);
 	
 	//kfree(bioq_write, W_BIOQUEUE);
