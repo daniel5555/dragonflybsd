@@ -581,7 +581,7 @@ extern struct bio_queue_head *bioq_write;
 extern int destroy;
 extern int write;
 
-extern mtx_t* thread_protect;
+extern mtx_t thread_protect;
 
 /*
  * hammer2_subr.c
