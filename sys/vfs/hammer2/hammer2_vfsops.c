@@ -716,7 +716,7 @@ hammer2_write_thread(void *arg)
 				rem_size = bp->b_resid;
 			}
 			
-			hammer2_write_file_core_t(bp, trans, ip, ipdata, parentp,
+			hammer2_write_file_core_t(bp, &trans, ip, ipdata, parentp,
 						lbase, IO_ASYNC,
 						lblksize, &error, &rem_size); //Get to this later...
 			ipdata = &ip->chain->data->ipdata;	/* reload */
@@ -728,6 +728,105 @@ hammer2_write_thread(void *arg)
 	}
 
 	lwkt_exit();
+}
+
+/* From hammer2_vnops.c. */
+static
+hammer2_chain_t *
+hammer2_assign_physical(hammer2_trans_t *trans,
+			hammer2_inode_t *ip, hammer2_chain_t **parentp,
+			hammer2_key_t lbase, int pblksize, int *errorp)
+{
+	hammer2_chain_t *parent;
+	hammer2_chain_t *chain;
+	hammer2_off_t pbase;
+	int pradix = hammer2_getradix(pblksize);
+
+	/*
+	 * Locate the chain associated with lbase, return a locked chain.
+	 * However, do not instantiate any data reference (which utilizes a
+	 * device buffer) because we will be using direct IO via the
+	 * logical buffer cache buffer.
+	 */
+	*errorp = 0;
+retry:
+	parent = *parentp;
+	hammer2_chain_lock(parent, HAMMER2_RESOLVE_ALWAYS); /* extra lock */
+	chain = hammer2_chain_lookup(&parent,
+				     lbase, lbase,
+				     HAMMER2_LOOKUP_NODATA);
+
+	if (chain == NULL) {
+		/*
+		 * We found a hole, create a new chain entry.
+		 *
+		 * NOTE: DATA chains are created without device backing
+		 *	 store (nor do we want any).
+		 */
+		*errorp = hammer2_chain_create(trans, &parent, &chain,
+					       lbase, HAMMER2_PBUFRADIX,
+					       HAMMER2_BREF_TYPE_DATA,
+					       pblksize);
+		if (chain == NULL) {
+			hammer2_chain_lookup_done(parent);
+			panic("hammer2_chain_create: par=%p error=%d\n",
+				parent, *errorp);
+			goto retry;
+		}
+
+		pbase = chain->bref.data_off & ~HAMMER2_OFF_MASK_RADIX;
+		/*ip->delta_dcount += pblksize;*/
+	} else {
+		switch (chain->bref.type) {
+		case HAMMER2_BREF_TYPE_INODE:
+			/*
+			 * The data is embedded in the inode.  The
+			 * caller is responsible for marking the inode
+			 * modified and copying the data to the embedded
+			 * area.
+			 */
+			pbase = NOOFFSET;
+			break;
+		case HAMMER2_BREF_TYPE_DATA:
+			if (chain->bytes != pblksize) {
+				panic("hammer2_assign_physical: "
+				      "size mismatch %d/%d\n",
+				      pblksize, chain->bytes);
+			}
+			if (chain->bytes != pblksize) {
+				hammer2_chain_resize(trans, ip,
+						     parent, &chain,
+						     pradix,
+						     HAMMER2_MODIFY_OPTDATA);
+			}
+			hammer2_chain_modify(trans, &chain,
+					     HAMMER2_MODIFY_OPTDATA);
+			pbase = chain->bref.data_off & ~HAMMER2_OFF_MASK_RADIX;
+			break;
+		default:
+			panic("hammer2_assign_physical: bad type");
+			/* NOT REACHED */
+			pbase = NOOFFSET;
+			break;
+		}
+	}
+
+	/*
+	 * Cleanup.  If chain wound up being the inode (i.e. DIRECTDATA),
+	 * we might have to replace *parentp.
+	 */
+	hammer2_chain_lookup_done(parent);
+	if (chain) {
+		if (*parentp != chain &&
+		    (*parentp)->core == chain->core) {
+			parent = *parentp;
+			*parentp = chain;		/* eats lock */
+			hammer2_chain_unlock(parent);
+			hammer2_chain_lock(chain, 0);	/* need another */
+		}
+		/* else chain already locked for return */
+	}
+	return (chain);
 }
 
 /* From hammer2_vnops.c. */
