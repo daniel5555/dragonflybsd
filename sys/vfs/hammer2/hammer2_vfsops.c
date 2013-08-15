@@ -727,6 +727,7 @@ hammer2_write_thread(void *arg)
 				break;
 			hammer2_inode_unlock_ex(ip, parent);
 			hammer2_trans_done(&trans);
+			biodone(bio);
 		}
 	}
 
@@ -1372,7 +1373,7 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	
 	destroy = 1;
 	
-	//wakeup(&write);	
+	wakeup(&write);	
 	//wakeup(&destroy);
 	
 	kfree(bioq_write, W_BIOQUEUE);

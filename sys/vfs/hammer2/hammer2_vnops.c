@@ -2786,9 +2786,11 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	 * normal operations on the logical buffer.
 	 */
 	kprintf("Executing strategy write.\n");
-	ap->a_bio->bio_buf->b_resid = 0;
-	ap->a_bio->bio_buf->b_error = 0;
-	biodone(ap->a_bio);
+	//ap->a_bio->bio_buf->b_resid = 0;
+	//ap->a_bio->bio_buf->b_error = 0;
+	++write;
+	wakeup(&write);	
+	//biodone(ap->a_bio);
 	return(0);
 	KKASSERT(0);
 #if 0
