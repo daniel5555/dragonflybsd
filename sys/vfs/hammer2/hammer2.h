@@ -63,6 +63,8 @@
 #include <sys/buf2.h>
 #include <sys/signal2.h>
 #include <sys/dmsg.h>
+#include <sys/mutex.h>
+#include <sys/mutex2.h>
 
 #include "hammer2_disk.h"
 #include "hammer2_mount.h"
