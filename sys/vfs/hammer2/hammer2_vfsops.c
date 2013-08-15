@@ -687,8 +687,8 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	/*
 	 * Launch test threads.
 	 */
-	//lwkt_create(hammer2_write_thread, hmp,
-		    //NULL, NULL, 0, -1, "hammer2-write");
+	lwkt_create(hammer2_write_thread, hmp,
+		    NULL, NULL, 0, -1, "hammer2-write");
 	//lwkt_create(hammer2_read_thread, hmp,
 		    //NULL, NULL, 0, -1, "hammer2-read");
 
@@ -750,7 +750,7 @@ hammer2_write_thread(void *arg)
 			ipdata = &ip->chain->data->ipdata;	/* reload */
 			if (error) {
 				kprintf("An error occured in writing thread.\n");
-				//break;
+				break;
 			}
 			hammer2_inode_unlock_ex(ip, parent);
 			hammer2_trans_done(&trans);
