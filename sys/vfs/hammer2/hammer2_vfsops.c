@@ -724,7 +724,7 @@ hammer2_write_thread(void *arg)
 						lblksize, &error, &rem_size); //Get to this later...
 			ipdata = &ip->chain->data->ipdata;	/* reload */
 			if (error) {
-				printf("An error occured in writing thread.\n");
+				kprintf("An error occured in writing thread.\n");
 				//break;
 			}
 			hammer2_inode_unlock_ex(ip, parent);
