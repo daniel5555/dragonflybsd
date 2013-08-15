@@ -717,12 +717,15 @@ hammer2_write_thread(void *arg)
 	hmp = arg;
 	
 	while (destroy == 0) {
+		kprintf("Executing write thread: outer thread.\n");
 		tsleep(&write, 0, "write_thread_sleep", 0);
 		while (write > 0) {
+			kprintf("Executing write thread: inner thread.\n");
 			mtx_lock(thread_protect);
 			bio = bioq_takefirst(bioq_write);
 			--write;
 			mtx_unlock(thread_protect);
+			kprintf("Write thread: write = %d.\n", write);
 			
 			error = 0;
 			bp = bio->bio_buf;
@@ -754,8 +757,6 @@ hammer2_write_thread(void *arg)
 			biodone(bio);
 		}
 	}
-	
-	safe_to_unload = 1;
 
 	lwkt_exit();
 }
@@ -1400,8 +1401,6 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	destroy = 1;
 	
 	wakeup(&write);
-	
-	while(safe_to_unload == 0) {}
 	//wakeup(&destroy);
 	
 	//kfree(bioq_write, W_BIOQUEUE);
