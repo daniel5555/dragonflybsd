@@ -229,6 +229,7 @@ static void hammer2_autodmsg(kdmsg_msg_t *msg);
 int destroy;
 int write;
 int counter_write;
+int safe_to_unload;
 
 mtx_t thread_protect;
 
@@ -296,6 +297,7 @@ hammer2_vfs_init(struct vfsconf *conf)
 	
 	thread_protect = kmalloc(sizeof(mtx_t), W_MTX, M_INTWAIT);
 	mtx_init(thread_protect);
+	safe_to_umount = 0;
 	
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
 	TAILQ_INIT(&hammer2_mntlist);
@@ -752,6 +754,8 @@ hammer2_write_thread(void *arg)
 			biodone(bio);
 		}
 	}
+	
+	safe_to_unload = 1;
 
 	lwkt_exit();
 }
@@ -1395,7 +1399,9 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	
 	destroy = 1;
 	
-	wakeup(&write);	
+	wakeup(&write);
+	
+	while(safe_to_unload == 0) {}
 	//wakeup(&destroy);
 	
 	//kfree(bioq_write, W_BIOQUEUE);
