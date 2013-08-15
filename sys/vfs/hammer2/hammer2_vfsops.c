@@ -181,31 +181,31 @@ static void hammer2_write_thread(void *arg);
  * Functions for compression in threads,
  * from hammer2_vnops.c
  */
-static void hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
+static void hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip,
 				hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase, int ioflag, int lblksize,
 				int *errorp, int *rem_size);
-static void hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
+static void hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip,
 				hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase, int ioflag,
 				int lblksize, int *errorp, int *rem_size);
-static void hammer2_zero_check_and_write(struct buf *bp,
+static void hammer2_zero_check_and_write_t(struct buf *bp,
 				hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase,
 				int ioflag, int lblksize, int* error);
-static int test_block_not_zeros(char *buf, size_t bytes);
-static void zero_write(struct buf *bp, hammer2_trans_t *trans,
+static int test_block_not_zeros_t(char *buf, size_t bytes);
+static void zero_write_t(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip,
 				hammer2_inode_data_t *ipdata,
 				hammer2_chain_t **parentp, 
 				hammer2_key_t lbase);
-static void hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp,
+static void hammer2_write_bp_t(hammer2_chain_t *chain, struct buf *bp,
 				int ioflag, int lblksize);
 
 static int hammer2_rcvdmsg(kdmsg_msg_t *msg);
@@ -689,7 +689,7 @@ hammer2_write_thread(void *arg)
 	
 	while (destroy == 0) {
 		while (write > 0) {
-			tsleep(&write, 0, "write_thread_sleep", 0)
+			tsleep(&write, 0, "write_thread_sleep", 0);
 			bio = bioq_takefirst(bioq_write);
 			--write;
 			
@@ -707,7 +707,7 @@ hammer2_write_thread(void *arg)
 				rem_size = bp->b_resid;
 			}
 			
-			hammer2_write_file_core(bp, trans, ip, ipdata, parentp,
+			hammer2_write_file_core_t(bp, trans, ip, ipdata, parentp,
 						lbase, IO_ASYNC,
 						lblksize, &error, &rem_size); //Get to this later...
 			ipdata = &ip->chain->data->ipdata;	/* reload */
@@ -724,7 +724,7 @@ hammer2_write_thread(void *arg)
 /* From hammer2_vnops.c. */
 static
 void
-hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
+hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
 			hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 			hammer2_chain_t **parentp,
 			hammer2_key_t lbase, int ioflag, int lblksize,
@@ -733,14 +733,14 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_chain_t *chain;
 
 	if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
-		hammer2_compress_and_write(bp, trans, ip,
+		hammer2_compress_and_write_t(bp, trans, ip,
 					   ipdata, parentp,
 					   lbase, ioflag,
 					   lblksize, errorp, rem_size);
 		bp->b_flags |= B_AGE;
 		bdwrite(bp); //get rid of this, no need to bdwrite() anymore
 	} else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
-		hammer2_zero_check_and_write(bp, trans, ip,
+		hammer2_zero_check_and_write_t(bp, trans, ip,
 				    ipdata, parentp, lbase,
 				    ioflag, lblksize, errorp);
 	} else {
@@ -755,7 +755,7 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 		chain = hammer2_assign_physical(trans, ip, parentp,
 						lbase, lblksize,
 						errorp);
-		hammer2_write_bp(chain, bp, ioflag, lblksize);
+		hammer2_write_bp_t(chain, bp, ioflag, lblksize);
 		if (chain)
 			hammer2_chain_unlock(chain);
 	}
@@ -764,7 +764,7 @@ hammer2_write_file_core(struct buf *bp, hammer2_trans_t *trans,
 
 static
 void
-hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
+hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 	hammer2_chain_t **parentp,
 	hammer2_key_t lbase, int ioflag, int lblksize,
@@ -772,7 +772,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 {
 	hammer2_chain_t *chain;
 
-	if (test_block_not_zeros(bp->b_data, lblksize)) {
+	if (test_block_not_zeros_t(bp->b_data, lblksize)) {
 		int compressed_size;
 		int compressed_block_size = lblksize;
 			
@@ -918,7 +918,7 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 				}
 				break;
 			default:
-				panic("hammer2_write_bp: bad chain type %d\n",
+				panic("hammer2_write_bp_t: bad chain type %d\n",
 					chain->bref.type);
 			/* NOT REACHED */
 				break;
@@ -929,27 +929,27 @@ hammer2_compress_and_write(struct buf *bp, hammer2_trans_t *trans,
 			hammer2_chain_unlock(chain);
 		}
 	} else {
-		zero_write(bp, trans, ip, ipdata, parentp, lbase);
+		zero_write_t(bp, trans, ip, ipdata, parentp, lbase);
 	}
 }
 
 static
 void
-hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
+hammer2_zero_check_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 	hammer2_inode_t *ip, hammer2_inode_data_t *ipdata,
 	hammer2_chain_t **parentp,
 	hammer2_key_t lbase, int ioflag, int lblksize, int *errorp)
 {
 	hammer2_chain_t *chain;
 
-	if (test_block_not_zeros(bp->b_data, lblksize)) {
+	if (test_block_not_zeros_t(bp->b_data, lblksize)) {
 		chain = hammer2_assign_physical(trans, ip, parentp,
 						lbase, lblksize, errorp);
-		hammer2_write_bp(chain, bp, ioflag, lblksize);
+		hammer2_write_bp_t(chain, bp, ioflag, lblksize);
 		if (chain)
 			hammer2_chain_unlock(chain);
 	} else {
-		zero_write(bp, trans, ip, ipdata, parentp, lbase);
+		zero_write_t(bp, trans, ip, ipdata, parentp, lbase);
 		bp->b_flags |= B_AGE;
 		bdwrite(bp);
 	}
@@ -957,7 +957,7 @@ hammer2_zero_check_and_write(struct buf *bp, hammer2_trans_t *trans,
 
 static
 int
-test_block_not_zeros(char *buf, size_t bytes)
+test_block_not_zeros_t(char *buf, size_t bytes)
 {
 	size_t i;
 
@@ -970,7 +970,7 @@ test_block_not_zeros(char *buf, size_t bytes)
 
 static
 void
-zero_write(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
+zero_write_t(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
 	hammer2_inode_data_t *ipdata, hammer2_chain_t **parentp,
 	hammer2_key_t lbase)
 {
@@ -995,7 +995,7 @@ zero_write(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
 
 static
 void
-hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag,
+hammer2_write_bp_t(hammer2_chain_t *chain, struct buf *bp, int ioflag,
 				int lblksize)
 {
 	hammer2_off_t pbase;
@@ -1060,7 +1060,7 @@ hammer2_write_bp(hammer2_chain_t *chain, struct buf *bp, int ioflag,
 		}
 		break;
 	default:
-		panic("hammer2_write_bp: bad chain type %d\n",
+		panic("hammer2_write_bp_t: bad chain type %d\n",
 		      chain->bref.type);
 		/* NOT REACHED */
 		break;
