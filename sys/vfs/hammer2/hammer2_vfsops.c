@@ -45,9 +45,18 @@
 #include <sys/socket.h>
 #include <sys/objcache.h>
 
+#include <sys/proc.h>
+#include <sys/namei.h>
+#include <sys/mountctl.h>
+#include <sys/dirent.h>
+#include <sys/uio.h>
+
 #include "hammer2.h"
 #include "hammer2_disk.h"
 #include "hammer2_mount.h"
+
+#include "hammer2.h"
+#include "hammer2_lz4.h"
 
 #define REPORT_REFS_ERRORS 1	/* XXX remove me */
 
@@ -697,10 +706,10 @@ hammer2_write_thread(void *arg)
 			bp = bio->bio_buf;
 			vp = bp->b_vp;
 			ip = VTOI(vp);
-			hammer2_trans_init(&trans, hmp, 0);
+			hammer2_trans_init(&trans, ip->pmp, 0);
 			parent = hammer2_inode_lock_ex(ip);
 			parentp = &parent;
-			ipdata = hammer2_chain_modify_ip(trans, ip, parentp, 0);
+			ipdata = hammer2_chain_modify_ip(&trans, ip, parentp, 0);
 			lblksize = hammer2_calc_logical(ip, bio->bio_offset,
 							&lbase, &leof);
 			if (bp->b_resid < lblksize) {
