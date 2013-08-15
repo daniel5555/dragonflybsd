@@ -313,14 +313,8 @@ hammer2_vfs_uninit(struct vfsconf *vfsp __unused)
 	objcache_destroy(cache_buffer_write);
 	//destroy = 1;
 	//wakeup(&write);
-	if (safe_to_unload) {
-		kfree(thread_protect, W_MTX);
-		kfree(bioq_write, W_BIOQUEUE);
-	}
-	else {
-		kprintf("Unsafe to unload, thread is still executing.\n");
-		return -1;
-	}
+	kfree(thread_protect, W_MTX);
+	kfree(bioq_write, W_BIOQUEUE);
 	return 0;
 }
 
