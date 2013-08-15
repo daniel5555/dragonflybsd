@@ -52,7 +52,7 @@
 #include <sys/uio.h>
 
 #include <sys/mutex.h>
-#include <sys/lock.h>
+#include <sys/mutex2.h>
 
 #include "hammer2.h"
 #include "hammer2_disk.h"
