@@ -309,8 +309,8 @@ hammer2_vfs_uninit(struct vfsconf *vfsp __unused)
 {
 	objcache_destroy(cache_buffer_read);
 	objcache_destroy(cache_buffer_write);
-	destroy = 1;
-	wakeup(&write);	
+	//destroy = 1;
+	//wakeup(&write);
 	//kfree(thread_protect, W_MTX);
 	//kfree(bioq_write, W_BIOQUEUE);
 	return 0;
@@ -1393,9 +1393,9 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	}
 	lockmgr(&hammer2_mntlk, LK_RELEASE);
 	
-	//destroy = 1;
+	destroy = 1;
 	
-	//wakeup(&write);	
+	wakeup(&write);	
 	//wakeup(&destroy);
 	
 	//kfree(bioq_write, W_BIOQUEUE);
