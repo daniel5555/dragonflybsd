@@ -297,7 +297,7 @@ hammer2_vfs_init(struct vfsconf *conf)
 	
 	thread_protect = kmalloc(sizeof(mtx_t), W_MTX, M_INTWAIT);
 	mtx_init(thread_protect);
-	safe_to_umount = 0;
+	safe_to_unload = 0;
 	
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
 	TAILQ_INIT(&hammer2_mntlist);
