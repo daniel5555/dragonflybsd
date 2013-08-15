@@ -108,6 +108,9 @@ MALLOC_DEFINE(D_BUFFER, "decompbuffer", "Buffer used for decompression.");
 MALLOC_DECLARE(W_BIOQUEUE);
 MALLOC_DEFINE(W_BIOQUEUE, "wbioqueue", "Writing bio queue.");
 
+MALLOC_DECLARE(W_MTX);
+MALLOC_DEFINE(W_MTX, "wmutex", "Mutex for write thread.");
+
 SYSCTL_NODE(_vfs, OID_AUTO, hammer2, CTLFLAG_RW, 0, "HAMMER2 filesystem");
 
 SYSCTL_INT(_vfs_hammer2, OID_AUTO, debug, CTLFLAG_RW,
@@ -227,7 +230,7 @@ int destroy;
 int write;
 int counter_write;
 
-mtx_t thread_protect;
+mtx_t* thread_protect;
 
 /*
  * HAMMER2 vfs operations.
@@ -291,7 +294,8 @@ hammer2_vfs_init(struct vfsconf *conf)
 	bioq_write = kmalloc(sizeof(*bioq_write), W_BIOQUEUE, M_INTWAIT);
 	bioq_init(bioq_write);
 	
-	mtx_init(thread_protect);
+	thread_protect = kmalloc(sizeof(*thread_protect), W_MTX, M_INTWAIT);
+	mtx_init(*thread_protect);
 	
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
 	TAILQ_INIT(&hammer2_mntlist);
@@ -307,7 +311,7 @@ hammer2_vfs_uninit(struct vfsconf *vfsp __unused)
 	objcache_destroy(cache_buffer_write);
 	destroy = 1;
 	wakeup(&write);	
-	//mtx_destroy(thread_protect);
+	//mtx_destroy(*thread_protect);
 	kfree(bioq_write, W_BIOQUEUE);
 	return 0;
 }
@@ -713,10 +717,10 @@ hammer2_write_thread(void *arg)
 	while (destroy == 0) {
 		tsleep(&write, 0, "write_thread_sleep", 0);
 		while (write > 0) {
-			mtx_lock(thread_protect);
+			mtx_lock(*thread_protect);
 			bio = bioq_takefirst(bioq_write);
 			--write;
-			mtx_unlock(thread_protect);
+			mtx_unlock(*thread_protect);
 			
 			error = 0;
 			bp = bio->bio_buf;
