@@ -311,7 +311,8 @@ hammer2_vfs_uninit(struct vfsconf *vfsp __unused)
 	objcache_destroy(cache_buffer_write);
 	destroy = 1;
 	wakeup(&write);	
-	//mtx_destroy(*thread_protect);
+	mtx_uninit(*thread_protect)
+	kfree(thread_protect, W_MTX);
 	kfree(bioq_write, W_BIOQUEUE);
 	return 0;
 }
