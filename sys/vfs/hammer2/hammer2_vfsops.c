@@ -723,8 +723,10 @@ hammer2_write_thread(void *arg)
 						lbase, IO_ASYNC,
 						lblksize, &error, &rem_size); //Get to this later...
 			ipdata = &ip->chain->data->ipdata;	/* reload */
-			if (error)
-				break;
+			if (error) {
+				printf("An error occured in writing thread.\n");
+				//break;
+			}
 			hammer2_inode_unlock_ex(ip, parent);
 			hammer2_trans_done(&trans);
 			biodone(bio);
@@ -849,8 +851,8 @@ hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
 					   ipdata, parentp,
 					   lbase, ioflag,
 					   lblksize, errorp, rem_size);
-		bp->b_flags |= B_AGE;
-		bdwrite(bp); //get rid of this, no need to bdwrite() anymore
+		//bp->b_flags |= B_AGE;
+		//bdwrite(bp); //get rid of this, no need to bdwrite() anymore
 	} else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
 		hammer2_zero_check_and_write_t(bp, trans, ip,
 				    ipdata, parentp, lbase,
@@ -1062,8 +1064,8 @@ hammer2_zero_check_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			hammer2_chain_unlock(chain);
 	} else {
 		zero_write_t(bp, trans, ip, ipdata, parentp, lbase);
-		bp->b_flags |= B_AGE;
-		bdwrite(bp);
+		//bp->b_flags |= B_AGE;
+		//bdwrite(bp);
 	}
 }
 
@@ -1177,8 +1179,8 @@ hammer2_write_bp_t(hammer2_chain_t *chain, struct buf *bp, int ioflag,
 		/* NOT REACHED */
 		break;
 	}
-	bp->b_flags |= B_AGE;
-	bdwrite(bp);
+	//bp->b_flags |= B_AGE;
+	//bdwrite(bp);
 }
 
 /* Another empty thread. */
