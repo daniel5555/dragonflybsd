@@ -224,6 +224,8 @@ int destroy;
 int write;
 int counter_write;
 
+struct mtx thread_protect;
+
 /*
  * HAMMER2 vfs operations.
  */
@@ -705,8 +707,10 @@ hammer2_write_thread(void *arg)
 	while (destroy == 0) {
 		tsleep(&write, 0, "write_thread_sleep", 0);
 		while (write > 0) {
+			mtx_lock(&thread_protect);
 			bio = bioq_takefirst(bioq_write);
 			--write;
+			mtx_unlock(&thread_protect);
 			
 			error = 0;
 			bp = bio->bio_buf;
