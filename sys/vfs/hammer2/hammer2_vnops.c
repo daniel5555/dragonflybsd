@@ -2792,8 +2792,9 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	//ap->a_bio->bio_buf->b_error = 0;
 	
 	bio = ap->a_bio;
-	nbio = push_bio(bio);
-	hmp = nbio->bio_caller_info1.ptr;
+	bp = bio->bio_buf;
+	ip = VTOI(ap->a_vp);
+	hmp = ip->pmp->mount_cluster->hmp;
 	
 	mtx_lock(&hmp->wthread_mtx);
 	bioq_insert_tail(&hmp->wthread_bioq, ap->a_bio);
