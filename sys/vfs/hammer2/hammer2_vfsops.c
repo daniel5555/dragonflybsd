@@ -662,7 +662,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	
 	
 	
-	mtx_init(&hmp->wthread_mtx_t);
+	mtx_init(&hmp->wthread_mtx);
 	bioq_init(hmp->wthread_bioq);
 	hmp->wthread_destroy = 0;
 	
@@ -698,16 +698,16 @@ hammer2_write_thread(void *arg)
 	
 	hmp = arg;
 	
-	mtx_lock(hmp->wthread_mtx_t);
+	mtx_lock(&hmp->wthread_mtx);
 	while (hmp->wthread_destroy == 0) {
 		kprintf("Executing write thread: outer thread.\n");
 		if (bioq_first(hmp->wthread_bioq) == NULL) {
-			mtxsleep(&hmp->wthread_bioq, hmp->wthread_mtx_t,
+			mtxsleep(&hmp->wthread_bioq, &hmp->wthread_mtx,
 				 0, "h2-write-thread-sleep", 0);
 		}
 		while ((bio = bioq_takefirst(hmp->wthread_bioq)) != NULL) {
 			kprintf("Executing write thread: inner thread.\n");
-			mtx_unlock(hmp->wthread_mtx_t);
+			mtx_unlock(&hmp->wthread_mtx);
 			
 			error = 0;
 			bp = bio->bio_buf;
@@ -737,10 +737,10 @@ hammer2_write_thread(void *arg)
 			hammer2_inode_unlock_ex(ip, parent);
 			hammer2_trans_done(&trans);
 			biodone(bio);
-			mtx_lock(hmp->wthread_mtx_t);
+			mtx_lock(&hmp->wthread_mtx);
 		}
 	}
-	mtx_unlock(hmp->wthread_mtx_t);
+	mtx_unlock(&hmp->wthread_mtx);
 	
 	hmp->wthread_destroy = -1;
 	wakeup(&hmp->wthread_destroy);
@@ -1388,12 +1388,12 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	hmp->wthread_destroy = 1;
 	wakeup(&hmp->wthread_destroy);
 	
-	mtx_lock(hmp->wthread_mtx_t);
+	mtx_lock(&hmp->wthread_mtx);
 	while (hmp->wthread_destroy != -1) {
-		mtxsleep(&hmp->wthread_destroy, hmp->wthread_mtx_t, 0,
+		mtxsleep(&hmp->wthread_destroy, &hmp->wthread_mtx, 0,
 		"umount-sleep",	0);
 	}
-	mtx_unlock(hmp->wthread_mtx_t);
+	mtx_unlock(&hmp->wthread_mtx);
 	//wakeup(&destroy);
 	
 	//kfree(bioq_write, W_BIOQUEUE);
