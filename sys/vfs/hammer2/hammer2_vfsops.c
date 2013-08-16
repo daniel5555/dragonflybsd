@@ -254,6 +254,9 @@ static
 int
 hammer2_vfs_init(struct vfsconf *conf)
 {
+	static struct objcache_malloc_args margs_read;
+	static struct objcache_malloc_args margs_write;
+
 	int error;
 
 	error = 0;
@@ -268,23 +271,18 @@ hammer2_vfs_init(struct vfsconf *conf)
 	if (error)
 		kprintf("HAMMER2 structure size mismatch; cannot continue.\n");
 	
-	struct objcache_malloc_args *margs_read;
-	struct objcache_malloc_args *margs_write;
-
-	margs_read = kmalloc(sizeof(*margs_read), M_OBJCACHE, M_WAITOK|M_ZERO);
-	margs_read->objsize = 65536;
-	margs_read->mtype = D_BUFFER;
+	margs_read.objsize = 65536;
+	margs_read.mtype = D_BUFFER;
 	
-	margs_write = kmalloc(sizeof(*margs_write), M_OBJCACHE, M_WAITOK|M_ZERO);
-	margs_write->objsize = 32768;
-	margs_write->mtype = C_BUFFER;
+	margs_write.objsize = 32768;
+	margs_write.mtype = C_BUFFER;
 	
-	cache_buffer_read = objcache_create(margs_read->mtype->ks_shortdesc,
+	cache_buffer_read = objcache_create(margs_read.mtype->ks_shortdesc,
 				0, 1, NULL, NULL, NULL, objcache_malloc_alloc,
-				objcache_malloc_free, margs_read);
-	cache_buffer_write = objcache_create(margs_write->mtype->ks_shortdesc,
+				objcache_malloc_free, &margs_read);
+	cache_buffer_write = objcache_create(margs_write.mtype->ks_shortdesc,
 				0, 1, NULL, NULL, NULL, objcache_malloc_alloc,
-				objcache_malloc_free, margs_write);
+				objcache_malloc_free, &margs_write);
 
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
 	TAILQ_INIT(&hammer2_mntlist);
