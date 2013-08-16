@@ -102,8 +102,6 @@ static void hammer2_zero_check_and_write(struct buf *bp,
 struct objcache *cache_buffer_read;
 struct objcache *cache_buffer_write;
 
-struct bio_queue_head *bioq_write;
-
 /* 
  * Callback used in read path in case that a block is compressed.
  */
@@ -2788,12 +2786,11 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	kprintf("Executing strategy write.\n");
 	//ap->a_bio->bio_buf->b_resid = 0;
 	//ap->a_bio->bio_buf->b_error = 0;
-	mtx_lock(thread_protect);
-	bioq_insert_tail(bioq_write, ap->a_bio);
-	++write;
-	mtx_unlock(thread_protect);
-	kprintf("Strategy write: write = %d.\n", write);
-	wakeup(&write);	
+	
+	mtx_lock(&hmp->wthread_mtx);
+	bioq_insert_tail(&hmp->wthread_bioq, ap->a_bio);
+	wakeup(&hmp->wthread_bioq);
+	mtx_unlock(&hmp->wthread_mtx);
 	//biodone(ap->a_bio);
 	return(0);
 	KKASSERT(0);

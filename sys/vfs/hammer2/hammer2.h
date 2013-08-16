@@ -413,6 +413,9 @@ struct hammer2_mount {
 	int		volhdrno;	/* last volhdrno written */
 	hammer2_volume_data_t voldata;
 	hammer2_volume_data_t volsync;	/* synchronized voldata */
+	struct mtx wthread_mtx;     /* mutex for write thread */
+	bio_queue_head *bioq_write; /* bio queue for write thread */
+	int 	wthread_destroy;    /* to control the write thread */
 };
 
 typedef struct hammer2_mount hammer2_mount_t;
@@ -577,9 +580,8 @@ extern long hammer2_ioa_volu_write;
 extern struct objcache *cache_buffer_read;
 extern struct objcache *cache_buffer_write;
 
-extern struct bio_queue_head *bioq_write;
 extern int destroy;
-extern int write;
+extern int write_thread_wakeup;
 
 extern mtx_t thread_protect;
 

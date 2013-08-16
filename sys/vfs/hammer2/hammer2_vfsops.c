@@ -226,12 +226,6 @@ static void hammer2_write_bp_t(hammer2_chain_t *chain, struct buf *bp,
 static int hammer2_rcvdmsg(kdmsg_msg_t *msg);
 static void hammer2_autodmsg(kdmsg_msg_t *msg);
 
-int destroy;
-int write;
-int counter_write;
-int safe_to_unload;
-
-mtx_t thread_protect;
 
 /*
  * HAMMER2 vfs operations.
@@ -291,14 +285,7 @@ hammer2_vfs_init(struct vfsconf *conf)
 	cache_buffer_write = objcache_create(margs_write->mtype->ks_shortdesc,
 				0, 1, NULL, NULL, NULL, objcache_malloc_alloc,
 				objcache_malloc_free, margs_write);
-				
-	bioq_write = kmalloc(sizeof(*bioq_write), W_BIOQUEUE, M_INTWAIT);
-	bioq_init(bioq_write);
-	
-	thread_protect = kmalloc(sizeof(mtx_t), W_MTX, M_INTWAIT);
-	mtx_init(thread_protect);
-	safe_to_unload = 0;
-	
+
 	lockinit(&hammer2_mntlk, "mntlk", 0, 0);
 	TAILQ_INIT(&hammer2_mntlist);
 
@@ -311,10 +298,6 @@ hammer2_vfs_uninit(struct vfsconf *vfsp __unused)
 {
 	objcache_destroy(cache_buffer_read);
 	objcache_destroy(cache_buffer_write);
-	//destroy = 1;
-	//wakeup(&write);
-	kfree(thread_protect, W_MTX);
-	kfree(bioq_write, W_BIOQUEUE);
 	return 0;
 }
 
@@ -677,15 +660,11 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	 */
 	hammer2_vfs_statfs(mp, &mp->mnt_stat, cred);
 	
-	//bioq_write = kmalloc(sizeof(*bioq_write), W_BIOQUEUE, M_INTWAIT);
-	//bioq_init(bioq_write);
-	
-	destroy = 0;
-	write = 0;
-	counter_write = 0;
+	mtx_init(&hmp->wthread_mtx);
+	bioq_init(hmp->bioq_write);
 	
 	/*
-	 * Launch test threads.
+	 * Launch threads.
 	 */
 	lwkt_create(hammer2_write_thread, hmp,
 		    NULL, NULL, 0, -1, "hammer2-write");
@@ -716,12 +695,16 @@ hammer2_write_thread(void *arg)
 	
 	hmp = arg;
 	
-	while (destroy == 0) {
+	mtx_lock(&hmp->wthread_mtx);
+	while (hmp->wthread_destroy == 0) {
 		kprintf("Executing write thread: outer thread.\n");
-		tsleep(&write, 0, "write_thread_sleep", 0);
-		while (write > 0) {
+		if (bioq_first(&hmp->whtread_bioq) == NULL) {
+			mtxsleep(&hmp->wthread_bioq, &hmp->wthread_mtx,
+				 0, "h2-write-thread-sleep", 0);
+		}
+		while ((bio = bioq_takefirst(&hmp->wthread_bioq)) != NULL) {
 			kprintf("Executing write thread: inner thread.\n");
-			mtx_lock(thread_protect);
+			mtx_unlock(&hmp->wthread_mtx);
 			bio = bioq_takefirst(bioq_write);
 			--write;
 			mtx_unlock(thread_protect);
@@ -755,10 +738,10 @@ hammer2_write_thread(void *arg)
 			hammer2_inode_unlock_ex(ip, parent);
 			hammer2_trans_done(&trans);
 			biodone(bio);
+			mtx_lock(&hmp->wthread_mtx);
 		}
 	}
-	
-	safe_to_unload = 1;
+	mtx_unlock(&hmp->wthread_mtx);
 
 	lwkt_exit();
 }
@@ -1245,10 +1228,6 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	int ronly = ((mp->mnt_flag & MNT_RDONLY) != 0);
 	int dumpcnt;
 	struct vnode *devvp;
-	
-	destroy = 1;
-	
-	wakeup(&write);
 
 	pmp = MPTOPMP(mp);
 	cluster = pmp->mount_cluster;
@@ -1404,6 +1383,15 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	}
 	lockmgr(&hammer2_mntlk, LK_RELEASE);
 	
+	hmp->wthread_destroy = 1;
+	wakeup(&hmp->wthread_destroy);
+	
+	mtxlock(&hmp->wthread_mtx);
+	while (hmp->wthread_destroy != -1) {
+		mtxsleep(&hmp->wthread_destroy, &hmp->wthread_mtx, 0,
+		"umount-sleep",	0);
+	}
+	mtxunlock(&hmp->wthread_mtx);
 	//wakeup(&destroy);
 	
 	//kfree(bioq_write, W_BIOQUEUE);
