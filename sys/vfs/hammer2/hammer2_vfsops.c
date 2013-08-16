@@ -1388,7 +1388,7 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	
 	mtx_lock(&hmp->wthread_mtx);
 	while (hmp->wthread_destroy != -1) {
-		mtxsleep(hmp->wthread_destroy, &hmp->wthread_mtx, 0,
+		mtxsleep(&(hmp->wthread_destroy), &hmp->wthread_mtx, 0,
 		"umount-sleep",	0);
 	}
 	mtx_unlock(&hmp->wthread_mtx);
