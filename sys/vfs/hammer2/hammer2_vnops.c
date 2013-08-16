@@ -2783,9 +2783,12 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	 * logical->physical work and have the vop_write path just do
 	 * normal operations on the logical buffer.
 	 */
+	hammer2_mount_t *hmp;
 	kprintf("Executing strategy write.\n");
 	//ap->a_bio->bio_buf->b_resid = 0;
 	//ap->a_bio->bio_buf->b_error = 0;
+	
+	hmp = nbio->bio_caller_info1.ptr;
 	
 	mtx_lock(&hmp->wthread_mtx);
 	bioq_insert_tail(&hmp->wthread_bioq, ap->a_bio);

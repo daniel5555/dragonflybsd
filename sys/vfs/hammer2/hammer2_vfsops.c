@@ -661,7 +661,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	hammer2_vfs_statfs(mp, &mp->mnt_stat, cred);
 	
 	mtx_init(&hmp->wthread_mtx);
-	bioq_init(&hmp->wthread_bioq);
+	bioq_init(hmp->wthread_bioq);
 	
 	/*
 	 * Launch threads.
@@ -698,7 +698,7 @@ hammer2_write_thread(void *arg)
 	mtx_lock(&hmp->wthread_mtx);
 	while (hmp->wthread_destroy == 0) {
 		kprintf("Executing write thread: outer thread.\n");
-		if (bioq_first(&hmp->wthread_bioq) == NULL) {
+		if (bioq_first(hmp->wthread_bioq) == NULL) {
 			mtxsleep(&hmp->wthread_bioq, &hmp->wthread_mtx,
 				 0, "h2-write-thread-sleep", 0);
 		}
