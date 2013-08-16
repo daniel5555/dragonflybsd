@@ -749,9 +749,9 @@ hammer2_write_thread(void *arg)
 		}
 	}
 	hmp->wthread_destroy = -1;
-	mtx_unlock(&hmp->wthread_mtx);
-	
 	wakeup(&hmp->wthread_destroy);
+	
+	mtx_unlock(&hmp->wthread_mtx);
 
 	//lwkt_exit();
 }
