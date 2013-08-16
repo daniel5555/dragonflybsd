@@ -1387,9 +1387,9 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	kfree(cluster, M_HAMMER2);
 	kfree(pmp, M_HAMMER2);
 	if (hmp->pmp_count == 0) {
-		wakeup(&hmp->wthread_bioq);
 		mtx_lock(&hmp->wthread_mtx);
 		hmp->wthread_destroy = 1;
+		wakeup(&hmp->wthread_bioq);
 		while (hmp->wthread_destroy != -1) {
 			mtxsleep(&hmp->wthread_destroy, &hmp->wthread_mtx, 0,
 				"umount-sleep",	0);
