@@ -2785,7 +2785,8 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	 */
 	hammer2_mount_t *hmp;
 	struct bio *bio;
-	struct bio *nbio;
+	struct buf *bp;
+	hammer2_inode_t *ip;
 	
 	kprintf("Executing strategy write.\n");
 	//ap->a_bio->bio_buf->b_resid = 0;
