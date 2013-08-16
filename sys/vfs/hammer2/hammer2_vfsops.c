@@ -740,9 +740,9 @@ hammer2_write_thread(void *arg)
 			mtx_lock(&hmp->wthread_mtx);
 		}
 	}
+	hmp->wthread_destroy = -1;
 	mtx_unlock(&hmp->wthread_mtx);
 	
-	hmp->wthread_destroy = -1;
 	wakeup(&hmp->wthread_destroy);
 
 	lwkt_exit();
@@ -1395,8 +1395,6 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	}
 	mtx_unlock(&hmp->wthread_mtx);
 	//wakeup(&destroy);
-	
-	//kfree(bioq_write, W_BIOQUEUE);
 
 	return (error);
 }
