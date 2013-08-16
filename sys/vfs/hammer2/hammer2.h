@@ -414,7 +414,7 @@ struct hammer2_mount {
 	hammer2_volume_data_t voldata;
 	hammer2_volume_data_t volsync;	/* synchronized voldata */
 	struct mtx wthread_mtx;     /* mutex for write thread */
-	bio_queue_head *bioq_write; /* bio queue for write thread */
+	struct bio_queue_head *bioq_write; /* bio queue for write thread */
 	int 	wthread_destroy;    /* to control the write thread */
 };
 
