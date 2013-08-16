@@ -662,6 +662,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	
 	mtx_init(&hmp->wthread_mtx);
 	bioq_init(hmp->wthread_bioq);
+	hmp->wthread_destroy = 0;
 	
 	/*
 	 * Launch threads.
@@ -738,6 +739,9 @@ hammer2_write_thread(void *arg)
 		}
 	}
 	mtx_unlock(&hmp->wthread_mtx);
+	
+	hmp->wthread_destroy = -1;
+	wakeup(&hmp->wthread_destroy);
 
 	lwkt_exit();
 }
