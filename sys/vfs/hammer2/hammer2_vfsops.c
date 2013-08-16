@@ -529,6 +529,16 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 		hammer2_inode_ref(hmp->sroot);	/* for hmp->sroot */
 		hammer2_inode_unlock_ex(hmp->sroot, schain);
 		schain = NULL;
+		
+		mtx_init(&hmp->wthread_mtx);
+		bioq_init(&hmp->wthread_bioq);
+		hmp->wthread_destroy = 0;
+	
+		/*
+		 * Launch threads.
+		 */
+		lwkt_create(hammer2_write_thread, hmp,
+				NULL, NULL, 0, -1, "hammer2-write");
 	}
 
 	/*
@@ -660,14 +670,14 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	 */
 	hammer2_vfs_statfs(mp, &mp->mnt_stat, cred);
 	
-	mtx_init(&hmp->wthread_mtx);
-	bioq_init(&hmp->wthread_bioq);
-	hmp->wthread_destroy = 0;
+	//mtx_init(&hmp->wthread_mtx);
+	//bioq_init(&hmp->wthread_bioq);
+	//hmp->wthread_destroy = 0;
 	
-	/*
-	 * Launch threads.
-	 */
-	lwkt_create(hammer2_write_thread, hmp,
+	///*
+	 //* Launch threads.
+	 //*/
+	//lwkt_create(hammer2_write_thread, hmp,
 		    NULL, NULL, 0, -1, "hammer2-write");
 	//lwkt_create(hammer2_read_thread, hmp,
 		    //NULL, NULL, 0, -1, "hammer2-read");
@@ -743,7 +753,7 @@ hammer2_write_thread(void *arg)
 	
 	wakeup(&hmp->wthread_destroy);
 
-	lwkt_exit();
+	//lwkt_exit();
 }
 
 /* From hammer2_vnops.c. */
