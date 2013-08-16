@@ -1,17 +1,13 @@
-$DragonFly: doc/notes/porting_drivers.txt,v 1.4 2008/04/06 19:08:30 pavalos Exp $
-
 		    PORTING FREEBSD DRIVERS TO DRAGONFLY
 
 * Copy the driver code to the appropriate DragonFly directory.  For example,
   a disk driver /usr/src/sys/dev/blah in FreeBSD would likely be 
   /usr/src/sys/dev/disk/blah in DragonFly.
 
-* Keep all the CVS ids in the files for future reference point. If the files
-  don't have it, please add it to them. You can find them out from CVSWeb
-  repository or by checking out the specific source files with the FreeBSD
-  SVN client.
-  This could be automated in the case pkgsrc's SVN client had the set of
-  patches that provide this functionality.
+* Keep all the SVN IDs in the files as a future reference point. dports' SVN
+  will do that by default. When using pkgsrc's SVN client, please note the
+  files' IDs manually, either in the files themselves or in the commit message.
+  The general idea is that it must not get lost.
 
 * Remove FBSDID declaration and '#include <sys/cdefs.h>' as well.
 
@@ -102,6 +98,8 @@ $DragonFly: doc/notes/porting_drivers.txt,v 1.4 2008/04/06 19:08:30 pavalos Exp 
 	mtx_assert(&my_mtx, MA_OWNED|MA_NOTRECURSED);
 
   calls.
+
+* rwlock conversion: Use lockmgr locks
 	
 * UMA conversion - generally speaking UMA should be converted to a standard
   kmalloc.
@@ -202,3 +200,28 @@ $DragonFly: doc/notes/porting_drivers.txt,v 1.4 2008/04/06 19:08:30 pavalos Exp 
 	 * 01-02-03-04-05-06
 	 */
 	kprintf("%s\n", hexncpy(mydata, 6, hexstr, HEX_NCPYLEN(6), "-"));
+
+* TAILQ_XXX_SAFE
+
+  Use TAILQ_XXX_MUTABLE; the macros have the same effect, only the name is
+  different
+
+* kern_yield()
+
+  Replace by lwkt_yield()
+
+* vm_page_lock() and vm_page_unlock()
+
+  Not needed on DragonFly, remove these calls
+
+* vm_pager_get_pages()
+
+  Removed, use vm_pager_get_page() instead
+
+* VPO_BUSY
+
+  Replace by PG_BUSY
+
+* kern_psignal()
+
+  Replace by ksignal()

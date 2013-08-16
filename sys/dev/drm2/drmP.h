@@ -188,17 +188,6 @@ SYSCTL_DECL(_hw_drm);
 
 #define DRM_CURPROC		curthread
 #define DRM_STRUCTPROC		struct thread
-#define DRM_SPINTYPE		struct spinlock
-#define DRM_SPININIT(l,name)	spin_init(l)
-#define DRM_SPINUNINIT(l)	spin_uninit(l)
-#define DRM_SPINLOCK(l)		spin_lock(l)
-#define DRM_SPINUNLOCK(u)	spin_unlock(u)
-#define DRM_SPINLOCK_IRQSAVE(l, irqflags) do {		\
-	mtx_lock(l);					\
-	(void)irqflags;					\
-} while (0)
-#define DRM_SPINUNLOCK_IRQRESTORE(u, irqflags) mtx_unlock(u)
-#define DRM_SPINLOCK_ASSERT(l)	mtx_assert(l, MA_OWNED)
 #define DRM_CURRENTPID		curthread->td_proc->p_pid
 #define DRM_LOCK(dev)		lockmgr(&(dev)->dev_struct_lock, LK_EXCLUSIVE);
 #define DRM_UNLOCK(dev)		lockmgr(&(dev)->dev_struct_lock, LK_RELEASE);
@@ -844,7 +833,7 @@ struct drm_device {
 	struct lwkt_serialize irq_lock;	/* protects irq condition checks */
 	struct lock	  dev_lock;	/* protects everything else */
 	struct lock	  dev_struct_lock;
-	DRM_SPINTYPE	  drw_lock;
+	struct spinlock   drw_lock;
 
 				/* Usage Counters */
 	int		  open_count;	/* Outstanding files open	   */
@@ -909,6 +898,7 @@ struct drm_device {
 	struct drm_minor *control;		/**< Control node for card */
 	struct drm_minor *primary;		/**< render type primary screen head */
 
+	void		  *drm_ttm_bo;
 	struct unrhdr	  *drw_unrhdr;
 	/* RB tree of drawable infos */
 	RB_HEAD(drawable_tree, bsd_drm_drawable_info) drw_head;
@@ -1308,9 +1298,13 @@ void drm_gem_release(struct drm_device *dev, struct drm_file *file_priv);
 
 int drm_gem_create_mmap_offset(struct drm_gem_object *obj);
 void drm_gem_free_mmap_offset(struct drm_gem_object *obj);
-int drm_gem_mmap_single(struct cdev *kdev, vm_ooffset_t *offset, vm_size_t size,
-    struct vm_object **obj_res, int nprot);
+int drm_gem_mmap_single(struct drm_device *dev, vm_ooffset_t *offset,
+    vm_size_t size, struct vm_object **obj_res, int nprot);
 void drm_gem_pager_dtr(void *obj);
+
+struct ttm_bo_device;
+int ttm_bo_mmap_single(struct ttm_bo_device *bdev, vm_ooffset_t *offset,
+    vm_size_t size, struct vm_object **obj_res, int nprot);
 
 void drm_device_lock_mtx(struct drm_device *dev);
 void drm_device_unlock_mtx(struct drm_device *dev);
@@ -1412,6 +1406,16 @@ do {									\
 
 #define	KTR_DRM		KTR_DEV
 #define	KTR_DRM_REG	KTR_SPARE3
+
+
+/* FreeBSD compatibility macros */
+#define PROC_LOCK(p)
+#define PROC_UNLOCK(p)
+
+#define VM_OBJECT_RLOCK(object)		VM_OBJECT_LOCK(object)
+#define VM_OBJECT_RUNLOCK(object)	VM_OBJECT_UNLOCK(object)
+#define VM_OBJECT_WLOCK(object)		VM_OBJECT_LOCK(object)
+#define VM_OBJECT_WUNLOCK(object)	VM_OBJECT_UNLOCK(object)
 
 #endif /* __KERNEL__ */
 #endif /* _DRM_P_H_ */
