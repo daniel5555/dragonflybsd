@@ -2795,10 +2795,10 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	nbio = push_bio(bio);
 	hmp = nbio->bio_caller_info1.ptr;
 	
-	mtx_lock(hmp->wthread_mtx_t);
+	mtx_lock(&hmp->wthread_mtx);
 	bioq_insert_tail(hmp->wthread_bioq, ap->a_bio);
 	wakeup(&hmp->wthread_bioq);
-	mtx_unlock(hmp->wthread_mtx_t);
+	mtx_unlock(&hmp->wthread_mtx);
 	//biodone(ap->a_bio);
 	return(0);
 	KKASSERT(0);
