@@ -662,7 +662,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	
 	hmp->wthread_mtx_t = kmalloc(sizeof(mtx_t), W_MTX, M_INTWAIT);
 	
-	mtx_init(hmp->wthread_mtx);
+	mtx_init(hmp->wthread_mtx_t);
 	bioq_init(hmp->wthread_bioq);
 	hmp->wthread_destroy = 0;
 	
