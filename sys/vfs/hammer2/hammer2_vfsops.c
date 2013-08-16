@@ -678,7 +678,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	 //* Launch threads.
 	 //*/
 	//lwkt_create(hammer2_write_thread, hmp,
-		    NULL, NULL, 0, -1, "hammer2-write");
+		    //NULL, NULL, 0, -1, "hammer2-write");
 	//lwkt_create(hammer2_read_thread, hmp,
 		    //NULL, NULL, 0, -1, "hammer2-read");
 
