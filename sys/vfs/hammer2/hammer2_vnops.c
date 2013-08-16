@@ -2799,6 +2799,7 @@ hammer2_strategy_write(struct vop_strategy_args *ap)
 	
 	mtx_lock(&hmp->wthread_mtx);
 	bioq_insert_tail(&hmp->wthread_bioq, ap->a_bio);
+	kprintf("Inserting tail into bioq.\n");
 	wakeup(&hmp->wthread_bioq);
 	mtx_unlock(&hmp->wthread_mtx);
 	//biodone(ap->a_bio);

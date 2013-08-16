@@ -706,13 +706,14 @@ hammer2_write_thread(void *arg)
 	
 	mtx_lock(&hmp->wthread_mtx);
 	while (hmp->wthread_destroy == 0) {
-		kprintf("Executing write thread: outer thread.\n");
+		kprintf("Write thread: outer thread.\n");
 		if (bioq_first(&hmp->wthread_bioq) == NULL) {
+			kprintf("Write thread: going to sleep.\n");
 			mtxsleep(&hmp->wthread_bioq, &hmp->wthread_mtx,
 				 0, "h2-write-thread-sleep", 0);
 		}
 		while ((bio = bioq_takefirst(&hmp->wthread_bioq)) != NULL) {
-			kprintf("Executing write thread: inner thread.\n");
+			kprintf("Write thread: inner thread.\n");
 			mtx_unlock(&hmp->wthread_mtx);
 			
 			error = 0;
@@ -746,6 +747,7 @@ hammer2_write_thread(void *arg)
 			mtx_lock(&hmp->wthread_mtx);
 		}
 	}
+	kprintf("Write thread: exiting.\n");
 	hmp->wthread_destroy = -1;
 	wakeup(&hmp->wthread_destroy);
 	
