@@ -413,8 +413,8 @@ struct hammer2_mount {
 	int		volhdrno;	/* last volhdrno written */
 	hammer2_volume_data_t voldata;
 	hammer2_volume_data_t volsync;	/* synchronized voldata */
-	struct mtx wthread_mtx;     /* mutex for write thread */
 	struct bio_queue_head *wthread_bioq; /* bio queue for write thread */
+	struct mtx_t* wthread_mtx;     /* mutex for write thread */
 	int 	wthread_destroy;    /* to control the write thread */
 };
 
