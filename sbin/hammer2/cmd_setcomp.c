@@ -125,7 +125,7 @@ setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 	return 0;
 }
 
-void
+int
 setcomp_recursive_call(char *directory, int comp_method, int set_files)
 {
 	DIR *dir;
