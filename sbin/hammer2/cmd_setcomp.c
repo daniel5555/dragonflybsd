@@ -74,6 +74,7 @@ cmd_setcomp(char* comp_string, char* file_string)
 int
 cmd_setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 {
+	int ecode = 0;
 	int set_files;
 	if (strcmp(option_string, "-r") == 0) {
 		set_files = 0;
@@ -121,7 +122,7 @@ cmd_setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 		}
 	}
 	close(fd);
-	return 0;
+	return ecode;
 }
 
 int
