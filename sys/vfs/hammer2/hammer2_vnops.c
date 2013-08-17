@@ -367,7 +367,7 @@ hammer2_vop_getattr(struct vop_getattr_args *ap)
 	vap->va_gid = hammer2_to_unix_xid(&ipdata->gid);
 	vap->va_rmajor = 0;
 	vap->va_rminor = 0;
-	vap->va_size = ip->size;
+	vap->va_size = ip->size;	/* protected by shared lock */
 	vap->va_blocksize = HAMMER2_PBUFSIZE;
 	vap->va_flags = ipdata->uflags;
 	hammer2_time_to_timespec(ipdata->ctime, &vap->va_ctime);
@@ -829,7 +829,9 @@ hammer2_read_file(hammer2_inode_t *ip, struct uio *uio, int seqcount)
 	/*
 	 * UIO read loop.
 	 */
+	ccms_thread_lock(&ip->topo_cst, CCMS_STATE_EXCLUSIVE);
 	size = ip->size;
+	ccms_thread_unlock(&ip->topo_cst);
 
 	while (uio->uio_resid > 0 && uio->uio_offset < size) {
 		hammer2_key_t lbase;
@@ -881,8 +883,11 @@ hammer2_write_file(hammer2_inode_t *ip,
 	/*
 	 * Setup if append
 	 */
+	ccms_thread_lock(&ip->topo_cst, CCMS_STATE_EXCLUSIVE);
 	if (ioflag & IO_APPEND)
 		uio->uio_offset = ip->size;
+	old_eof = ip->size;
+	ccms_thread_unlock(&ip->topo_cst);
 
 	/*
 	 * Extend the file if necessary.  If the write fails at some point
@@ -896,9 +901,8 @@ hammer2_write_file(hammer2_inode_t *ip,
 	error = 0;
 	modified = 0;
 
-	old_eof = ip->size;
-	if (uio->uio_offset + uio->uio_resid > ip->size) {
-		new_eof = uio->uio_resid + ip->size;
+	if (uio->uio_offset + uio->uio_resid > old_eof) {
+		new_eof = uio->uio_offset + uio->uio_resid;
 		modified = 1;
 		hammer2_extend_file(ip, new_eof);
 		kflags |= NOTE_EXTEND;
@@ -951,7 +955,7 @@ hammer2_write_file(hammer2_inode_t *ip,
 		n = lblksize - loff;
 		if (n > uio->uio_resid) {
 			n = uio->uio_resid;
-			if (loff == lbase && uio->uio_offset + n == ip->size)
+			if (loff == lbase && uio->uio_offset + n == new_eof)
 				trivial = 1;
 		} else if (loff == 0) {
 			trivial = 1;
@@ -1019,11 +1023,13 @@ hammer2_write_file(hammer2_inode_t *ip,
 	 * Cleanup.  If we extended the file EOF but failed to write through
 	 * the entire write is a failure and we have to back-up.
 	 */
-	if (error && ip->size != old_eof) {
+	if (error && new_eof != old_eof) {
 		hammer2_truncate_file(ip, old_eof);
 	} else if (modified) {
+		ccms_thread_lock(&ip->topo_cst, CCMS_STATE_EXCLUSIVE);
 		hammer2_update_time(&ip->mtime);
 		atomic_set_int(&ip->flags, HAMMER2_INODE_MTIME);
+		ccms_thread_unlock(&ip->topo_cst);
 	}
 	atomic_set_int(&ip->flags, HAMMER2_INODE_MODIFIED);
 	hammer2_knote(ip->vp, kflags);
@@ -1047,8 +1053,10 @@ hammer2_truncate_file(hammer2_inode_t *ip, hammer2_key_t nsize)
 			   nblksize, (int)nsize & (nblksize - 1),
 			   0);
 	}
+	ccms_thread_lock(&ip->topo_cst, CCMS_STATE_EXCLUSIVE);
 	ip->size = nsize;
 	atomic_set_int(&ip->flags, HAMMER2_INODE_RESIZED);
+	ccms_thread_unlock(&ip->topo_cst);
 }
 
 /*
@@ -1063,8 +1071,11 @@ hammer2_extend_file(hammer2_inode_t *ip, hammer2_key_t nsize)
 	int oblksize;
 	int nblksize;
 
+	ccms_thread_lock(&ip->topo_cst, CCMS_STATE_EXCLUSIVE);
 	osize = ip->size;
 	ip->size = nsize;
+	ccms_thread_unlock(&ip->topo_cst);
+
 	if (ip->vp) {
 		oblksize = hammer2_calc_logical(ip, osize, &lbase, NULL);
 		nblksize = hammer2_calc_logical(ip, nsize, &lbase, NULL);

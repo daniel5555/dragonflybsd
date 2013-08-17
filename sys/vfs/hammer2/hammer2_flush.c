@@ -103,6 +103,10 @@ hammer2_updatestats(hammer2_flush_info_t *info, hammer2_blockref_t *bref,
  * with that flush.  They only have to wait for transactions prior to the
  * flush trans to complete before they unstall.
  *
+ * WARNING! Transaction ids are only allocated when the transaction becomes
+ *	    active, which allows other transactions to insert ahead of us
+ *	    if we are forced to block (only bioq transactions do that).
+ *
  * WARNING! Modifications to the root volume cannot dup the root volume
  *	    header to handle synchronization points, so alloc_tid can
  *	    wind up (harmlessly) more advanced on flush.
@@ -124,26 +128,49 @@ hammer2_trans_init(hammer2_trans_t *trans, hammer2_pfsmount_t *pmp, int flags)
 	hmp = cluster->hmp;
 
 	hammer2_voldata_lock(hmp);
-	trans->sync_tid = hmp->voldata.alloc_tid++;
 	trans->flags = flags;
 	trans->td = curthread;
 
 	if (flags & HAMMER2_TRANS_ISFLUSH) {
 		/*
+		 * If multiple flushes are trying to run we have to
+		 * wait until it is our turn, then set curflush to
+		 * indicate that a flush is now pending (but not
+		 * necessarily active yet).
+		 *
+		 * NOTE: Do not set trans->blocked here.
+		 */
+		++hmp->flushcnt;
+		while (hmp->curflush != NULL) {
+			lksleep(&hmp->curflush, &hmp->voldatalk,
+				0, "h2multf", hz);
+		}
+		hmp->curflush = trans;
+		TAILQ_INSERT_TAIL(&hmp->transq, trans, entry);
+
+		/*
 		 * If we are a flush we have to wait for all transactions
 		 * prior to our flush synchronization point to complete
 		 * before we can start our flush.
+		 *
+		 * Most importantly, this includes bioq flushes.
+		 *
+		 * NOTE: Do not set trans->blocked here.
 		 */
-		TAILQ_INSERT_TAIL(&hmp->transq, trans, entry);
-		++hmp->flushcnt;
-		if (hmp->curflush == NULL) {
-			hmp->curflush = trans;
-			hmp->topo_flush_tid = trans->sync_tid;
-		}
 		while (TAILQ_FIRST(&hmp->transq) != trans) {
 			lksleep(&trans->sync_tid, &hmp->voldatalk,
 				0, "h2syncw", hz);
 		}
+
+		/*
+		 * don't assign sync_tid until we become the running
+		 * flush.  topo_flush_tid is used to control when
+		 * chain modifications in concurrent transactions are
+		 * required to delete-duplicate (so as not to disturb
+		 * the state of what is being currently flushed).
+		 */
+		trans->sync_tid = hmp->voldata.alloc_tid++;
+		hmp->topo_flush_tid = trans->sync_tid;
 
 		/*
 		 * Once we become the running flush we can wakeup anyone
@@ -161,55 +188,43 @@ hammer2_trans_init(hammer2_trans_t *trans, hammer2_pfsmount_t *pmp, int flags)
 		}
 	} else if ((flags & HAMMER2_TRANS_BUFCACHE) && hmp->curflush) {
 		/*
-		 * XXX hack at the moment, duplicate transaction id's
-		 *     if a buffer is reflushed before the formal flush
-		 *     finishes can cause a panic.
+		 * We cannot block if we are the bioq thread.  When a
+		 * flush is not pending we can operate normally but
+		 * if a flush IS pending the bioq thread's transaction
+		 * must be placed either before or after curflush.
 		 *
-		 * We cannot block if we are the bioq thread.  Our buffers
-		 * represent data from prior transactions that were already
-		 * allowed.  New writes will block in vop_write's transaction
-		 * init and not generate new buffers (yet).
-		 *
-		 * If the current flush is running and not waiting for
-		 * pre-flush transactions to finish we represent a
-		 * transaction id flushing concurrently after the current
-		 * flush.
-		 *
-		 * Otherwise we have to be part of the transaction running
-		 * beforehand.
+		 * If the current flush is waiting the bioq thread's
+		 * transaction is placed before.  If it is running the
+		 * bioq thread's transaction is placed after.
 		 */
 		scan = TAILQ_FIRST(&hmp->transq);
-		TAILQ_INSERT_AFTER(&hmp->transq, scan, trans, entry);
-		trans->sync_tid = scan->sync_tid;
-
-		/*
-		 * We must inherit the blocked status of the entry we are
-		 * inserting in front of to prevent early scan breakouts,
-		 * even though we aren't blocked ourselves.
-		 */
-		scan = TAILQ_NEXT(trans, entry);
-		if (scan)
-			trans->blocked = scan->blocked;
+		if (scan != hmp->curflush) {
+			TAILQ_INSERT_BEFORE(hmp->curflush, trans, entry);
+		} else {
+			TAILQ_INSERT_TAIL(&hmp->transq, trans, entry);
+		}
+		trans->sync_tid = hmp->voldata.alloc_tid++;
 	} else {
 		/*
-		 * If we are not a flush but our sync_tid is after a
-		 * stalled flush, we have to wait until that flush unstalls
-		 * (that is, all transactions prior to that flush complete),
-		 * but then we can run concurrently with that flush.
+		 * If this is a normal transaction and not a flush, or
+		 * if this is a bioq transaction and no flush is pending,
+		 * we can queue normally.
 		 *
-		 * (flushcnt check only good as pre-condition, otherwise it
-		 *  may represent elements queued after us after we block).
+		 * Normal transactions must block while a pending flush is
+		 * waiting for prior transactions to complete.  Once the
+		 * pending flush becomes active we can run concurrently
+		 * with it.
 		 */
 		TAILQ_INSERT_TAIL(&hmp->transq, trans, entry);
-		if (hmp->flushcnt > 1 ||
-		    (hmp->curflush &&
-		     TAILQ_FIRST(&hmp->transq) != hmp->curflush)) {
+		scan = TAILQ_FIRST(&hmp->transq);
+		if (hmp->curflush && hmp->curflush != scan) {
 			trans->blocked = 1;
 			while (trans->blocked) {
 				lksleep(&trans->blocked, &hmp->voldatalk,
 					0, "h2trans", hz);
 			}
 		}
+		trans->sync_tid = hmp->voldata.alloc_tid++;
 	}
 	hammer2_voldata_unlock(hmp, 0);
 }
@@ -227,24 +242,16 @@ hammer2_trans_done(hammer2_trans_t *trans)
 	hammer2_voldata_lock(hmp);
 	TAILQ_REMOVE(&hmp->transq, trans, entry);
 	if (trans->flags & HAMMER2_TRANS_ISFLUSH) {
-		/*
-		 * If we were a flush we have to adjust curflush to the
-		 * next flush.
-		 *
-		 * flush_tid is used to partition copy-on-write operations
-		 * (mostly duplicate-on-modify ops), which is what allows
-		 * us to execute a flush concurrent with modifying operations
-		 * with higher TIDs.
-		 */
 		--hmp->flushcnt;
 		if (hmp->flushcnt) {
-			TAILQ_FOREACH(scan, &hmp->transq, entry) {
-				if (scan->flags & HAMMER2_TRANS_ISFLUSH)
-					break;
-			}
-			KKASSERT(scan);
-			hmp->curflush = scan;
-			hmp->topo_flush_tid = scan->sync_tid;
+			/*
+			 * If we were a flush then wakeup anyone waiting on
+			 * curflush (i.e. other flushes that want to run).
+			 * Leave topo_flush_id set (I think we could probably
+			 * clear it to zero here).
+			 */
+			hmp->curflush = NULL;
+			wakeup(&hmp->curflush);
 		} else {
 			/*
 			 * Theoretically we don't have to clear flush_tid
