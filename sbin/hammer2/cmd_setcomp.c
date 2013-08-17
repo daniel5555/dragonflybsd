@@ -79,7 +79,7 @@ cmd_setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 	if (strcmp(option_string, "-r") == 0) {
 		set_files = 0;
 	}
-	else if (option_string, "-rf") == 0) {
+	else if (strcmp(option_string, "-rf") == 0) {
 		set_files = 1;
 	}
 	else {
@@ -87,13 +87,13 @@ cmd_setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 		exit(1);
 	}
 	int comp_method;
-	if (comp_string, "0") == 0) {
+	if (strcmp(comp_string, "0") == 0) {
 		printf("Will turn off compression on directory/file %s\n", file_string);
 		comp_method = HAMMER2_COMP_NONE;
-	} else if (comp_string, "1") == 0) {
+	} else if (strcmp(comp_string, "1") == 0) {
 		printf("Will set zero-checking compression on directory/file %s.\n", file_string);
 		comp_method = HAMMER2_COMP_AUTOZERO;
-	} else if (comp_string, "2") == 0) {
+	} else if (strcmp(comp_string, "2") == 0) {
 		printf("Will set LZ4 compression on directory/file %s.\n", file_string);
 		comp_method = HAMMER2_COMP_LZ4;
 	} else {
