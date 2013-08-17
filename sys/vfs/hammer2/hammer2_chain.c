@@ -97,6 +97,20 @@ hammer2_chain_cmp(hammer2_chain_t *chain1, hammer2_chain_t *chain2)
 		return(-1);
 	if (chain1->delete_tid > chain2->delete_tid)
 		return(1);
+
+	/*
+	 * Multiple deletions in the same transaction are possible.  We
+	 * still need to detect SMP races on _get() so only do this
+	 * conditionally.
+	 */
+	if ((chain1->flags & HAMMER2_CHAIN_DELETED) &&
+	    (chain2->flags & HAMMER2_CHAIN_DELETED)) {
+		if (chain1 < chain2)
+			return(-1);
+		if (chain1 > chain2)
+			return(1);
+	}
+
 	return(0);
 }
 
@@ -1465,8 +1479,19 @@ hammer2_chain_find_callback(hammer2_chain_t *child, void *data)
 	struct hammer2_chain_find_info *info = data;
 
 	if (info->delete_tid < child->delete_tid) {
-		info->delete_tid = child->delete_tid;
-		info->best = child;
+		/*
+		 * Normally the child with the larger delete_tid (which would
+		 * be MAX_TID if the child is not deleted) wins.  However, if
+		 * the child was deleted AND flushed (DELETED set and MOVED
+		 * no longer set), the parent bref is now valid and we don't
+		 * want the child to improperly shadow it.
+		 */
+		if ((child->flags &
+		     (HAMMER2_CHAIN_DELETED | HAMMER2_CHAIN_MOVED)) !=
+		    HAMMER2_CHAIN_DELETED) {
+			info->delete_tid = child->delete_tid;
+			info->best = child;
+		}
 	}
 	return(0);
 }
@@ -2791,17 +2816,24 @@ hammer2_chain_delete_duplicate(hammer2_trans_t *trans, hammer2_chain_t **chainp,
 
 	nchain->index = ochain->index;
 
+	KKASSERT(ochain->flags & HAMMER2_CHAIN_ONRBTREE);
 	spin_lock(&above->cst.spin);
-	atomic_set_int(&nchain->flags, HAMMER2_CHAIN_ONRBTREE);
+
+	RB_REMOVE(hammer2_chain_tree, &above->rbtree, ochain);
 	ochain->delete_tid = trans->sync_tid;
-	nchain->above = above;
 	atomic_set_int(&ochain->flags, HAMMER2_CHAIN_DELETED);
+	if (RB_INSERT(hammer2_chain_tree, &above->rbtree, ochain))
+		panic("chain_delete: reinsertion failed %p", ochain);
+
+	nchain->above = above;
+	atomic_set_int(&nchain->flags, HAMMER2_CHAIN_ONRBTREE);
+	if (RB_INSERT(hammer2_chain_tree, &above->rbtree, nchain)) {
+		panic("hammer2_chain_delete_duplicate: collision");
+	}
+
 	if ((ochain->flags & HAMMER2_CHAIN_MOVED) == 0) {
 		hammer2_chain_ref(ochain);
 		atomic_set_int(&ochain->flags, HAMMER2_CHAIN_MOVED);
-	}
-	if (RB_INSERT(hammer2_chain_tree, &above->rbtree, nchain)) {
-		panic("hammer2_chain_delete_duplicate: collision");
 	}
 	spin_unlock(&above->cst.spin);
 
@@ -3626,13 +3658,19 @@ hammer2_chain_delete(hammer2_trans_t *trans, hammer2_chain_t *chain, int flags)
 	 * We need the spinlock on the core whos RBTREE contains chain
 	 * to protect against races.
 	 */
+	KKASSERT(chain->flags & HAMMER2_CHAIN_ONRBTREE);
 	spin_lock(&chain->above->cst.spin);
+
+	RB_REMOVE(hammer2_chain_tree, &chain->above->rbtree, chain);
+	chain->delete_tid = trans->sync_tid;
 	atomic_set_int(&chain->flags, HAMMER2_CHAIN_DELETED);
+	if (RB_INSERT(hammer2_chain_tree, &chain->above->rbtree, chain))
+		panic("chain_delete: reinsertion failed %p", chain);
+
 	if ((chain->flags & HAMMER2_CHAIN_MOVED) == 0) {
 		hammer2_chain_ref(chain);
 		atomic_set_int(&chain->flags, HAMMER2_CHAIN_MOVED);
 	}
-	chain->delete_tid = trans->sync_tid;
 	spin_unlock(&chain->above->cst.spin);
 
 	/*
