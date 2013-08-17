@@ -1676,11 +1676,14 @@ hammer2_sync_scan2(struct mount *mp, struct vnode *vp, void *data)
 	/*
 	 * VOP_FSYNC will start a new transaction so replicate some code
 	 * here to do it inline (see hammer2_vop_fsync()).
+	 *
+	 * WARNING: The vfsync interacts with the buffer cache and might
+	 *          block, we can't hold the inode lock at that time.
 	 */
-	parent = hammer2_inode_lock_ex(ip);
 	atomic_clear_int(&ip->flags, HAMMER2_INODE_MODIFIED);
 	if (ip->vp)
 		vfsync(ip->vp, MNT_NOWAIT, 1, NULL, NULL);
+	parent = hammer2_inode_lock_ex(ip);
 	hammer2_chain_flush(&info->trans, parent);
 	hammer2_inode_unlock_ex(ip, parent);
 	error = 0;

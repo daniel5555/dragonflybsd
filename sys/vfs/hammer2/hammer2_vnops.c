@@ -562,9 +562,11 @@ hammer2_vop_fsync(struct vop_fsync_args *ap)
 	vp = ap->a_vp;
 	ip = VTOI(vp);
 
+	/*
+	 * WARNING: The vfsync interacts with the buffer cache and might
+	 *	    block, we can't hold the inode lock at that time.
+	 */
 	hammer2_trans_init(&trans, ip->pmp, HAMMER2_TRANS_ISFLUSH);
-	chain = hammer2_inode_lock_ex(ip);
-
 	vfsync(vp, ap->a_waitfor, 1, NULL, NULL);
 
 	/*
@@ -575,6 +577,7 @@ hammer2_vop_fsync(struct vop_fsync_args *ap)
 	 * which call this function will eventually call chain_flush
 	 * on the volume root as a catch-all, which is far more optimal.
 	 */
+	chain = hammer2_inode_lock_ex(ip);
 	atomic_clear_int(&ip->flags, HAMMER2_INODE_MODIFIED);
 	if (ap->a_flags & VOP_FSYNC_SYSCALL) {
 		hammer2_chain_flush(&trans, chain);
