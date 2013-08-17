@@ -33,7 +33,7 @@
 #include "hammer2.h"
  
 int
-setcomp(char* comp_string, char* file_string)
+cmd_setcomp(char* comp_string, char* file_string)
 {
 	int comp_method;
 	if (strcmp(comp_string, "0") == 0) {
@@ -72,7 +72,7 @@ setcomp(char* comp_string, char* file_string)
 }
 
 int
-setcomp_recursive(char* option_string, char* comp_string, char* file_string)
+cmd_setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 {
 	int ecode = 0;
 	int set_files;
@@ -126,7 +126,7 @@ setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 }
 
 int
-setcomp_recursive_call(char *directory, int comp_method, int set_files)
+cmd_setcomp_recursive_call(char *directory, int comp_method, int set_files)
 {
 	DIR *dir;
 	if ((dir = opendir (directory)) == NULL) {
