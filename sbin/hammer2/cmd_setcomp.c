@@ -128,6 +128,7 @@ cmd_setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 int
 setcomp_recursive_call(char *directory, int comp_method, int set_files)
 {
+	int ecode = 0;
 	DIR *dir;
 	if ((dir = opendir (directory)) == NULL) {
         fprintf(stderr, "ERROR while trying to set the mode recursively: %s\n",
@@ -143,7 +144,7 @@ setcomp_recursive_call(char *directory, int comp_method, int set_files)
     ++lenght;
     errno = 0;
     dent = readdir(dir);
-    while (dent != NULL) {
+    while (dent != NULL && ecode == 0) {
 		if ((strcmp(dent->d_name, ".") != 0) &&
 		 (strcmp(dent->d_name, "..") != 0)) {
 			strncpy(name + lenght, dent->d_name, HAMMER2_INODE_MAXNAME -
@@ -157,7 +158,7 @@ setcomp_recursive_call(char *directory, int comp_method, int set_files)
 				return 3;
 			}
 			if (inode.ip_data.type == HAMMER2_OBJTYPE_DIRECTORY) {
-				set_comp_mode_recursive(name, comp_method, set_files);
+				ecode = setcomp_recursive_call(name, comp_method, set_files);
 				inode.ip_data.comp_algo = comp_method;
 				res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 			}
@@ -186,5 +187,5 @@ setcomp_recursive_call(char *directory, int comp_method, int set_files)
 		fprintf(stderr, "ERROR during iteration: %s\n", strerror(errno));
 		return 3;
     }
-    return 0;
+    return ecode;
 }
