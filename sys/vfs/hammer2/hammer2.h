@@ -307,6 +307,8 @@ struct hammer2_inode {
 	hammer2_tid_t		inum;
 	u_int			flags;
 	u_int			refs;		/* +vpref, +flushref */
+	hammer2_off_t		size;
+	uint64_t		mtime;
 };
 
 typedef struct hammer2_inode hammer2_inode_t;
@@ -315,6 +317,8 @@ typedef struct hammer2_inode hammer2_inode_t;
 #define HAMMER2_INODE_SROOT		0x0002	/* kmalloc special case */
 #define HAMMER2_INODE_RENAME_INPROG	0x0004
 #define HAMMER2_INODE_ONRBTREE		0x0008
+#define HAMMER2_INODE_RESIZED		0x0010
+#define HAMMER2_INODE_MTIME		0x0020
 
 int hammer2_inode_cmp(hammer2_inode_t *ip1, hammer2_inode_t *ip2);
 RB_PROTOTYPE2(hammer2_inode_tree, hammer2_inode, rbnode, hammer2_inode_cmp,
@@ -375,8 +379,9 @@ struct hammer2_trans {
 
 typedef struct hammer2_trans hammer2_trans_t;
 
-#define HAMMER2_TRANS_ISFLUSH		0x0001
+#define HAMMER2_TRANS_ISFLUSH		0x0001	/* formal flush */
 #define HAMMER2_TRANS_RESTRICTED	0x0002	/* snapshot flush restrict */
+#define HAMMER2_TRANS_BUFCACHE		0x0004	/* from bioq strategy write */
 
 #define HAMMER2_FREEMAP_HEUR_NRADIX	4	/* pwr 2 PBUFRADIX-MINIORADIX */
 #define HAMMER2_FREEMAP_HEUR_TYPES	8
@@ -619,6 +624,7 @@ int hammer2_getradix(size_t bytes);
 
 int hammer2_calc_logical(hammer2_inode_t *ip, hammer2_off_t uoff,
 			 hammer2_key_t *lbasep, hammer2_key_t *leofp);
+int hammer2_calc_physical(hammer2_inode_t *ip, hammer2_key_t lbase);
 void hammer2_update_time(uint64_t *timep);
 
 /*
@@ -648,7 +654,8 @@ int hammer2_inode_connect(hammer2_trans_t *trans, int hlink,
 			const uint8_t *name, size_t name_len);
 hammer2_inode_t *hammer2_inode_common_parent(hammer2_inode_t *fdip,
 			hammer2_inode_t *tdip);
-
+void hammer2_inode_fsync(hammer2_trans_t *trans, hammer2_inode_t *ip,
+			hammer2_chain_t **parentp);
 int hammer2_unlink_file(hammer2_trans_t *trans, hammer2_inode_t *dip,
 			const uint8_t *name, size_t name_len, int isdir,
 			int *hlinkp);

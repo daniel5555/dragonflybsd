@@ -487,6 +487,8 @@ again:
 		nip->flags = HAMMER2_INODE_SROOT;
 	}
 	nip->inum = chain->data->ipdata.inum;
+	nip->size = chain->data->ipdata.size;
+	nip->mtime = chain->data->ipdata.mtime;
 	hammer2_inode_repoint(nip, NULL, chain);
 	nip->pip = dip;				/* can be NULL */
 	if (dip)
@@ -1515,4 +1517,75 @@ hammer2_inode_common_parent(hammer2_inode_t *fdip, hammer2_inode_t *tdip)
 	      fdip, tdip);
 	/* NOT REACHED */
 	return(NULL);
+}
+
+/*
+ * Synchronize the inode's frontend state with the chain state prior
+ * to any explicit flush of the inode or any strategy write call.
+ *
+ * Called with a locked inode.
+ */
+void
+hammer2_inode_fsync(hammer2_trans_t *trans, hammer2_inode_t *ip, 
+		    hammer2_chain_t **chainp)
+{
+	hammer2_inode_data_t *ipdata;
+	hammer2_chain_t *parent;
+	hammer2_chain_t *chain;
+	hammer2_key_t lbase;
+
+	ipdata = &ip->chain->data->ipdata;
+
+	if (ip->flags & HAMMER2_INODE_MTIME) {
+		ipdata = hammer2_chain_modify_ip(trans, ip, chainp, 0);
+		atomic_clear_int(&ip->flags, HAMMER2_INODE_MTIME);
+		ipdata->mtime = ip->mtime;
+	}
+	if ((ip->flags & HAMMER2_INODE_RESIZED) && ip->size < ipdata->size) {
+		ipdata = hammer2_chain_modify_ip(trans, ip, chainp, 0);
+		ipdata->size = ip->size;
+		atomic_clear_int(&ip->flags, HAMMER2_INODE_RESIZED);
+
+		/*
+		 * We must delete any chains beyond the EOF.  The chain
+		 * straddling the EOF will be pending in the bioq.
+		 */
+		lbase = (ipdata->size + HAMMER2_PBUFMASK64) &
+			~HAMMER2_PBUFMASK64;
+		parent = hammer2_chain_lookup_init(ip->chain, 0);
+		chain = hammer2_chain_lookup(&parent,
+					     lbase, (hammer2_key_t)-1,
+					     HAMMER2_LOOKUP_NODATA);
+		while (chain) {
+			/*
+			 * Degenerate embedded case, nothing to loop on
+			 */
+			if (chain->bref.type == HAMMER2_BREF_TYPE_INODE) {
+				hammer2_chain_unlock(chain);
+				break;
+			}
+			if (chain->bref.type == HAMMER2_BREF_TYPE_DATA) {
+				hammer2_chain_delete(trans, chain, 0);
+			}
+			chain = hammer2_chain_next(&parent, chain,
+						   lbase, (hammer2_key_t)-1,
+						   HAMMER2_LOOKUP_NODATA);
+		}
+		hammer2_chain_lookup_done(parent);
+	} else
+	if ((ip->flags & HAMMER2_INODE_RESIZED) && ip->size > ipdata->size) {
+		ipdata = hammer2_chain_modify_ip(trans, ip, chainp, 0);
+		ipdata->size = ip->size;
+		atomic_clear_int(&ip->flags, HAMMER2_INODE_RESIZED);
+
+		/*
+		 * When resizing larger we may not have any direct-data
+		 * available.
+		 */
+		if ((ipdata->op_flags & HAMMER2_OPFLAG_DIRECTDATA) &&
+		    ip->size > HAMMER2_EMBEDDED_BYTES) {
+			ipdata->op_flags &= ~HAMMER2_OPFLAG_DIRECTDATA;
+			bzero(&ipdata->u.blockset, sizeof(ipdata->u.blockset));
+		}
+	}
 }
