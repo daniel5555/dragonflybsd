@@ -332,7 +332,7 @@ main(int ac, char **av)
 		}
 	} else if (strcmp(av[0], "setcomp") == 0) {
 		if (ac < 3 || ac > 4) {
-			fprintf(stderr, "setcomp: requires compression method and" +
+			fprintf(stderr, "setcomp: requires compression method and"
 				"directory/file path\n");
 			usage(1);
 		} else {
