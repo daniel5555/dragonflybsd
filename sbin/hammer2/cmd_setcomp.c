@@ -39,11 +39,11 @@ cmd_setcomp(char* comp_string, char* file_string)
 	if (strcmp(comp_string, "0") == 0) {
 		printf("Will turn off compression on directory/file %s\n", file_string);
 		comp_method = HAMMER2_COMP_NONE;
-	} else if (comp_string, "1") == 0) {
+	} else if (strcmp(comp_string, "1") == 0) {
 		printf("Will set zero-checking compression on directory/file %s.\n",
-			av[2]);
+			file_string);
 		comp_method = HAMMER2_COMP_AUTOZERO;
-	} else if (comp_string, "2") == 0) {
+	} else if (strcmp(comp_string, "2") == 0) {
 		printf("Will set LZ4 compression on directory/file %s.\n", file_string);
 		comp_method = HAMMER2_COMP_LZ4;
 	} else {
@@ -171,7 +171,8 @@ cmd_setcomp_recursive_call(char *directory, int comp_method, int set_files)
 			if (res < 0) {
 				if (errno != EINVAL) {
 					fprintf(stderr, "ERROR during recursion after trying"
-						+ "to set the mode: %s\n", strerror(errno));
+						"to set the mode: %s\n",
+						strerror(errno));
 					return 3;
 				}
 			}
