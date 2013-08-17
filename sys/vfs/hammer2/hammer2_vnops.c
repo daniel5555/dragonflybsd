@@ -520,6 +520,13 @@ hammer2_vop_setattr(struct vop_setattr_args *ap)
 			kflags |= NOTE_ATTRIB;
 		}
 	}
+
+	/*
+	 * If a truncation occurred we must call inode_fsync() now in order
+	 * to trim the related data chains, otherwise a later expansion can
+	 * cause havoc.
+	 */
+	hammer2_inode_fsync(&trans, ip, &chain);
 done:
 	hammer2_inode_unlock_ex(ip, chain);
 	hammer2_trans_done(&trans);
@@ -1917,10 +1924,12 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 			nbio->bio_caller_info3.value = loff;
 			breadcb(chain->hmp->devvp, pbase, psize,
 				hammer2_decompress_callback, nbio);
-		}
-		else {
-			hammer2_chain_load_async(chain, hammer2_strategy_read_callback,
-					 nbio);
+			/* XXX async read dev blk not protected by chain lk */
+			hammer2_chain_unlock(chain);
+		} else {
+			hammer2_chain_load_async(chain,
+						 hammer2_strategy_read_callback,
+						 nbio);
 		}
 	} else {
 		panic("READ PATH: hammer2_strategy_read: unknown bref type");
@@ -1971,7 +1980,8 @@ hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,
 		if (dbp)
 			bqrelse(dbp);
 		panic("hammer2_strategy_read: unknown bref type");
-		chain = NULL;
+		/*hammer2_chain_unlock(chain);*/
+		/*chain = NULL;*/
 	}
 }
 
