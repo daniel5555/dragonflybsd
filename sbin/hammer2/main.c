@@ -336,143 +336,19 @@ main(int ac, char **av)
 				"directory/file path\n");
 			usage(1);
 		} else {
-			if (ac == 3) {//no option specified, no recursion by default
+			if (ac == 3) //no option specified, no recursion by default
 				ecode = cmd_setcomp(av[1], av[2]);
-				//int comp_method;
-				//if (strcmp(av[1], "0") == 0) {
-					//printf("Will turn off compression on directory/file %s\n", av[2]);
-					//comp_method = HAMMER2_COMP_NONE;
-				//} else if (strcmp(av[1], "1") == 0) {
-					//printf("Will set zero-checking compression on directory/file %s.\n", av[2]);
-					//comp_method = HAMMER2_COMP_AUTOZERO;
-				//} else if (strcmp(av[1], "2") == 0) {
-					//printf("Will set LZ4 compression on directory/file %s.\n", av[2]);
-					//comp_method = HAMMER2_COMP_LZ4;
-				//} else {
-					//printf("Unknown compression method.\n");
-					//exit(1);
-				//}
-				//int fd = hammer2_ioctl_handle(av[2]);
-				//hammer2_ioc_inode_t inode;
-				//int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
-				//if (res < 0) {
-					//fprintf(stderr, "ERROR before setting the mode: %s\n", strerror(errno));
-					//exit(3);
-				//}
-				//inode.ip_data.comp_algo = comp_method;
-				//res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
-				//if (res < 0) {
-					//if (errno != EINVAL) {
-						//fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
-						//exit(3);
-					//}
-				//}
-				//close(fd);
-			}
-			else {
+			else
 				ecode = cmd_setcomp_recursive(av[1], av[2], av[3]);
-				//int set_files;
-				//if (strcmp(av[1], "-r") == 0) {
-					//set_files = 0;
-				//}
-				//else if (strcmp(av[1], "-rf") == 0) {
-					//set_files = 1;
-				//}
-				//else {
-					//printf("setcomp: Unrecognized option.\n");
-					//exit(1);
-				//}
-				//int comp_method;
-				//if (strcmp(av[2], "0") == 0) {
-					//printf("Will turn off compression on directory/file %s\n", av[3]);
-					//comp_method = HAMMER2_COMP_NONE;
-				//} else if (strcmp(av[2], "1") == 0) {
-					//printf("Will set zero-checking compression on directory/file %s.\n", av[3]);
-					//comp_method = HAMMER2_COMP_AUTOZERO;
-				//} else if (strcmp(av[2], "2") == 0) {
-					//printf("Will set LZ4 compression on directory/file %s.\n", av[3]);
-					//comp_method = HAMMER2_COMP_LZ4;
-				//} else {
-					//printf("Unknown compression method.\n");
-					//exit(1);
-				//}
-				//int fd = hammer2_ioctl_handle(av[3]);
-				//hammer2_ioc_inode_t inode;
-				//int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
-				//if (res < 0) {
-					//fprintf(stderr, "ERROR before setting the mode: %s\n", strerror(errno));
-					//exit(3);
-				//}
-				//if (inode.ip_data.type != HAMMER2_OBJTYPE_DIRECTORY) {
-					//printf("setcomp: the specified object is not a directory, nothing changed.\n");
-					//exit(1);
-				//}
-				//printf("Attention: recursive compression mode setting demanded, this may take a while...\n");
-				//set_comp_mode_recursive(av[3], comp_method, set_files);
-				//inode.ip_data.comp_algo = comp_method;
-				//res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
-				//if (res < 0) {
-					//if (errno != EINVAL) {
-						//fprintf(stderr, "ERROR after trying to set the mode: %s\n", strerror(errno));
-						//exit(3);
-					//}
-				//}
-				//close(fd);
-			}
 			if (ecode == 0) printf("Compression mode set.\n");			
 		}
 	} else if (strcmp(av[0], "printinode") == 0) {
 		if (ac != 2) {
 			fprintf(stderr, "printinode: requires directory/file path\n");
 			usage(1);
-		} else {
-			printf("Printing the inode's contents of directory/file %s\n", av[1]);
-			int fd = hammer2_ioctl_handle(av[1]);
-			if (fd != -1) {
-				hammer2_ioc_inode_t inode;
-				int res = ioctl(fd, HAMMER2IOC_INODE_GET, &inode);
-				hammer2_inode_data_t inode_data;
-				inode_data = inode.ip_data;
-				printf("Got res = %d\n", res);
-				printf("Printing inode data.\n");
-				/*printf("version = %d\n", inode_data.version);
-				printf("uflags = %d\n", inode_data.uflags);
-				printf("rmajor = %d\n", inode_data.rmajor);
-				printf("rminor = %d\n", inode_data.rminor);
-				printf("ctime = %u !\n", (unsigned int)inode_data.ctime);
-				printf("mtime = %u !\n", (unsigned int)inode_data.mtime);*/
-				printf("type = %d\n", inode_data.type);
-				printf("op_flags = %d\n", inode_data.op_flags);
-				/*printf("cap_flags = %d\n", inode_data.cap_flags);
-				printf("mode = %d\n", inode_data.mode);
-				printf("inum = %u !\n", (unsigned int)inode_data.inum);
-				printf("size = %u !\n", (unsigned int)inode_data.size),*/
-				printf("name_key = %u !\n", (unsigned int)inode_data.name_key);
-				/*printf("name_len = %d\n", inode_data.name_len);
-				printf("ncopies = %d\n", inode_data.ncopies);*/
-				printf("comp_algo = %d\n", inode_data.comp_algo);
-				if (inode_data.op_flags != HAMMER2_OPFLAG_DIRECTDATA) {
-					int i;
-					for (i = 0; i < HAMMER2_SET_COUNT; ++i) {
-						if (inode_data.u.blockset.blockref[i].type != HAMMER2_BREF_TYPE_EMPTY) {
-							printf("blockrefs %d type = %d\n", i, inode_data.u.blockset.blockref[i].type);
-							printf("blockrefs %d methods = %d\n", i, inode_data.u.blockset.blockref[i].methods);
-							printf("blockrefs %d copyid = %d\n", i, inode_data.u.blockset.blockref[i].copyid);
-							printf("blockrefs %d flags = %d\n", i, inode_data.u.blockset.blockref[i].flags);
-							printf("blockrefs %d key = %u !\n", i, (unsigned int)inode_data.u.blockset.blockref[i].key);
-						}
-						else
-							printf("blockrefs %d is empty.\n", i);
-					}
-				}
-				else {
-					printf("This inode has data instead of blockrefs.\n");
-				}
-			}
-			else {
-				exit(0);
-			}
 		}
+		else
+			print_inode(av[1]);
 	} else {
 		fprintf(stderr, "Unrecognized command: %s\n", av[0]);
 		usage(1);

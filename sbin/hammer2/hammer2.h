@@ -156,3 +156,4 @@ uint32_t hammer2_icrc32c(const void *buf, size_t size, uint32_t crc);
 void hammer2_shell_parse(dmsg_msg_t *msg);
 int setcomp_recursive_call(char *directory, int comp_method,
 	int set_files);
+void print_inode(char* inode_string);
