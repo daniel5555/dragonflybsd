@@ -37,14 +37,14 @@ setcomp(char* comp_string, char* file_string)
 {
 	int comp_method;
 	if (strcmp(comp_string, "0") == 0) {
-		printf("Will turn off compression on directory/file %s\n", av[2]);
+		printf("Will turn off compression on directory/file %s\n", file_string);
 		comp_method = HAMMER2_COMP_NONE;
 	} else if (comp_string, "1") == 0) {
 		printf("Will set zero-checking compression on directory/file %s.\n",
 			av[2]);
 		comp_method = HAMMER2_COMP_AUTOZERO;
 	} else if (comp_string, "2") == 0) {
-		printf("Will set LZ4 compression on directory/file %s.\n", av[2]);
+		printf("Will set LZ4 compression on directory/file %s.\n", file_string);
 		comp_method = HAMMER2_COMP_LZ4;
 	} else {
 		printf("ERROR: Unknown compression method.\n");
@@ -88,13 +88,13 @@ setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 	}
 	int comp_method;
 	if (comp_string, "0") == 0) {
-		printf("Will turn off compression on directory/file %s\n", av[3]);
+		printf("Will turn off compression on directory/file %s\n", file_string);
 		comp_method = HAMMER2_COMP_NONE;
 	} else if (comp_string, "1") == 0) {
-		printf("Will set zero-checking compression on directory/file %s.\n", av[3]);
+		printf("Will set zero-checking compression on directory/file %s.\n", file_string);
 		comp_method = HAMMER2_COMP_AUTOZERO;
 	} else if (comp_string, "2") == 0) {
-		printf("Will set LZ4 compression on directory/file %s.\n", av[3]);
+		printf("Will set LZ4 compression on directory/file %s.\n", file_string);
 		comp_method = HAMMER2_COMP_LZ4;
 	} else {
 		printf("Unknown compression method.\n");
