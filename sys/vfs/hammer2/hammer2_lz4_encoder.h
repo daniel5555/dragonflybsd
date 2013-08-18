@@ -47,17 +47,21 @@
 //#  error "FUNTION_NAME is not defined"
 //#endif
 
-void* LZ4_create(void);
-int LZ4_free(void* ctx);
+void*
+LZ4_create(void);
+int
+LZ4_free(void* ctx);
 
-int LZ4_compress_heap_limitedOutput(
+int
+LZ4_compress_heap_limitedOutput(
                  void* ctx,
                  char* source,
                  char* dest,
                  int inputSize,
                  int maxOutputSize);
                  
-int LZ4_compress64k_heap_limitedOutput(
+int
+LZ4_compress64k_heap_limitedOutput(
                  void* ctx,
                  char* source,
                  char* dest,
@@ -89,7 +93,8 @@ int LZ4_compress64k_heap_limitedOutput(
 // Function code
 //****************************
 
-int LZ4_compress_heap_limitedOutput(
+int
+LZ4_compress_heap_limitedOutput(
                  void* ctx,
                  char* source,
                  char* dest,
@@ -272,7 +277,8 @@ _last_literals:
     return (int) (((char*)op)-dest);
 }
 
-int LZ4_compress64k_heap_limitedOutput(
+int
+LZ4_compress64k_heap_limitedOutput(
                  void* ctx,
                  char* source,
                  char* dest,

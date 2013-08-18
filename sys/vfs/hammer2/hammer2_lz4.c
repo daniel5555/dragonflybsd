@@ -422,11 +422,14 @@ Used to allocate and free hashTable memory
 to be used by the LZ4_compress_heap* family of functions.
 LZ4_createHeapMemory() returns NULL is memory allocation fails.
 */
-void* LZ4_create()
+void*
+LZ4_create()
 {
 	return kmalloc(HASHTABLESIZE, C_HASHTABLE, M_INTWAIT);
 }
-int LZ4_free(void* ctx)
+
+int
+LZ4_free(void* ctx)
 {
 	kfree(ctx, C_HASHTABLE);
 	return 0;
@@ -540,7 +543,8 @@ return : the number of bytes written in buffer 'dest', or 0 if the compression f
 //}
 
 
-int LZ4_compress_limitedOutput(char* source, char* dest, int inputSize, int maxOutputSize)
+int
+LZ4_compress_limitedOutput(char* source, char* dest, int inputSize, int maxOutputSize)
 {
 //#if HEAPMODE
     void* ctx = LZ4_create();
@@ -571,7 +575,9 @@ typedef enum { full = 0, partial = 1 } exit_directive;
 // It shall be instanciated several times, using different sets of directives
 // Note that it is essential this generic function is really inlined, 
 // in order to remove useless branches during compilation optimisation.
-static inline int LZ4_decompress_generic(
+static
+inline
+int LZ4_decompress_generic(
                  char* source,
                  char* dest,
                  int inputSize,          //
@@ -702,7 +708,8 @@ _output_error:
 }
 
 
-int LZ4_decompress_safe(char* source, char* dest, int inputSize, int maxOutputSize)
+int
+LZ4_decompress_safe(char* source, char* dest, int inputSize, int maxOutputSize)
 {
     return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
 							endOnInputSize, noPrefix, full, 0);
