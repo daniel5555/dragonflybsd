@@ -423,7 +423,7 @@ to be used by the LZ4_compress_heap* family of functions.
 LZ4_createHeapMemory() returns NULL is memory allocation fails.
 */
 void*
-LZ4_create()
+LZ4_create(void)
 {
 	return kmalloc(HASHTABLESIZE, C_HASHTABLE, M_INTWAIT);
 }
