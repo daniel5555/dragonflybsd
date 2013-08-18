@@ -93,17 +93,17 @@ int FUNCTION_NAME(
     const BYTE* ip = (BYTE*) source;
     CURRENTBASE(base);
     const BYTE* anchor = ip;
-    const BYTE* const iend = ip + inputSize;
-    const BYTE* const mflimit = iend - MFLIMIT;
+    const BYTE* iend = ip + inputSize;
+    const BYTE* mflimit = iend - MFLIMIT;
 #define matchlimit (iend - LASTLITERALS)
 
     BYTE* op = (BYTE*) dest;
 #ifdef LIMITED_OUTPUT
-    BYTE* const oend = op + maxOutputSize;
+    BYTE* oend = op + maxOutputSize;
 #endif
 
     int length;
-    const int skipStrength = SKIPSTRENGTH;
+    int skipStrength = SKIPSTRENGTH;
     U32 forwardH;
 
 
@@ -125,8 +125,8 @@ int FUNCTION_NAME(
     for ( ; ; )
     {
         int findMatchAttempts = (1U << skipStrength) + 3;
-        const BYTE* forwardIp = ip;
-        const BYTE* ref;
+        BYTE* forwardIp = ip;
+        BYTE* ref;
         BYTE* token;
 
         // Find a match

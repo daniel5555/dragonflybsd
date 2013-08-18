@@ -233,7 +233,7 @@ typedef struct _U64_S { U64 v; } _PACKED U64_S;
 #  define LZ4_COPYPACKET(s,d)     LZ4_COPYSTEP(s,d)
 #  define LZ4_SECURECOPY(s,d,e)   if (d<e) LZ4_WILDCOPY(s,d,e)
 #  define HTYPE                   U32
-#  define INITBASE(base)          const BYTE* const base = ip
+#  define INITBASE(base)          BYTE* const base = ip
 #else      // 32-bit
 #  define STEPSIZE 4
 #  define UARCH U32
@@ -241,8 +241,8 @@ typedef struct _U64_S { U64 v; } _PACKED U64_S;
 #  define LZ4_COPYSTEP(s,d)       A32(d) = A32(s); d+=4; s+=4;
 #  define LZ4_COPYPACKET(s,d)     LZ4_COPYSTEP(s,d); LZ4_COPYSTEP(s,d);
 #  define LZ4_SECURECOPY          LZ4_WILDCOPY
-#  define HTYPE                   const BYTE*
-#  define INITBASE(base)          const int base = 0
+#  define HTYPE                   BYTE*
+#  define INITBASE(base)          int base = 0
 #endif
 
 #if (defined(LZ4_BIG_ENDIAN) && !defined(BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE))
@@ -290,7 +290,7 @@ static inline int LZ4_NbCommonBytes (register U64 val)
     #elif defined(__GNUC__) && (GCC_VERSION >= 304) && !defined(LZ4_FORCE_SW_BITCOUNT)
     return (__builtin_ctzll(val) >> 3);
     #else
-    static const int DeBruijnBytePos[64] = { 
+    static int DeBruijnBytePos[64] = { 
 		0, 0, 0, 0, 0, 1, 1, 2, 0, 3,
 		1, 3, 1, 4, 2, 7, 0, 2, 3, 6,
 		1, 5, 3, 5, 1, 3, 4, 4, 2, 5,
@@ -328,7 +328,7 @@ static inline int LZ4_NbCommonBytes (register U32 val)
 #  elif defined(__GNUC__) && (GCC_VERSION >= 304) && !defined(LZ4_FORCE_SW_BITCOUNT)
     return (__builtin_ctz(val) >> 3);
 #  else
-    static const int DeBruijnBytePos[32] = { 
+    static int DeBruijnBytePos[32] = { 
 		0, 0, 3, 0, 3, 1, 3, 0, 3, 2,
 		2, 1, 3, 2, 0, 1, 3, 3, 1, 2,
 		2, 2, 2, 0, 3, 1, 2, 0, 1, 0,
@@ -507,7 +507,7 @@ return : the number of bytes written in buffer 'dest', or 0 if the compression f
 #include "hammer2_lz4_encoder.h"
 
 
-int LZ4_compress(const char* source, char* dest, int inputSize)
+int LZ4_compress(char* source, char* dest, int inputSize)
 {
 #if HEAPMODE
     void* ctx = LZ4_create();
@@ -525,7 +525,7 @@ int LZ4_compress(const char* source, char* dest, int inputSize)
 }
 
 
-int LZ4_compress_limitedOutput(const char* source, char* dest, int inputSize, int maxOutputSize)
+int LZ4_compress_limitedOutput(char* source, char* dest, int inputSize, int maxOutputSize)
 {
 #if HEAPMODE
     void* ctx = LZ4_create();
@@ -557,7 +557,7 @@ typedef enum { full = 0, partial = 1 } exit_directive;
 // Note that it is essential this generic function is really inlined, 
 // in order to remove useless branches during compilation optimisation.
 static inline int LZ4_decompress_generic(
-                 const char* source,
+                 char* source,
                  char* dest,
                  int inputSize,          //
                  int outputSize,         // OutputSize must be != 0; if endOnInput==endOnInputSize, this value is the max size of Output Buffer.
@@ -569,12 +569,12 @@ static inline int LZ4_decompress_generic(
                  )
 {
     // Local Variables
-    const BYTE* restrict ip = (const BYTE*) source;
-    const BYTE* ref;
-    const BYTE* const iend = ip + inputSize;
+    BYTE* restrict ip = (BYTE*) source;
+    BYTE* ref;
+    BYTE* iend = ip + inputSize;
 
     BYTE* op = (BYTE*) dest;
-    BYTE* const oend = op + outputSize;
+    BYTE* oend = op + outputSize;
     BYTE* cpy;
     BYTE* oexit = op + targetOutputSize;
 
@@ -631,7 +631,7 @@ static inline int LZ4_decompress_generic(
 
         // get offset
         LZ4_READ_LITTLEENDIAN_16(ref,cpy,ip); ip+=2;
-        if ((prefix64k==noPrefix) && unlikely(ref < (BYTE* const)dest)) goto _output_error;   // Error : offset outside destination buffer
+        if ((prefix64k==noPrefix) && unlikely(ref < (BYTE*)dest)) goto _output_error;   // Error : offset outside destination buffer
 
         // get matchlength
         if ((length=(token&ML_MASK)) == ML_MASK) 
@@ -687,31 +687,31 @@ _output_error:
 }
 
 
-int LZ4_decompress_safe(const char* source, char* dest, int inputSize, int maxOutputSize)
+int LZ4_decompress_safe(char* source, char* dest, int inputSize, int maxOutputSize)
 {
     return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
 							endOnInputSize, noPrefix, full, 0);
 }
 
-int LZ4_decompress_fast(const char* source, char* dest, int outputSize)
+int LZ4_decompress_fast(char* source, char* dest, int outputSize)
 {
     return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize, noPrefix, full, 0);
 }
 
-int LZ4_decompress_safe_withPrefix64k(const char* source, char* dest, int inputSize,
+int LZ4_decompress_safe_withPrefix64k(char* source, char* dest, int inputSize,
 							int maxOutputSize)
 {
     return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
 							endOnInputSize, withPrefix, full, 0);
 }
 
-int LZ4_decompress_fast_withPrefix64k(const char* source, char* dest, int outputSize)
+int LZ4_decompress_fast_withPrefix64k(char* source, char* dest, int outputSize)
 {
     return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize,
 							withPrefix, full, 0);
 }
 
-int LZ4_decompress_safe_partial(const char* source, char* dest, int inputSize,
+int LZ4_decompress_safe_partial(char* source, char* dest, int inputSize,
 							int targetOutputSize, int maxOutputSize)
 {
     return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
