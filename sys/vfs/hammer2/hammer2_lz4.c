@@ -447,14 +447,6 @@ return : the number of bytes written in buffer 'dest'
 #define USE_HEAPMEMORY
 #include "hammer2_lz4_encoder.h"
 
-
-int LZ4_compress_heap_limitedOutput(
-                 void* ctx,
-                 const char* source,
-                 char* dest,
-                 int inputSize,
-                 int maxOutputSize);
-
 /*
 int LZ4_compress_heap_limitedOutput(
                  void* ctx,
@@ -491,14 +483,6 @@ return : the number of bytes written in buffer 'dest'
 //#define COMPRESS_64K
 //#define USE_HEAPMEMORY
 //#include "hammer2_lz4_encoder.h"
-
-
-int LZ4_compress64k_heap_limitedOutput(
-                 void* ctx,
-                 const char* source,
-                 char* dest,
-                 int inputSize,
-                 int maxOutputSize);
 
 /*
 int LZ4_compress64k_heap_limitedOutput(
