@@ -356,8 +356,8 @@ Compress 'inputSize' bytes from 'source' into an output buffer 'dest'.
 Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
 return : the number of bytes written in buffer 'dest'
 */
-#define FUNCTION_NAME LZ4_compress_stack
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress_stack
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -371,9 +371,9 @@ Compress 'inputSize' bytes from 'source' into an output buffer 'dest' of maximum
 If it cannot achieve it, compression will stop, and result of the function will be zero.
 return : the number of bytes written in buffer 'dest', or 0 if the compression fails
 */
-#define FUNCTION_NAME LZ4_compress_stack_limitedOutput
-#define LIMITED_OUTPUT
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress_stack_limitedOutput
+//#define LIMITED_OUTPUT
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -388,9 +388,9 @@ This function compresses better than LZ4_compress_stack(), on the condition that
 Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
 return : the number of bytes written in buffer 'dest', or 0 if compression fails
 */
-#define FUNCTION_NAME LZ4_compress64k_stack
-#define COMPRESS_64K
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress64k_stack
+//#define COMPRESS_64K
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -406,10 +406,10 @@ This function compresses better than LZ4_compress_stack_limitedOutput(), on the 
 If it cannot achieve it, compression will stop, and result of the function will be zero.
 return : the number of bytes written in buffer 'dest', or 0 if the compression fails
 */
-#define FUNCTION_NAME LZ4_compress64k_stack_limitedOutput
-#define COMPRESS_64K
-#define LIMITED_OUTPUT
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress64k_stack_limitedOutput
+//#define COMPRESS_64K
+//#define LIMITED_OUTPUT
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -480,10 +480,10 @@ The memory used for compression must be created by LZ4_createHeapMemory() and pr
 Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
 return : the number of bytes written in buffer 'dest'
 */
-#define FUNCTION_NAME LZ4_compress64k_heap
-#define COMPRESS_64K
-#define USE_HEAPMEMORY
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress64k_heap
+//#define COMPRESS_64K
+//#define USE_HEAPMEMORY
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
