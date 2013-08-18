@@ -356,8 +356,8 @@ Compress 'inputSize' bytes from 'source' into an output buffer 'dest'.
 Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
 return : the number of bytes written in buffer 'dest'
 */
-#define FUNCTION_NAME LZ4_compress_stack
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress_stack
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -371,9 +371,9 @@ Compress 'inputSize' bytes from 'source' into an output buffer 'dest' of maximum
 If it cannot achieve it, compression will stop, and result of the function will be zero.
 return : the number of bytes written in buffer 'dest', or 0 if the compression fails
 */
-#define FUNCTION_NAME LZ4_compress_stack_limitedOutput
-#define LIMITED_OUTPUT
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress_stack_limitedOutput
+//#define LIMITED_OUTPUT
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -388,9 +388,9 @@ This function compresses better than LZ4_compress_stack(), on the condition that
 Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
 return : the number of bytes written in buffer 'dest', or 0 if compression fails
 */
-#define FUNCTION_NAME LZ4_compress64k_stack
-#define COMPRESS_64K
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress64k_stack
+//#define COMPRESS_64K
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -406,10 +406,10 @@ This function compresses better than LZ4_compress_stack_limitedOutput(), on the 
 If it cannot achieve it, compression will stop, and result of the function will be zero.
 return : the number of bytes written in buffer 'dest', or 0 if the compression fails
 */
-#define FUNCTION_NAME LZ4_compress64k_stack_limitedOutput
-#define COMPRESS_64K
-#define LIMITED_OUTPUT
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress64k_stack_limitedOutput
+//#define COMPRESS_64K
+//#define LIMITED_OUTPUT
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -443,9 +443,9 @@ The memory used for compression must be created by LZ4_createHeapMemory() and pr
 Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
 return : the number of bytes written in buffer 'dest'
 */
-#define FUNCTION_NAME LZ4_compress_heap
-#define USE_HEAPMEMORY
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress_heap
+//#define USE_HEAPMEMORY
+//#include "hammer2_lz4_encoder.h"
 
 /*
 int LZ4_compress_heap_limitedOutput(
@@ -479,10 +479,10 @@ The memory used for compression must be created by LZ4_createHeapMemory() and pr
 Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
 return : the number of bytes written in buffer 'dest'
 */
-#define FUNCTION_NAME LZ4_compress64k_heap
-#define COMPRESS_64K
-#define USE_HEAPMEMORY
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress64k_heap
+//#define COMPRESS_64K
+//#define USE_HEAPMEMORY
+//#include "hammer2_lz4_encoder.h"
 
 /*
 int LZ4_compress64k_heap_limitedOutput(
@@ -505,27 +505,27 @@ return : the number of bytes written in buffer 'dest', or 0 if the compression f
 #include "hammer2_lz4_encoder.h"
 
 
-int LZ4_compress(char* source, char* dest, int inputSize)
-{
-#if HEAPMODE
-    void* ctx = LZ4_create();
-    int result;
-    if (ctx == NULL) return 0;    // Failed allocation => compression not done
-    if (inputSize < LZ4_64KLIMIT)
-        result = LZ4_compress64k_heap(ctx, source, dest, inputSize);
-    else result = LZ4_compress_heap(ctx, source, dest, inputSize);
-    LZ4_free(ctx);
-    return result;
-#else
-    if (inputSize < (int)LZ4_64KLIMIT) return LZ4_compress64k_stack(source, dest, inputSize);
-    return LZ4_compress_stack(source, dest, inputSize);
-#endif
-}
+//int LZ4_compress(char* source, char* dest, int inputSize)
+//{
+//#if HEAPMODE
+    //void* ctx = LZ4_create();
+    //int result;
+    //if (ctx == NULL) return 0;    // Failed allocation => compression not done
+    //if (inputSize < LZ4_64KLIMIT)
+        //result = LZ4_compress64k_heap(ctx, source, dest, inputSize);
+    //else result = LZ4_compress_heap(ctx, source, dest, inputSize);
+    //LZ4_free(ctx);
+    //return result;
+//#else
+    //if (inputSize < (int)LZ4_64KLIMIT) return LZ4_compress64k_stack(source, dest, inputSize);
+    //return LZ4_compress_stack(source, dest, inputSize);
+//#endif
+//}
 
 
 int LZ4_compress_limitedOutput(char* source, char* dest, int inputSize, int maxOutputSize)
 {
-#if HEAPMODE
+//#if HEAPMODE
     void* ctx = LZ4_create();
     int result;
     if (ctx == NULL) return 0;    // Failed allocation => compression not done
@@ -534,10 +534,10 @@ int LZ4_compress_limitedOutput(char* source, char* dest, int inputSize, int maxO
     else result = LZ4_compress_heap_limitedOutput(ctx, source, dest, inputSize, maxOutputSize);
     LZ4_free(ctx);
     return result;
-#else
-    if (inputSize < (int)LZ4_64KLIMIT) return LZ4_compress64k_stack_limitedOutput(source, dest, inputSize, maxOutputSize);
-    return LZ4_compress_stack_limitedOutput(source, dest, inputSize, maxOutputSize);
-#endif
+//#else
+    //if (inputSize < (int)LZ4_64KLIMIT) return LZ4_compress64k_stack_limitedOutput(source, dest, inputSize, maxOutputSize);
+    //return LZ4_compress_stack_limitedOutput(source, dest, inputSize, maxOutputSize);
+//#endif
 }
 
 
@@ -691,28 +691,28 @@ int LZ4_decompress_safe(char* source, char* dest, int inputSize, int maxOutputSi
 							endOnInputSize, noPrefix, full, 0);
 }
 
-int LZ4_decompress_fast(char* source, char* dest, int outputSize)
-{
-    return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize, noPrefix, full, 0);
-}
+//int LZ4_decompress_fast(char* source, char* dest, int outputSize)
+//{
+    //return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize, noPrefix, full, 0);
+//}
 
-int LZ4_decompress_safe_withPrefix64k(char* source, char* dest, int inputSize,
-							int maxOutputSize)
-{
-    return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
-							endOnInputSize, withPrefix, full, 0);
-}
+//int LZ4_decompress_safe_withPrefix64k(char* source, char* dest, int inputSize,
+							//int maxOutputSize)
+//{
+    //return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
+							//endOnInputSize, withPrefix, full, 0);
+//}
 
-int LZ4_decompress_fast_withPrefix64k(char* source, char* dest, int outputSize)
-{
-    return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize,
-							withPrefix, full, 0);
-}
+//int LZ4_decompress_fast_withPrefix64k(char* source, char* dest, int outputSize)
+//{
+    //return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize,
+							//withPrefix, full, 0);
+//}
 
-int LZ4_decompress_safe_partial(char* source, char* dest, int inputSize,
-							int targetOutputSize, int maxOutputSize)
-{
-    return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
-							endOnInputSize, noPrefix, partial, targetOutputSize);
-}
+//int LZ4_decompress_safe_partial(char* source, char* dest, int inputSize,
+							//int targetOutputSize, int maxOutputSize)
+//{
+    //return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
+							//endOnInputSize, noPrefix, partial, targetOutputSize);
+//}
 

@@ -50,7 +50,7 @@ extern "C" {
 // Simple Functions
 //****************************
 
-int LZ4_compress        (char* source, char* dest, int inputSize);
+//int LZ4_compress        (char* source, char* dest, int inputSize);
 int LZ4_decompress_safe (char* source, char* dest, int inputSize, int maxOutputSize);
 
 /*
@@ -107,7 +107,7 @@ LZ4_compress_limitedOutput() :
 */
 
 
-int LZ4_decompress_fast(char* source, char* dest, int outputSize);
+//int LZ4_decompress_fast(char* source, char* dest, int outputSize);
 
 /*
 LZ4_decompress_fast() :
@@ -120,8 +120,8 @@ LZ4_decompress_fast() :
            Destination buffer must be already allocated. Its size must be a minimum of 'outputSize' bytes.
 */
 
-int LZ4_decompress_safe_partial(char* source, char* dest, int inputSize,
-						int targetOutputSize, int maxOutputSize);
+//int LZ4_decompress_safe_partial(char* source, char* dest, int inputSize,
+						//int targetOutputSize, int maxOutputSize);
 
 /*
 LZ4_decompress_safe_partial() :
@@ -137,9 +137,9 @@ LZ4_decompress_safe_partial() :
 */
 
 
-int LZ4_decompress_safe_withPrefix64k(char* source, char* dest, int inputSize,
-							int maxOutputSize);
-int LZ4_decompress_fast_withPrefix64k(char* source, char* dest, int outputSize);
+//int LZ4_decompress_safe_withPrefix64k(char* source, char* dest, int inputSize,
+							//int maxOutputSize);
+//int LZ4_decompress_fast_withPrefix64k(char* source, char* dest, int outputSize);
 
 /*
 *_withPrefix64k() :
