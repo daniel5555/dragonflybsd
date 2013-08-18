@@ -55,7 +55,7 @@
 #ifdef COMPRESS_64K
 #  define HASHLOG (MEMORY_USAGE-1)
 #  define CURRENT_H_TYPE U16
-#  define CURRENTBASE(base) const BYTE* const base = ip
+#  define CURRENTBASE(base) BYTE* const base = ip
 #else
 #  define HASHLOG (MEMORY_USAGE-2)
 #  define CURRENT_H_TYPE HTYPE
@@ -90,11 +90,11 @@ int FUNCTION_NAME(
     CURRENT_H_TYPE HashTable[HASHTABLE_NBCELLS] = {0};
 #endif
 
-    const BYTE* ip = (BYTE*) source;
+    BYTE* ip = (BYTE*) source;
     CURRENTBASE(base);
-    const BYTE* anchor = ip;
-    const BYTE* iend = ip + inputSize;
-    const BYTE* mflimit = iend - MFLIMIT;
+    BYTE* anchor = ip;
+    BYTE* iend = ip + inputSize;
+    BYTE* mflimit = iend - MFLIMIT;
 #define matchlimit (iend - LASTLITERALS)
 
     BYTE* op = (BYTE*) dest;

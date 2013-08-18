@@ -233,7 +233,7 @@ typedef struct _U64_S { U64 v; } _PACKED U64_S;
 #  define LZ4_COPYPACKET(s,d)     LZ4_COPYSTEP(s,d)
 #  define LZ4_SECURECOPY(s,d,e)   if (d<e) LZ4_WILDCOPY(s,d,e)
 #  define HTYPE                   U32
-#  define INITBASE(base)          BYTE* const base = ip
+#  define INITBASE(base)          BYTE* base = ip
 #else      // 32-bit
 #  define STEPSIZE 4
 #  define UARCH U32
