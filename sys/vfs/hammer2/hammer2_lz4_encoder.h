@@ -43,9 +43,23 @@
 // Check required defines
 //****************************
 
-#ifndef FUNCTION_NAME
-#  error "FUNTION_NAME is not defined"
-#endif
+//#ifndef FUNCTION_NAME
+//#  error "FUNTION_NAME is not defined"
+//#endif
+
+int LZ4_compress_heap_limitedOutput(
+                 void* ctx,
+                 const char* source,
+                 char* dest,
+                 int inputSize,
+                 int maxOutputSize);
+                 
+int LZ4_compress64k_heap_limitedOutput(
+                 void* ctx,
+                 const char* source,
+                 char* dest,
+                 int inputSize,
+                 int maxOutputSize);
 
 
 //****************************
