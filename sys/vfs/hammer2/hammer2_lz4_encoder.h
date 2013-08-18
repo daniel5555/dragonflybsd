@@ -72,23 +72,14 @@
 // Function code
 //****************************
 
-int FUNCTION_NAME(
-#ifdef USE_HEAPMEMORY
+int LZ4_compress_heap_limitedOutput(
                  void* ctx,
-#endif
-                 char* source,
+                 const char* source,
                  char* dest,
-                 int inputSize
-#ifdef LIMITED_OUTPUT
-                ,int maxOutputSize
-#endif
-                 )
+                 int inputSize,
+                 int maxOutputSize)
 {
-#ifdef USE_HEAPMEMORY
     CURRENT_H_TYPE* HashTable = (CURRENT_H_TYPE*)ctx;
-#else
-    CURRENT_H_TYPE HashTable[HASHTABLE_NBCELLS] = {0};
-#endif
 
     BYTE* ip = (BYTE*) source;
     CURRENTBASE(base);
@@ -98,9 +89,7 @@ int FUNCTION_NAME(
 #define matchlimit (iend - LASTLITERALS)
 
     BYTE* op = (BYTE*) dest;
-#ifdef LIMITED_OUTPUT
     BYTE* oend = op + maxOutputSize;
-#endif
 
     int length;
     int skipStrength = SKIPSTRENGTH;
@@ -109,12 +98,8 @@ int FUNCTION_NAME(
 
     // Init
     if (inputSize<MINLENGTH) goto _last_literals;
-#ifdef COMPRESS_64K
-    if (inputSize>LZ4_64KLIMIT) return 0;   // Size too large (not within 64K limit)
-#endif
-#ifdef USE_HEAPMEMORY
+    
     memset((void*)HashTable, 0, HASHTABLESIZE);
-#endif
 
     // First Byte
     HashTable[LZ4_HASHVALUE(ip)] = (CURRENT_H_TYPE)(ip - base);
@@ -155,9 +140,9 @@ int FUNCTION_NAME(
         // Encode Literal length
         length = (int)(ip - anchor);
         token = op++;
-#ifdef LIMITED_OUTPUT
+
         if unlikely(op + length + (2 + 1 + LASTLITERALS) + (length>>8) > oend) return 0;   // Check output limit
-#endif
+
         if (length>=(int)RUN_MASK) 
         { 
             int len = length-RUN_MASK; 
@@ -203,10 +188,10 @@ _endCount:
 
         // Encode MatchLength
         length = (int)(ip - anchor);
-#ifdef LIMITED_OUTPUT
+
         if unlikely(op + (1 + LASTLITERALS) + (length>>8) > oend) 
 			return 0;    // Check output limit
-#endif
+
         if (length>=(int)ML_MASK) 
         { 
             *token += ML_MASK; 
@@ -250,10 +235,10 @@ _last_literals:
     // Encode Last Literals
     {
         int lastRun = (int)(iend - anchor);
-#ifdef LIMITED_OUTPUT
+
         if (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize)
 			return 0;  // Check output limit
-#endif
+
         if (lastRun>=(int)RUN_MASK) {
 			*op++=(RUN_MASK<<ML_BITS);
 			lastRun-=RUN_MASK;
@@ -270,14 +255,395 @@ _last_literals:
     return (int) (((char*)op)-dest);
 }
 
+int LZ4_compress64k_heap_limitedOutput(
+                 void* ctx,
+                 const char* source,
+                 char* dest,
+                 int inputSize,
+                 int maxOutputSize)
+{
+    CURRENT_H_TYPE* HashTable = (CURRENT_H_TYPE*)ctx;
+
+    BYTE* ip = (BYTE*) source;
+    CURRENTBASE(base);
+    BYTE* anchor = ip;
+    BYTE* iend = ip + inputSize;
+    BYTE* mflimit = iend - MFLIMIT;
+#define matchlimit (iend - LASTLITERALS)
+
+    BYTE* op = (BYTE*) dest;
+    BYTE* oend = op + maxOutputSize;
+
+    int length;
+    int skipStrength = SKIPSTRENGTH;
+    U32 forwardH;
+
+
+    // Init
+    if (inputSize<MINLENGTH) goto _last_literals;
+
+    memset((void*)HashTable, 0, HASHTABLESIZE);
+
+    // First Byte
+    HashTable[LZ4_HASHVALUE(ip)] = (CURRENT_H_TYPE)(ip - base);
+    ip++;
+    forwardH = LZ4_HASHVALUE(ip);
+
+    // Main Loop
+    for ( ; ; )
+    {
+        int findMatchAttempts = (1U << skipStrength) + 3;
+        BYTE* forwardIp = ip;
+        BYTE* ref;
+        BYTE* token;
+
+        // Find a match
+        do {
+            U32 h = forwardH;
+            int step = findMatchAttempts++ >> skipStrength;
+            ip = forwardIp;
+            forwardIp = ip + step;
+
+            if unlikely(forwardIp > mflimit) { 
+				goto _last_literals; 
+			}
+
+            forwardH = LZ4_HASHVALUE(forwardIp);
+            ref = base + HashTable[h];
+            HashTable[h] = (CURRENT_H_TYPE)(ip - base);
+
+        } while ((ref < ip - MAX_DISTANCE) || (A32(ref) != A32(ip)));
+
+        // Catch up
+        while ((ip>anchor) && (ref>(BYTE*)source) && unlikely(ip[-1]==ref[-1])) { 
+			ip--;
+			ref--;
+		}
+
+        // Encode Literal length
+        length = (int)(ip - anchor);
+        token = op++;
+
+        if unlikely(op + length + (2 + 1 + LASTLITERALS) + (length>>8) > oend) return 0;   // Check output limit
+
+        if (length>=(int)RUN_MASK) 
+        { 
+            int len = length-RUN_MASK; 
+            *token=(RUN_MASK<<ML_BITS); 
+            for(; len >= 255 ; len-=255) 
+				*op++ = 255; 
+            *op++ = (BYTE)len; 
+        }
+        else *token = (BYTE)(length<<ML_BITS);
+
+        // Copy Literals
+        LZ4_BLINDCOPY(anchor, op, length);
+
+_next_match:
+        // Encode Offset
+        LZ4_WRITE_LITTLEENDIAN_16(op,(U16)(ip-ref));
+
+        // Start Counting
+        ip+=MINMATCH; ref+=MINMATCH;    // MinMatch already verified
+        anchor = ip;
+        while likely(ip<matchlimit-(STEPSIZE-1))
+        {
+            UARCH diff = AARCH(ref) ^ AARCH(ip);
+            if (!diff) {
+				ip+=STEPSIZE;
+				ref+=STEPSIZE; 
+				continue; 
+			}
+            ip += LZ4_NbCommonBytes(diff);
+            goto _endCount;
+        }
+        if (LZ4_ARCH64) if ((ip<(matchlimit-3)) && (A32(ref) == A32(ip))) {
+			ip+=4;
+			ref+=4;
+		}
+        if ((ip<(matchlimit-1)) && (A16(ref) == A16(ip))) {
+			ip+=2;
+			ref+=2;
+		}
+        if ((ip<matchlimit) && (*ref == *ip)) 
+			ip++;
+_endCount:
+
+        // Encode MatchLength
+        length = (int)(ip - anchor);
+
+        if unlikely(op + (1 + LASTLITERALS) + (length>>8) > oend) 
+			return 0;    // Check output limit
+
+        if (length>=(int)ML_MASK) 
+        { 
+            *token += ML_MASK; 
+            length -= ML_MASK; 
+            for (; length > 509 ; length-=510) {
+				*op++ = 255;
+				*op++ = 255;
+			} 
+            if (length >= 255) {
+				length-=255;
+				*op++ = 255;
+			} 
+            *op++ = (BYTE)length; 
+        }
+        else *token += (BYTE)length;
+
+        // Test end of chunk
+        if (ip > mflimit) {
+			anchor = ip;
+			break;
+		}
+
+        // Fill table
+        HashTable[LZ4_HASHVALUE(ip-2)] = (CURRENT_H_TYPE)(ip - 2 - base);
+
+        // Test next position
+        ref = base + HashTable[LZ4_HASHVALUE(ip)];
+        HashTable[LZ4_HASHVALUE(ip)] = (CURRENT_H_TYPE)(ip - base);
+        if ((ref >= ip - MAX_DISTANCE) && (A32(ref) == A32(ip))) {
+			token = op++;
+			*token=0;
+			goto _next_match;
+		}
+
+        // Prepare next loop
+        anchor = ip++;
+        forwardH = LZ4_HASHVALUE(ip);
+    }
+
+_last_literals:
+    // Encode Last Literals
+    {
+        int lastRun = (int)(iend - anchor);
+
+        if (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize)
+			return 0;  // Check output limit
+
+        if (lastRun>=(int)RUN_MASK) {
+			*op++=(RUN_MASK<<ML_BITS);
+			lastRun-=RUN_MASK;
+			for(; lastRun >= 255 ; lastRun-=255)
+				*op++ = 255;
+			*op++ = (BYTE) lastRun;
+		}
+        else *op++ = (BYTE)(lastRun<<ML_BITS);
+        memcpy(op, anchor, iend - anchor);
+        op += iend-anchor;
+    }
+
+    // End
+    return (int) (((char*)op)-dest);
+}
+
+//int FUNCTION_NAME(
+//#ifdef USE_HEAPMEMORY
+                 //void* ctx,
+//#endif
+                 //char* source,
+                 //char* dest,
+                 //int inputSize
+//#ifdef LIMITED_OUTPUT
+                //,int maxOutputSize
+//#endif
+                 //)
+//{
+//#ifdef USE_HEAPMEMORY
+    //CURRENT_H_TYPE* HashTable = (CURRENT_H_TYPE*)ctx;
+//#else
+    //CURRENT_H_TYPE HashTable[HASHTABLE_NBCELLS] = {0};
+//#endif
+
+    //BYTE* ip = (BYTE*) source;
+    //CURRENTBASE(base);
+    //BYTE* anchor = ip;
+    //BYTE* iend = ip + inputSize;
+    //BYTE* mflimit = iend - MFLIMIT;
+//#define matchlimit (iend - LASTLITERALS)
+
+    //BYTE* op = (BYTE*) dest;
+//#ifdef LIMITED_OUTPUT
+    //BYTE* oend = op + maxOutputSize;
+//#endif
+
+    //int length;
+    //int skipStrength = SKIPSTRENGTH;
+    //U32 forwardH;
+
+
+    //// Init
+    //if (inputSize<MINLENGTH) goto _last_literals;
+//#ifdef COMPRESS_64K
+    //if (inputSize>LZ4_64KLIMIT) return 0;   // Size too large (not within 64K limit)
+//#endif
+//#ifdef USE_HEAPMEMORY
+    //memset((void*)HashTable, 0, HASHTABLESIZE);
+//#endif
+
+    //// First Byte
+    //HashTable[LZ4_HASHVALUE(ip)] = (CURRENT_H_TYPE)(ip - base);
+    //ip++;
+    //forwardH = LZ4_HASHVALUE(ip);
+
+    //// Main Loop
+    //for ( ; ; )
+    //{
+        //int findMatchAttempts = (1U << skipStrength) + 3;
+        //BYTE* forwardIp = ip;
+        //BYTE* ref;
+        //BYTE* token;
+
+        //// Find a match
+        //do {
+            //U32 h = forwardH;
+            //int step = findMatchAttempts++ >> skipStrength;
+            //ip = forwardIp;
+            //forwardIp = ip + step;
+
+            //if unlikely(forwardIp > mflimit) { 
+				//goto _last_literals; 
+			//}
+
+            //forwardH = LZ4_HASHVALUE(forwardIp);
+            //ref = base + HashTable[h];
+            //HashTable[h] = (CURRENT_H_TYPE)(ip - base);
+
+        //} while ((ref < ip - MAX_DISTANCE) || (A32(ref) != A32(ip)));
+
+        //// Catch up
+        //while ((ip>anchor) && (ref>(BYTE*)source) && unlikely(ip[-1]==ref[-1])) { 
+			//ip--;
+			//ref--;
+		//}
+
+        //// Encode Literal length
+        //length = (int)(ip - anchor);
+        //token = op++;
+//#ifdef LIMITED_OUTPUT
+        //if unlikely(op + length + (2 + 1 + LASTLITERALS) + (length>>8) > oend) return 0;   // Check output limit
+//#endif
+        //if (length>=(int)RUN_MASK) 
+        //{ 
+            //int len = length-RUN_MASK; 
+            //*token=(RUN_MASK<<ML_BITS); 
+            //for(; len >= 255 ; len-=255) 
+				//*op++ = 255; 
+            //*op++ = (BYTE)len; 
+        //}
+        //else *token = (BYTE)(length<<ML_BITS);
+
+        //// Copy Literals
+        //LZ4_BLINDCOPY(anchor, op, length);
+
+//_next_match:
+        //// Encode Offset
+        //LZ4_WRITE_LITTLEENDIAN_16(op,(U16)(ip-ref));
+
+        //// Start Counting
+        //ip+=MINMATCH; ref+=MINMATCH;    // MinMatch already verified
+        //anchor = ip;
+        //while likely(ip<matchlimit-(STEPSIZE-1))
+        //{
+            //UARCH diff = AARCH(ref) ^ AARCH(ip);
+            //if (!diff) {
+				//ip+=STEPSIZE;
+				//ref+=STEPSIZE; 
+				//continue; 
+			//}
+            //ip += LZ4_NbCommonBytes(diff);
+            //goto _endCount;
+        //}
+        //if (LZ4_ARCH64) if ((ip<(matchlimit-3)) && (A32(ref) == A32(ip))) {
+			//ip+=4;
+			//ref+=4;
+		//}
+        //if ((ip<(matchlimit-1)) && (A16(ref) == A16(ip))) {
+			//ip+=2;
+			//ref+=2;
+		//}
+        //if ((ip<matchlimit) && (*ref == *ip)) 
+			//ip++;
+//_endCount:
+
+        //// Encode MatchLength
+        //length = (int)(ip - anchor);
+//#ifdef LIMITED_OUTPUT
+        //if unlikely(op + (1 + LASTLITERALS) + (length>>8) > oend) 
+			//return 0;    // Check output limit
+//#endif
+        //if (length>=(int)ML_MASK) 
+        //{ 
+            //*token += ML_MASK; 
+            //length -= ML_MASK; 
+            //for (; length > 509 ; length-=510) {
+				//*op++ = 255;
+				//*op++ = 255;
+			//} 
+            //if (length >= 255) {
+				//length-=255;
+				//*op++ = 255;
+			//} 
+            //*op++ = (BYTE)length; 
+        //}
+        //else *token += (BYTE)length;
+
+        //// Test end of chunk
+        //if (ip > mflimit) {
+			//anchor = ip;
+			//break;
+		//}
+
+        //// Fill table
+        //HashTable[LZ4_HASHVALUE(ip-2)] = (CURRENT_H_TYPE)(ip - 2 - base);
+
+        //// Test next position
+        //ref = base + HashTable[LZ4_HASHVALUE(ip)];
+        //HashTable[LZ4_HASHVALUE(ip)] = (CURRENT_H_TYPE)(ip - base);
+        //if ((ref >= ip - MAX_DISTANCE) && (A32(ref) == A32(ip))) {
+			//token = op++;
+			//*token=0;
+			//goto _next_match;
+		//}
+
+        //// Prepare next loop
+        //anchor = ip++;
+        //forwardH = LZ4_HASHVALUE(ip);
+    //}
+
+//_last_literals:
+    //// Encode Last Literals
+    //{
+        //int lastRun = (int)(iend - anchor);
+//#ifdef LIMITED_OUTPUT
+        //if (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize)
+			//return 0;  // Check output limit
+//#endif
+        //if (lastRun>=(int)RUN_MASK) {
+			//*op++=(RUN_MASK<<ML_BITS);
+			//lastRun-=RUN_MASK;
+			//for(; lastRun >= 255 ; lastRun-=255)
+				//*op++ = 255;
+			//*op++ = (BYTE) lastRun;
+		//}
+        //else *op++ = (BYTE)(lastRun<<ML_BITS);
+        //memcpy(op, anchor, iend - anchor);
+        //op += iend-anchor;
+    //}
+
+    //// End
+    //return (int) (((char*)op)-dest);
+//}
+
 
 
 //****************************
 // Clean defines
 //****************************
 
-// Required defines
-#undef FUNCTION_NAME
+//// Required defines
+//#undef FUNCTION_NAME
 
 // Locally Generated
 #undef HASHLOG
@@ -287,11 +653,11 @@ _last_literals:
 #undef CURRENT_H_TYPE
 #undef CURRENTBASE
 
-// Optional defines
-#ifdef LIMITED_OUTPUT
-#undef LIMITED_OUTPUT
-#endif
+//// Optional defines
+//#ifdef LIMITED_OUTPUT
+//#undef LIMITED_OUTPUT
+//#endif
 
-#ifdef USE_HEAPMEMORY
-#undef USE_HEAPMEMORY
-#endif
+//#ifdef USE_HEAPMEMORY
+//#undef USE_HEAPMEMORY
+//#endif

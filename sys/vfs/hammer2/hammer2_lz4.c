@@ -346,6 +346,8 @@ static inline int LZ4_NbCommonBytes (register U32 val)
 // Compression functions
 //******************************
 
+#include "hammer2_lz4_encoder.h"
+
 /*
 int LZ4_compress_stack(
                  const char* source,
@@ -468,10 +470,10 @@ If it cannot achieve it, compression will stop, and result of the function will 
 The memory used for compression must be created by LZ4_createHeapMemory() and provided by pointer 'ctx'.
 return : the number of bytes written in buffer 'dest', or 0 if the compression fails
 */
-#define FUNCTION_NAME LZ4_compress_heap_limitedOutput
-#define LIMITED_OUTPUT
-#define USE_HEAPMEMORY
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress_heap_limitedOutput
+//#define LIMITED_OUTPUT
+//#define USE_HEAPMEMORY
+//#include "hammer2_lz4_encoder.h"
 
 
 /*
@@ -513,11 +515,11 @@ The memory used for compression must be created by LZ4_createHeapMemory() and pr
 'inputSize' must be < to LZ4_64KLIMIT, or the function will fail.
 return : the number of bytes written in buffer 'dest', or 0 if the compression fails
 */
-#define FUNCTION_NAME LZ4_compress64k_heap_limitedOutput
-#define COMPRESS_64K
-#define LIMITED_OUTPUT
-#define USE_HEAPMEMORY
-#include "hammer2_lz4_encoder.h"
+//#define FUNCTION_NAME LZ4_compress64k_heap_limitedOutput
+//#define COMPRESS_64K
+//#define LIMITED_OUTPUT
+//#define USE_HEAPMEMORY
+//#include "hammer2_lz4_encoder.h"
 
 
 //int LZ4_compress(char* source, char* dest, int inputSize)
