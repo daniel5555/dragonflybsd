@@ -55,7 +55,7 @@
 #ifdef COMPRESS_64K
 #  define HASHLOG (MEMORY_USAGE-1)
 #  define CURRENT_H_TYPE U16
-#  define CURRENTBASE(base) BYTE* const base = ip
+#  define CURRENTBASE(base) BYTE* base = ip
 #else
 #  define HASHLOG (MEMORY_USAGE-2)
 #  define CURRENT_H_TYPE HTYPE
@@ -71,6 +71,10 @@
 //****************************
 // Function code
 //****************************
+
+int LZ4_compress64k_stack(void* ctx, char* source, char* dest, int inputSize);
+int LZ4_compress64k_stack(void* ctx, char* source, char* dest, int inputSize, 
+					int maxOutputSize);
 
 int FUNCTION_NAME(
 #ifdef USE_HEAPMEMORY
