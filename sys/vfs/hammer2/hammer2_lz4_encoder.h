@@ -72,10 +72,6 @@
 // Function code
 //****************************
 
-int LZ4_compress64k_stack(void* ctx, char* source, char* dest, int inputSize);
-int LZ4_compress64k_stack(void* ctx, char* source, char* dest, int inputSize, 
-					int maxOutputSize);
-
 int FUNCTION_NAME(
 #ifdef USE_HEAPMEMORY
                  void* ctx,
