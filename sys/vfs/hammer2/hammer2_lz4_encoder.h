@@ -52,14 +52,14 @@ int LZ4_free(void* ctx);
 
 int LZ4_compress_heap_limitedOutput(
                  void* ctx,
-                 const char* source,
+                 char* source,
                  char* dest,
                  int inputSize,
                  int maxOutputSize);
                  
 int LZ4_compress64k_heap_limitedOutput(
                  void* ctx,
-                 const char* source,
+                 char* source,
                  char* dest,
                  int inputSize,
                  int maxOutputSize);
@@ -91,7 +91,7 @@ int LZ4_compress64k_heap_limitedOutput(
 
 int LZ4_compress_heap_limitedOutput(
                  void* ctx,
-                 const char* source,
+                 char* source,
                  char* dest,
                  int inputSize,
                  int maxOutputSize)
@@ -274,7 +274,7 @@ _last_literals:
 
 int LZ4_compress64k_heap_limitedOutput(
                  void* ctx,
-                 const char* source,
+                 char* source,
                  char* dest,
                  int inputSize,
                  int maxOutputSize)
