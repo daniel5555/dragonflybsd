@@ -76,7 +76,7 @@ int FUNCTION_NAME(
 #ifdef USE_HEAPMEMORY
                  void* ctx,
 #endif
-                 const char* source,
+                 char* source,
                  char* dest,
                  int inputSize
 #ifdef LIMITED_OUTPUT
