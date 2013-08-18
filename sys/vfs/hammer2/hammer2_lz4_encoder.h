@@ -47,6 +47,9 @@
 //#  error "FUNTION_NAME is not defined"
 //#endif
 
+void* LZ4_create(void);
+int LZ4_free(void* ctx);
+
 int LZ4_compress_heap_limitedOutput(
                  void* ctx,
                  const char* source,
