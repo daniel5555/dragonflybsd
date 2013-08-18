@@ -30,6 +30,8 @@
  * SUCH DAMAGE.
  */
 
+#include "hammer2.h"
+
 void 
 print_inode(char* inode_string)
 {
