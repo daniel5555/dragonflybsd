@@ -145,8 +145,6 @@ Note : this source file requires "lz4_encoder.h"
 //**************************************
 // Includes
 //**************************************
-//#include <stdlib.h>   // for malloc
-//#include <string.h>   // for memset
 #include <sys/malloc.h> //for malloc macros
 #include "hammer2.h"
 #include "hammer2_lz4.h"
@@ -349,72 +347,6 @@ static inline int LZ4_NbCommonBytes (register U32 val)
 #include "hammer2_lz4_encoder.h"
 
 /*
-int LZ4_compress_stack(
-                 const char* source,
-                 char* dest,
-                 int inputSize)
-
-Compress 'inputSize' bytes from 'source' into an output buffer 'dest'.
-Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
-return : the number of bytes written in buffer 'dest'
-*/
-//#define FUNCTION_NAME LZ4_compress_stack
-//#include "hammer2_lz4_encoder.h"
-
-
-/*
-int LZ4_compress_stack_limitedOutput(
-                 const char* source,
-                 char* dest,
-                 int inputSize,
-                 int maxOutputSize)
-
-Compress 'inputSize' bytes from 'source' into an output buffer 'dest' of maximum size 'maxOutputSize'.
-If it cannot achieve it, compression will stop, and result of the function will be zero.
-return : the number of bytes written in buffer 'dest', or 0 if the compression fails
-*/
-//#define FUNCTION_NAME LZ4_compress_stack_limitedOutput
-//#define LIMITED_OUTPUT
-//#include "hammer2_lz4_encoder.h"
-
-
-/*
-int LZ4_compress64k_stack(
-                 const char* source,
-                 char* dest,
-                 int inputSize)
-
-Compress 'inputSize' bytes from 'source' into an output buffer 'dest'.
-This function compresses better than LZ4_compress_stack(), on the condition that
-'inputSize' must be < to LZ4_64KLIMIT, or the function will fail.
-Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
-return : the number of bytes written in buffer 'dest', or 0 if compression fails
-*/
-//#define FUNCTION_NAME LZ4_compress64k_stack
-//#define COMPRESS_64K
-//#include "hammer2_lz4_encoder.h"
-
-
-/*
-int LZ4_compress64k_stack_limitedOutput(
-                 const char* source,
-                 char* dest,
-                 int inputSize,
-                 int maxOutputSize)
-
-Compress 'inputSize' bytes from 'source' into an output buffer 'dest' of maximum size 'maxOutputSize'.
-This function compresses better than LZ4_compress_stack_limitedOutput(), on the condition that
-'inputSize' must be < to LZ4_64KLIMIT, or the function will fail.
-If it cannot achieve it, compression will stop, and result of the function will be zero.
-return : the number of bytes written in buffer 'dest', or 0 if the compression fails
-*/
-//#define FUNCTION_NAME LZ4_compress64k_stack_limitedOutput
-//#define COMPRESS_64K
-//#define LIMITED_OUTPUT
-//#include "hammer2_lz4_encoder.h"
-
-
-/*
 void* LZ4_createHeapMemory();
 int LZ4_freeHeapMemory(void* ctx);
 
@@ -434,114 +366,6 @@ LZ4_free(void* ctx)
 	kfree(ctx, C_HASHTABLE);
 	return 0;
 }
-
-
-/*
-int LZ4_compress_heap(
-                 void* ctx,
-                 const char* source,
-                 char* dest,
-                 int inputSize)
-
-Compress 'inputSize' bytes from 'source' into an output buffer 'dest'.
-The memory used for compression must be created by LZ4_createHeapMemory() and provided by pointer 'ctx'.
-Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
-return : the number of bytes written in buffer 'dest'
-*/
-//#define FUNCTION_NAME LZ4_compress_heap
-//#define USE_HEAPMEMORY
-//#include "hammer2_lz4_encoder.h"
-
-
-//int LZ4_compress_heap_limitedOutput(
-                 //void* ctx,
-                 //const char* source,
-                 //char* dest,
-                 //int inputSize,
-                 //int maxOutputSize);
-
-/*
-int LZ4_compress_heap_limitedOutput(
-                 void* ctx,
-                 const char* source,
-                 char* dest,
-                 int inputSize,
-                 int maxOutputSize)
-
-Compress 'inputSize' bytes from 'source' into an output buffer 'dest' of maximum size 'maxOutputSize'.
-If it cannot achieve it, compression will stop, and result of the function will be zero.
-The memory used for compression must be created by LZ4_createHeapMemory() and provided by pointer 'ctx'.
-return : the number of bytes written in buffer 'dest', or 0 if the compression fails
-*/
-//#define FUNCTION_NAME LZ4_compress_heap_limitedOutput
-//#define LIMITED_OUTPUT
-//#define USE_HEAPMEMORY
-//#include "hammer2_lz4_encoder.h"
-
-
-/*
-int LZ4_compress64k_heap(
-                 void* ctx,
-                 const char* source,
-                 char* dest,
-                 int inputSize)
-
-Compress 'inputSize' bytes from 'source' into an output buffer 'dest'.
-The memory used for compression must be created by LZ4_createHeapMemory() and provided by pointer 'ctx'.
-'inputSize' must be < to LZ4_64KLIMIT, or the function will fail.
-Destination buffer must be already allocated, and sized at a minimum of LZ4_compressBound(inputSize).
-return : the number of bytes written in buffer 'dest'
-*/
-//#define FUNCTION_NAME LZ4_compress64k_heap
-//#define COMPRESS_64K
-//#define USE_HEAPMEMORY
-//#include "hammer2_lz4_encoder.h"
-
-//int LZ4_compress64k_heap_limitedOutput(
-                 //void* ctx,
-                 //const char* source,
-                 //char* dest,
-                 //int inputSize,
-                 //int maxOutputSize);
-
-/*
-int LZ4_compress64k_heap_limitedOutput(
-                 void* ctx,
-                 const char* source,
-                 char* dest,
-                 int inputSize,
-                 int maxOutputSize)
-
-Compress 'inputSize' bytes from 'source' into an output buffer 'dest' of maximum size 'maxOutputSize'.
-If it cannot achieve it, compression will stop, and result of the function will be zero.
-The memory used for compression must be created by LZ4_createHeapMemory() and provided by pointer 'ctx'.
-'inputSize' must be < to LZ4_64KLIMIT, or the function will fail.
-return : the number of bytes written in buffer 'dest', or 0 if the compression fails
-*/
-//#define FUNCTION_NAME LZ4_compress64k_heap_limitedOutput
-//#define COMPRESS_64K
-//#define LIMITED_OUTPUT
-//#define USE_HEAPMEMORY
-//#include "hammer2_lz4_encoder.h"
-
-
-//int LZ4_compress(char* source, char* dest, int inputSize)
-//{
-//#if HEAPMODE
-    //void* ctx = LZ4_create();
-    //int result;
-    //if (ctx == NULL) return 0;    // Failed allocation => compression not done
-    //if (inputSize < LZ4_64KLIMIT)
-        //result = LZ4_compress64k_heap(ctx, source, dest, inputSize);
-    //else result = LZ4_compress_heap(ctx, source, dest, inputSize);
-    //LZ4_free(ctx);
-    //return result;
-//#else
-    //if (inputSize < (int)LZ4_64KLIMIT) return LZ4_compress64k_stack(source, dest, inputSize);
-    //return LZ4_compress_stack(source, dest, inputSize);
-//#endif
-//}
-
 
 int
 LZ4_compress_limitedOutput(char* source, char* dest, int inputSize, int maxOutputSize)
@@ -714,29 +538,3 @@ LZ4_decompress_safe(char* source, char* dest, int inputSize, int maxOutputSize)
     return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
 							endOnInputSize, noPrefix, full, 0);
 }
-
-//int LZ4_decompress_fast(char* source, char* dest, int outputSize)
-//{
-    //return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize, noPrefix, full, 0);
-//}
-
-//int LZ4_decompress_safe_withPrefix64k(char* source, char* dest, int inputSize,
-							//int maxOutputSize)
-//{
-    //return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
-							//endOnInputSize, withPrefix, full, 0);
-//}
-
-//int LZ4_decompress_fast_withPrefix64k(char* source, char* dest, int outputSize)
-//{
-    //return LZ4_decompress_generic(source, dest, 0, outputSize, endOnOutputSize,
-							//withPrefix, full, 0);
-//}
-
-//int LZ4_decompress_safe_partial(char* source, char* dest, int inputSize,
-							//int targetOutputSize, int maxOutputSize)
-//{
-    //return LZ4_decompress_generic(source, dest, inputSize, maxOutputSize,
-							//endOnInputSize, noPrefix, partial, targetOutputSize);
-//}
-
