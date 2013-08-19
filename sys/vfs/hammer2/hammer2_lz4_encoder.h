@@ -153,7 +153,8 @@ LZ4_compress_heap_limitedOutput(
         length = (int)(ip - anchor);
         token = op++;
 
-        if unlikely(op + length + (2 + 1 + LASTLITERALS) + (length>>8) > oend) return 0;   // Check output limit
+        if unlikely(op + length + (2 + 1 + LASTLITERALS) + (length>>8) > oend)
+			return 0;   // Check output limit
 
         if (length>=(int)RUN_MASK) 
         { 
@@ -337,7 +338,8 @@ LZ4_compress64k_heap_limitedOutput(
         length = (int)(ip - anchor);
         token = op++;
 
-        if unlikely(op + length + (2 + 1 + LASTLITERALS) + (length>>8) > oend) return 0;   // Check output limit
+        if unlikely(op + length + (2 + 1 + LASTLITERALS) + (length>>8) > oend)
+			return 0;   // Check output limit
 
         if (length>=(int)RUN_MASK) 
         { 
@@ -432,7 +434,8 @@ _last_literals:
     {
         int lastRun = (int)(iend - anchor);
 
-        if (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize)
+        if (((char*)op - dest) + lastRun + 1 + 
+			((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize)
 			return 0;  // Check output limit
 
         if (lastRun>=(int)RUN_MASK) {

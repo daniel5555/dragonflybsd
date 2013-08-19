@@ -42,7 +42,8 @@ extern "C" {
 // Compiler Options
 //**************************************
 #if defined(_MSC_VER) && !defined(__cplusplus)   // Visual Studio
-#  define inline __forceinline           // Visual C is not C99, but supports some kind of inline. Note : we *do* want to force inline
+#  define inline __forceinline           // Visual C is not C99, but supports some kind of inline.
+										 // Note : we *do* want to force inline
 #endif
 
 
@@ -54,10 +55,16 @@ int LZ4_decompress_safe (char* source, char* dest, int inputSize, int maxOutputS
 
 /*
 LZ4_decompress_safe() :
-    maxOutputSize : is the size of the destination buffer (which must be already allocated)
-    return : the number of bytes decoded in the destination buffer (necessarily <= maxOutputSize)
-             If the source stream is malformed or too large, the function will stop decoding and return a negative result.
-             This function is protected against any kind of buffer overflow attemps (never writes outside of output buffer, and never reads outside of input buffer). It is therefore protected against malicious data packets
+    maxOutputSize : 
+     is the size of the destination buffer (which must be already allocated)
+    return :
+     the number of bytes decoded in the destination buffer
+     (necessarily <= maxOutputSize)
+     If the source stream is malformed or too large, the function will
+     stop decoding and return a negative result.
+     This function is protected against any kind of buffer overflow attemps 
+     (never writes outside of output buffer, and never reads outside of 
+     input buffer). It is therefore protected against malicious data packets
 */
 
 
@@ -70,10 +77,12 @@ static inline int LZ4_compressBound(int isize)   { return ((isize) + ((isize)/25
 
 /*
 LZ4_compressBound() :
-    Provides the maximum size that LZ4 may output in a "worst case" scenario (input data not compressible)
+    Provides the maximum size that LZ4 may output in a "worst case"
+    scenario (input data not compressible)
     primarily useful for memory allocation of output buffer.
 	inline function is recommended for the general case,
-	macro is also provided when result needs to be evaluated at compile time (such as table size allocation).
+	macro is also provided when result needs to be evaluated at compile
+	time (such as table size allocation).
 
     isize  : is the input size. Max supported value is ~1.9GB
     return : maximum output size in a "worst case" scenario
@@ -86,14 +95,18 @@ int LZ4_compress_limitedOutput(char* source, char* dest, int inputSize,
 
 /*
 LZ4_compress_limitedOutput() :
-    Compress 'inputSize' bytes from 'source' into an output buffer 'dest' of maximum size 'maxOutputSize'.
-    If it cannot achieve it, compression will stop, and result of the function will be zero.
+    Compress 'inputSize' bytes from 'source' into an output buffer 'dest'
+    of maximum size 'maxOutputSize'.
+    If it cannot achieve it, compression will stop, and result of
+    the function will be zero.
     This function never writes outside of provided output buffer.
 
-    inputSize  : Max supported value is ~1.9GB
-    maxOutputSize : is the size of the destination buffer (which must be already allocated)
-    return : the number of bytes written in buffer 'dest'
-             or 0 if the compression fails
+    inputSize  : 
+     Max supported value is ~1.9GB
+    maxOutputSize : 
+     is the size of the destination buffer (which must bealready allocated)
+    return :
+     the number of bytes written in buffer 'dest' or 0 if the compression fails
 */
 
 #if defined (__cplusplus)

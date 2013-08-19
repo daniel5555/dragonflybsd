@@ -39,22 +39,27 @@ Note : this source file requires "lz4_encoder.h"
 // Tuning parameters
 //**************************************
 // MEMORY_USAGE :
-// Memory usage formula : N->2^N Bytes (examples : 10 -> 1KB; 12 -> 4KB ; 16 -> 64KB; 20 -> 1MB; etc.)
+// Memory usage formula : N->2^N Bytes (examples : 10 -> 1KB; 12 -> 4KB;
+// 16 -> 64KB; 20 -> 1MB; etc.)
 // Increasing memory usage improves compression ratio
 // Reduced memory usage can improve speed, due to cache effect
 // Default value is 14, for 16KB, which nicely fits into Intel x86 L1 cache
 #define MEMORY_USAGE 14
 
 // HEAPMODE :
-// Select how default compression function will allocate memory for its hash table,
-// in memory stack (0:default, fastest), or in memory heap (1:requires memory allocation (malloc)).
+// Select how default compression function will allocate memory for its 
+// hash table,
+// in memory stack (0:default, fastest), or in memory heap (1:requires 
+// memory allocation (malloc)).
 // Default allocation strategy is to use stack (HEAPMODE 0)
 // Note : explicit functions *_stack* and *_heap* are unaffected by this setting
 #define HEAPMODE 1
 
 // BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE :
-// This will provide a small boost to performance for big endian cpu, but the resulting compressed stream will be incompatible with little-endian CPU.
-// You can set this option to 1 in situations where data will remain within closed environment
+// This will provide a small boost to performance for big endian cpu, 
+// but the resulting compressed stream will be incompatible with little-endian CPU.
+// You can set this option to 1 in situations where data will remain within
+// closed environment
 // This option is useless on Little_Endian CPU (such as x86)
 //#define BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE 1
 
@@ -79,7 +84,8 @@ Note : this source file requires "lz4_encoder.h"
 #  if (__BYTE_ORDER == __BIG_ENDIAN)
 #     define LZ4_BIG_ENDIAN 1
 #  endif
-#elif (defined(__BIG_ENDIAN__) || defined(__BIG_ENDIAN) || defined(_BIG_ENDIAN)) && !(defined(__LITTLE_ENDIAN__) || defined(__LITTLE_ENDIAN) || defined(_LITTLE_ENDIAN))
+#elif (defined(__BIG_ENDIAN__) || defined(__BIG_ENDIAN) || defined(_BIG_ENDIAN)) 
+&& !(defined(__LITTLE_ENDIAN__) || defined(__LITTLE_ENDIAN) || defined(_LITTLE_ENDIAN))
 #  define LZ4_BIG_ENDIAN 1
 #elif defined(__sparc) || defined(__sparc__) \
    || defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) \
@@ -90,15 +96,20 @@ Note : this source file requires "lz4_encoder.h"
 // Little Endian assumed. PDP Endian and other very rare endian format are unsupported.
 #endif
 
-// Unaligned memory access is automatically enabled for "common" CPU, such as x86.
-// For others CPU, the compiler will be more cautious, and insert extra code to ensure aligned access is respected
-// If you know your target CPU supports unaligned memory access, you want to force this option manually to improve performance
+// Unaligned memory access is automatically enabled for "common" CPU,
+// such as x86.
+// For others CPU, the compiler will be more cautious, and insert extra 
+// code to ensure aligned access is respected
+// If you know your target CPU supports unaligned memory access, you 
+// want to force this option manually to improve performance
 #if defined(__ARM_FEATURE_UNALIGNED)
 #  define LZ4_FORCE_UNALIGNED_ACCESS 1
 #endif
 
-// Define this parameter if your target system or compiler does not support hardware bit count
-#if defined(_MSC_VER) && defined(_WIN32_WCE)            // Visual Studio for Windows CE does not support Hardware bit count
+// Define this parameter if your target system or compiler does not 
+// support hardware bit count
+#if defined(_MSC_VER) && defined(_WIN32_WCE)            
+// Visual Studio for Windows CE does not support Hardware bit count
 #  define LZ4_FORCE_SW_BITCOUNT
 #endif
 
@@ -123,7 +134,8 @@ Note : this source file requires "lz4_encoder.h"
 #    pragma intrinsic(_BitScanForward)   // For Visual 2005
 #    pragma intrinsic(_BitScanReverse)   // For Visual 2005
 #  endif
-#  pragma warning(disable : 4127)        // disable: C4127: conditional expression is constant
+#  pragma warning(disable : 4127)        // disable: C4127: 
+										 // conditional expression is constant
 #endif
 
 #ifdef _MSC_VER
@@ -152,7 +164,8 @@ Note : this source file requires "lz4_encoder.h"
 
 //Declaration for kmalloc functions
 MALLOC_DECLARE(C_HASHTABLE);
-MALLOC_DEFINE(C_HASHTABLE, "comphashtable", "A hash table used by LZ4 compression function.");
+MALLOC_DEFINE(C_HASHTABLE, "comphashtable",
+	"A hash table used by LZ4 compression function.");
 
 
 //**************************************
@@ -209,7 +222,9 @@ typedef struct _U64_S { U64 v; } _PACKED U64_S;
 #define MINLENGTH (MFLIMIT+1)
 
 #define LZ4_64KLIMIT ((1<<16) + (MFLIMIT-1))
-#define SKIPSTRENGTH 6     // Increasing this value will make the compression run slower on incompressible data
+#define SKIPSTRENGTH 6     
+// Increasing this value will make the compression run slower on 
+// incompressible data
 
 #define MAXD_LOG 16
 #define MAX_DISTANCE ((1 << MAXD_LOG) - 1)
@@ -244,8 +259,13 @@ typedef struct _U64_S { U64 v; } _PACKED U64_S;
 #endif
 
 #if (defined(LZ4_BIG_ENDIAN) && !defined(BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE))
-#  define LZ4_READ_LITTLEENDIAN_16(d,s,p) { U16 v = A16(p); v = lz4_bswap16(v); d = (s) - v; }
-#  define LZ4_WRITE_LITTLEENDIAN_16(p,i)  { U16 v = (U16)(i); v = lz4_bswap16(v); A16(p) = v; p+=2; }
+#  define LZ4_READ_LITTLEENDIAN_16(d,s,p) { U16 v = A16(p); 
+											v = lz4_bswap16(v); 
+											d = (s) - v; }
+#  define LZ4_WRITE_LITTLEENDIAN_16(p,i)  { U16 v = (U16)(i); 
+											v = lz4_bswap16(v);
+											A16(p) = v;
+											p+=2; }
 #else      // Little Endian
 #  define LZ4_READ_LITTLEENDIAN_16(d,s,p) { d = (s) - A16(p); }
 #  define LZ4_WRITE_LITTLEENDIAN_16(p,v)  { A16(p) = v; p+=2; }
@@ -370,19 +390,16 @@ LZ4_free(void* ctx)
 int
 LZ4_compress_limitedOutput(char* source, char* dest, int inputSize, int maxOutputSize)
 {
-//#if HEAPMODE
     void* ctx = LZ4_create();
     int result;
     if (ctx == NULL) return 0;    // Failed allocation => compression not done
     if (inputSize < LZ4_64KLIMIT)
-        result = LZ4_compress64k_heap_limitedOutput(ctx, source, dest, inputSize, maxOutputSize);
-    else result = LZ4_compress_heap_limitedOutput(ctx, source, dest, inputSize, maxOutputSize);
+        result = LZ4_compress64k_heap_limitedOutput(ctx, source, dest,
+			inputSize, maxOutputSize);
+    else result = LZ4_compress_heap_limitedOutput(ctx, source, dest,
+			inputSize, maxOutputSize);
     LZ4_free(ctx);
     return result;
-//#else
-    //if (inputSize < (int)LZ4_64KLIMIT) return LZ4_compress64k_stack_limitedOutput(source, dest, inputSize, maxOutputSize);
-    //return LZ4_compress_stack_limitedOutput(source, dest, inputSize, maxOutputSize);
-//#endif
 }
 
 
@@ -405,7 +422,9 @@ int LZ4_decompress_generic(
                  char* source,
                  char* dest,
                  int inputSize,          //
-                 int outputSize,         // OutputSize must be != 0; if endOnInput==endOnInputSize, this value is the max size of Output Buffer.
+                 int outputSize,        
+                 // OutputSize must be != 0; if endOnInput==endOnInputSize, 
+                 // this value is the max size of Output Buffer.
 
                  int endOnInput,         // endOnOutputSize, endOnInputSize
                  int prefix64k,          // noPrefix, withPrefix
@@ -430,8 +449,10 @@ int LZ4_decompress_generic(
 
 
     // Special case
-    if ((partialDecoding) && (oexit> oend-MFLIMIT)) oexit = oend-MFLIMIT;   // targetOutputSize too large, better decode everything
-    if unlikely(outputSize==0) goto _output_error;                          // Empty output buffer
+    if ((partialDecoding) && (oexit> oend-MFLIMIT)) oexit = oend-MFLIMIT;
+    // targetOutputSize too large, better decode everything
+    if unlikely(outputSize==0) goto _output_error;
+    // Empty output buffer
 
 
     // Main Loop
@@ -454,34 +475,44 @@ int LZ4_decompress_generic(
 
         // copy literals
         cpy = op+length;
-        if (((endOnInput) && ((cpy>(partialDecoding?oexit:oend-MFLIMIT)) || (ip+length>iend-(2+1+LASTLITERALS))) )
+        if (((endOnInput) && ((cpy>(partialDecoding?oexit:oend-MFLIMIT)) 
+			|| (ip+length>iend-(2+1+LASTLITERALS))) )
             || ((!endOnInput) && (cpy>oend-COPYLENGTH)))
         {
             if (partialDecoding)
             {
-                if (cpy > oend) goto _output_error;                            // Error : write attempt beyond end of output buffer
-                if ((endOnInput) && (ip+length > iend)) goto _output_error;    // Error : read attempt beyond end of input buffer
+                if (cpy > oend) goto _output_error;
+                // Error : write attempt beyond end of output buffer
+                if ((endOnInput) && (ip+length > iend)) goto _output_error;
+                // Error : read attempt beyond end of input buffer
             }
             else
             {
-                if ((!endOnInput) && (cpy != oend)) goto _output_error;        // Error : block decoding must stop exactly there, due to parsing restrictions
-                if ((endOnInput) && ((ip+length != iend) || (cpy > oend))) goto _output_error;   // Error : not enough place for another match (min 4) + 5 literals
+                if ((!endOnInput) && (cpy != oend)) goto _output_error;
+                // Error : block decoding must stop exactly there,
+                // due to parsing restrictions
+                if ((endOnInput) && ((ip+length != iend) || (cpy > oend))) 
+					goto _output_error;
+					// Error : not enough place for another match (min 4) + 5 literals
             }
             memcpy(op, ip, length);
             ip += length;
             op += length;
-            break;                                       // Necessarily EOF, due to parsing restrictions
+            break;
+            // Necessarily EOF, due to parsing restrictions
         }
         LZ4_WILDCOPY(ip, op, cpy); ip -= (op-cpy); op = cpy;
 
         // get offset
         LZ4_READ_LITTLEENDIAN_16(ref,cpy,ip); ip+=2;
-        if ((prefix64k==noPrefix) && unlikely(ref < (BYTE*)dest)) goto _output_error;   // Error : offset outside destination buffer
+        if ((prefix64k==noPrefix) && unlikely(ref < (BYTE*)dest))
+			goto _output_error;   // Error : offset outside destination buffer
 
         // get matchlength
         if ((length=(token&ML_MASK)) == ML_MASK) 
         { 
-            while (endOnInput ? ip<iend-(LASTLITERALS+1) : 1)    // A minimum nb of input bytes must remain for LASTLITERALS + token
+            while (endOnInput ? ip<iend-(LASTLITERALS+1) : 1)
+            // A minimum nb of input bytes must remain for LASTLITERALS + token
             { 
                 unsigned s = *ip++; 
                 length += s; 
@@ -510,7 +541,8 @@ int LZ4_decompress_generic(
 
         if unlikely(cpy>oend-(COPYLENGTH)-(STEPSIZE-4))
         {
-            if (cpy > oend-LASTLITERALS) goto _output_error;    // Error : last 5 bytes must be literals
+            if (cpy > oend-LASTLITERALS) goto _output_error;
+            // Error : last 5 bytes must be literals
             LZ4_SECURECOPY(ref, op, (oend-COPYLENGTH));
             while(op<cpy) *op++=*ref++;
             op=cpy;
