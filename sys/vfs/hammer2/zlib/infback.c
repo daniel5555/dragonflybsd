@@ -633,7 +633,8 @@ z_streamp strm;
 {
     if (strm == Z_NULL || strm->state == Z_NULL || strm->zfree == (free_func)0)
         return Z_STREAM_ERROR;
-    ZFREE(strm, strm->state);
+    kfree(strm->state, C_ZLIB_BUFFER_INFLATE);
+    //ZFREE(strm, strm->state);
     strm->state = Z_NULL;
     Tracev((stderr, "inflate: end\n"));
     return Z_OK;

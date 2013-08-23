@@ -173,7 +173,8 @@ int windowBits;
     if (windowBits && (windowBits < 8 || windowBits > 15))
         return Z_STREAM_ERROR;
     if (state->window != Z_NULL && state->wbits != (unsigned)windowBits) {
-        ZFREE(strm, state->window);
+        kfree(state->window, C_ZLIB_BUFFER_INFLATE);
+        //ZFREE(strm, state->window);
         state->window = Z_NULL;
     }
 
@@ -1265,8 +1266,9 @@ z_streamp strm;
     if (strm == Z_NULL || strm->state == Z_NULL || strm->zfree == (free_func)0)
         return Z_STREAM_ERROR;
     state = (struct inflate_state FAR *)strm->state;
-    if (state->window != Z_NULL) ZFREE(strm, state->window);
-    ZFREE(strm, strm->state);
+    if (state->window != Z_NULL) kfree(state->window, C_ZLIB_BUFFER_INFLATE);
+    //ZFREE(strm, strm->state);
+    kfree(strm->state, C_ZLIB_BUFFER_INFLATE);
     strm->state = Z_NULL;
     Tracev((stderr, "inflate: end\n"));
     return Z_OK;
@@ -1466,7 +1468,8 @@ z_streamp source;
         //window = (unsigned char FAR *)
                  //ZALLOC(source, 1U << state->wbits, sizeof(unsigned char));
         if (window == Z_NULL) {
-            ZFREE(source, copy);
+			kfree(copy, C_ZLIB_BUFFER_INFLATE);
+            //ZFREE(source, copy);
             return Z_MEM_ERROR;
         }
     }

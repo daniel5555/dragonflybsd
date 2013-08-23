@@ -1006,7 +1006,8 @@ int ZEXPORT deflateEnd (strm)
     TRY_FREE(strm, strm->state->prev);
     TRY_FREE(strm, strm->state->window);
 
-    ZFREE(strm, strm->state);
+    kfree(strm->state, C_ZLIB_BUFFER_DEFLATE);
+    //ZFREE(strm, strm->state);
     strm->state = Z_NULL;
 
     return status == BUSY_STATE ? Z_DATA_ERROR : Z_OK;
