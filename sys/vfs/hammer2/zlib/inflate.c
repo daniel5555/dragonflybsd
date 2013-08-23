@@ -88,7 +88,7 @@
 #include <sys/malloc.h> //for malloc macros
 
 MALLOC_DECLARE(C_ZLIB_BUFFER_INFLATE);
-MALLOC_DEFINE(C_ZLIB_BUFFER, "compzlibbufferinflate",
+MALLOC_DEFINE(C_ZLIB_BUFFER_INFLATE, "compzlibbufferinflate",
 	"A private buffer used by zlib library for inflate function.");
 
 #ifdef MAKEFIXED

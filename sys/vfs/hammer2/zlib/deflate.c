@@ -54,7 +54,7 @@
 #include <sys/malloc.h> //for malloc macros
 
 MALLOC_DECLARE(C_ZLIB_BUFFER_DEFLATE);
-MALLOC_DEFINE(C_ZLIB_BUFFER, "compzlibbufferdeflate",
+MALLOC_DEFINE(C_ZLIB_BUFFER_DEFLATE, "compzlibbufferdeflate",
 	"A private buffer used by zlib library for deflate function.");
 
 const char deflate_copyright[] =
