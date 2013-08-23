@@ -553,7 +553,7 @@ ZEXTERN int ZEXPORT deflateInit2 OF((z_streamp strm,
    compressed data instead of a zlib wrapper.  The gzip header will have no
    file name, no extra data, no comment, no modification time (set to zero), no
    header crc, and the operating system will be set to 255 (unknown).  If a
-   gzip stream is being written, strm->adler is a crc32 instead of an adler32.
+   gzip stream is being written, strm->adler is a crc32_zlib instead of an adler32.
 
      The memLevel parameter specifies how much memory should be allocated
    for the internal compression state.  memLevel=1 uses minimum memory but is
@@ -793,7 +793,7 @@ ZEXTERN int ZEXPORT inflateInit2 OF((z_streamp strm,
    is for use with other formats that use the deflate compressed data format
    such as zip.  Those formats provide their own check values.  If a custom
    format is developed using the raw deflate format for compressed data, it is
-   recommended that a check value such as an adler32 or a crc32 be applied to
+   recommended that a check value such as an adler32 or a crc32_zlib be applied to
    the uncompressed data as is done in the zlib, gzip, and zip formats.  For
    most applications, the zlib format should be used as is.  Note that comments
    above on the use in deflateInit2() applies to the magnitude of windowBits.
@@ -802,7 +802,7 @@ ZEXTERN int ZEXPORT inflateInit2 OF((z_streamp strm,
    32 to windowBits to enable zlib and gzip decoding with automatic header
    detection, or add 16 to decode only the gzip format (the zlib format will
    return a Z_DATA_ERROR).  If a gzip stream is being decoded, strm->adler is a
-   crc32 instead of an adler32.
+   crc32_zlib instead of an adler32.
 
      inflateInit2 returns Z_OK if success, Z_MEM_ERROR if there was not enough
    memory, Z_VERSION_ERROR if the zlib library version is incompatible with the
@@ -1572,7 +1572,7 @@ ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Bytef *buf, uInt len));
    return the updated checksum.  If buf is Z_NULL, this function returns the
    required initial value for the checksum.
 
-     An Adler-32 checksum is almost as reliable as a CRC32 but can be computed
+     An Adler-32 checksum is almost as reliable as a crc32_zlib but can be computed
    much faster.
 
    Usage example:
@@ -1597,7 +1597,7 @@ ZEXTERN uLong ZEXPORT adler32_combine OF((uLong adler1, uLong adler2,
    negative, the result has no meaning or utility.
 */
 
-ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Bytef *buf, uInt len));
+ZEXTERN uLong ZEXPORT crc32_zlib   OF((uLong crc, const Bytef *buf, uInt len));
 /*
      Update a running CRC-32 with the bytes buf[0..len-1] and return the
    updated CRC-32.  If buf is Z_NULL, this function returns the required
@@ -1606,20 +1606,20 @@ ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Bytef *buf, uInt len));
 
    Usage example:
 
-     uLong crc = crc32(0L, Z_NULL, 0);
+     uLong crc = crc32_zlib(0L, Z_NULL, 0);
 
      while (read_buffer(buffer, length) != EOF) {
-       crc = crc32(crc, buffer, length);
+       crc = crc32_zlib(crc, buffer, length);
      }
      if (crc != original_crc) error();
 */
 
 /*
-ZEXTERN uLong ZEXPORT crc32_combine OF((uLong crc1, uLong crc2, z_off_t len2));
+ZEXTERN uLong ZEXPORT crc32_zlib_combine OF((uLong crc1, uLong crc2, z_off_t len2));
 
      Combine two CRC-32 check values into one.  For two sequences of bytes,
    seq1 and seq2 with lengths len1 and len2, CRC-32 check values were
-   calculated for each, crc1 and crc2.  crc32_combine() returns the CRC-32
+   calculated for each, crc1 and crc2.  crc32_zlib_combine() returns the CRC-32
    check value of seq1 and seq2 concatenated, requiring only crc1, crc2, and
    len2.
 */
@@ -1694,7 +1694,7 @@ ZEXTERN int ZEXPORT gzgetc_ OF((gzFile file));  /* backward compatibility */
    ZEXTERN z_off64_t ZEXPORT gztell64 OF((gzFile));
    ZEXTERN z_off64_t ZEXPORT gzoffset64 OF((gzFile));
    ZEXTERN uLong ZEXPORT adler32_combine64 OF((uLong, uLong, z_off64_t));
-   ZEXTERN uLong ZEXPORT crc32_combine64 OF((uLong, uLong, z_off64_t));
+   ZEXTERN uLong ZEXPORT crc32_zlib_combine64 OF((uLong, uLong, z_off64_t));
 #endif
 
 #if !defined(ZLIB_INTERNAL) && defined(Z_WANT64)
@@ -1704,14 +1704,14 @@ ZEXTERN int ZEXPORT gzgetc_ OF((gzFile file));  /* backward compatibility */
 #    define z_gztell z_gztell64
 #    define z_gzoffset z_gzoffset64
 #    define z_adler32_combine z_adler32_combine64
-#    define z_crc32_combine z_crc32_combine64
+#    define z_crc32_zlib_combine z_crc32_zlib_combine64
 #  else
 #    define gzopen gzopen64
 #    define gzseek gzseek64
 #    define gztell gztell64
 #    define gzoffset gzoffset64
 #    define adler32_combine adler32_combine64
-#    define crc32_combine crc32_combine64
+#    define crc32_zlib_combine crc32_zlib_combine64
 #  endif
 #  ifndef Z_LARGE64
      ZEXTERN gzFile ZEXPORT gzopen64 OF((const char *, const char *));
@@ -1719,7 +1719,7 @@ ZEXTERN int ZEXPORT gzgetc_ OF((gzFile file));  /* backward compatibility */
      ZEXTERN z_off_t ZEXPORT gztell64 OF((gzFile));
      ZEXTERN z_off_t ZEXPORT gzoffset64 OF((gzFile));
      ZEXTERN uLong ZEXPORT adler32_combine64 OF((uLong, uLong, z_off_t));
-     ZEXTERN uLong ZEXPORT crc32_combine64 OF((uLong, uLong, z_off_t));
+     ZEXTERN uLong ZEXPORT crc32_zlib_combine64 OF((uLong, uLong, z_off_t));
 #  endif
 #else
    ZEXTERN gzFile ZEXPORT gzopen OF((const char *, const char *));
@@ -1727,13 +1727,13 @@ ZEXTERN int ZEXPORT gzgetc_ OF((gzFile file));  /* backward compatibility */
    ZEXTERN z_off_t ZEXPORT gztell OF((gzFile));
    ZEXTERN z_off_t ZEXPORT gzoffset OF((gzFile));
    ZEXTERN uLong ZEXPORT adler32_combine OF((uLong, uLong, z_off_t));
-   ZEXTERN uLong ZEXPORT crc32_combine OF((uLong, uLong, z_off_t));
+   ZEXTERN uLong ZEXPORT crc32_zlib_combine OF((uLong, uLong, z_off_t));
 #endif
 
 #else /* Z_SOLO */
 
    ZEXTERN uLong ZEXPORT adler32_combine OF((uLong, uLong, z_off_t));
-   ZEXTERN uLong ZEXPORT crc32_combine OF((uLong, uLong, z_off_t));
+   ZEXTERN uLong ZEXPORT crc32_zlib_combine OF((uLong, uLong, z_off_t));
 
 #endif /* !Z_SOLO */
 
