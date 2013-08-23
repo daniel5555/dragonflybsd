@@ -212,10 +212,10 @@ hammer2_decompress_ZLIB_callback(struct bio *bio)
 		//compressed_size = (int*)buffer;
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
 		//KKASSERT((unsigned int)*compressed_size <= 65536);
-		strm_decompress.next_in = compressed_buffer;
-		strm_decompress.avail_in = 65536;
-		strm_decompress.avail_out = obp->b_bufsize;
+		strm_decompress.next_in = buffer;
+		strm_decompress.avail_in = 65536; //bp->b_bufsize?
 		strm_decompress.next_out = compressed_buffer;
+		strm_decompress.avail_out = obp->b_bufsize;
 		
 		ret = inflate(&strm_decompress, Z_FINISH);
 		if (ret != Z_STREAM_END) {
@@ -233,12 +233,14 @@ hammer2_decompress_ZLIB_callback(struct bio *bio)
 		//}
 		//KKASSERT(result <= obp->b_bufsize);
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
+		int result = obp->b_bufsize - strm_decompress.avail_out;
 		if (result < obp->b_bufsize)
-			bzero(obp->b_data + result, obp->b_bufsize - result);
+			bzero(obp->b_data + result, strm_decompress.avail_out);
 		objcache_put(cache_buffer_read, compressed_buffer);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
 	}
+	ret = inflateEnd(&strm_decompress);
 	biodone(obio);
 	bqrelse(bp);
 }

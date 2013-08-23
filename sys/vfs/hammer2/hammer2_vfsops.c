@@ -1170,6 +1170,8 @@ hammer2_compress_ZLIB_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			c_size = (int*)compressed_buffer;
 			*c_size = compressed_size;
 		}
+		
+		ret = deflateEnd(&strm_compress);
 
 		chain = hammer2_assign_physical(trans, ip, parentp,
 						lbase, compressed_block_size,
