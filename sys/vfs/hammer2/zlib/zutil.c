@@ -27,11 +27,6 @@ z_const char * const z_errmsg[10] = {
 ""};
 
 
-MALLOC_DECLARE(C_ZLIB_BUFFER);
-MALLOC_DEFINE(C_ZLIB_BUFFER, "compzlibbuffer",
-	"A private buffer used by zlib library.");
-
-
 const char * ZEXPORT zlibVersion()
 {
     return ZLIB_VERSION;
@@ -231,10 +226,10 @@ voidpf ZLIB_INTERNAL zcalloc (voidpf opaque, unsigned items, unsigned size)
      * will return a usable pointer which doesn't have to be normalized.
      */
     if (bsize < 65520L) {
-        buf = kmalloc(bsize, C_ZLIB_BUFFER, M_INTWAIT);
+        buf = farmalloc(bsize);
         if (*(ush*)&buf != 0) return buf;
     } else {
-        buf = kmalloc(bsize + 16L, C_ZLIB_BUFFER, M_INTWAIT);
+        buf = farmalloc(bsize + 16L);
     }
     if (buf == NULL || next_ptr >= MAX_PTR) return NULL;
     table[next_ptr].org_ptr = buf;
@@ -250,14 +245,14 @@ void ZLIB_INTERNAL zcfree (voidpf opaque, voidpf ptr)
 {
     int n;
     if (*(ush*)&ptr != 0) { /* object < 64K */
-        kfree(ptr, C_ZLIB_BUFFER);
+        farfree(ptr);
         return;
     }
     /* Find the original pointer */
     for (n = 0; n < next_ptr; n++) {
         if (ptr != table[n].new_ptr) continue;
 
-        kfree(table[n].org_ptr, C_ZLIB_BUFFER);
+        farfree(table[n].org_ptr);
         while (++n < next_ptr) {
             table[n-1] = table[n];
         }
