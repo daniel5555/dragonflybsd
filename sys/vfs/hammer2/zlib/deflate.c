@@ -51,11 +51,6 @@
 
 #include "deflate.h"
 #include "hammer2.h"
-#include <sys/malloc.h> //for malloc macros
-
-MALLOC_DECLARE(C_ZLIB_BUFFER);
-MALLOC_DEFINE(C_ZLIB_BUFFER, "compzlibbuffer",
-	"A private buffer used by zlib library.");
 
 const char deflate_copyright[] =
    " deflate 1.2.8 Copyright 1995-2013 Jean-loup Gailly and Mark Adler ";

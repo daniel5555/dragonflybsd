@@ -85,11 +85,6 @@
 #include "inflate.h"
 #include "inffast.h"
 #include "hammer2.h"
-#include <sys/malloc.h> //for malloc macros
-
-MALLOC_DECLARE(C_ZLIB_BUFFER);
-MALLOC_DEFINE(C_ZLIB_BUFFER, "compzlibbuffer",
-	"A private buffer used by zlib library.");
 
 #ifdef MAKEFIXED
 #  ifndef BUILDFIXED
