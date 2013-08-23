@@ -258,21 +258,23 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
         //strm->zfree = zcfree;
 //#endif
 
-#ifdef FASTEST
-    if (level != 0) level = 1;
-#else
-    if (level == Z_DEFAULT_COMPRESSION) level = 6;
-#endif
+//#ifdef FASTEST
+    //if (level != 0) level = 1;
+//#else
+    //if (level == Z_DEFAULT_COMPRESSION) level = 6;
+//#endif
+
+	level = 6;
 
     if (windowBits < 0) { /* suppress zlib wrapper */
         wrap = 0;
         windowBits = -windowBits;
     }
-#ifdef GZIP
-    else if (windowBits > 15) {
-        wrap = 2;       /* write gzip wrapper instead */
-        windowBits -= 16;
-    }
+//#ifdef GZIP
+    //else if (windowBits > 15) {
+        //wrap = 2;       /* write gzip wrapper instead */
+        //windowBits -= 16;
+    //}
 #endif
     if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method != Z_DEFLATED ||
         windowBits < 8 || windowBits > 15 || level < 0 || level > 9 ||
