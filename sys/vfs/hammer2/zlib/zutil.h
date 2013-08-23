@@ -21,13 +21,13 @@
 
 #include "zlib.h"
 
-#if defined(STDC) && !defined(Z_SOLO)
-#  if !(defined(_WIN32_WCE) && defined(_MSC_VER))
+//#if defined(STDC) && !defined(Z_SOLO)
+//#  if !(defined(_WIN32_WCE) && defined(_MSC_VER))
 //#    include <stddef.h>
-#  endif
+//#  endif
 //#  include <string.h>
 //#  include <stdlib.h>
-#endif
+//#endif
 
 #ifdef Z_SOLO
    typedef long ptrdiff_t;  /* guess -- will be caught if guess is wrong */
