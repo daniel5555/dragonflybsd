@@ -84,6 +84,7 @@
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast.h"
+#include "hammer2.h"
 #include <sys/malloc.h> //for malloc macros
 
 MALLOC_DECLARE(C_ZLIB_BUFFER);
