@@ -56,6 +56,8 @@
 #include "hammer2.h"
 #include "hammer2_lz4.h"
 
+#include "zlib/zlib.h"
+
 #define ZFOFFSET	(-2LL)
 
 static int hammer2_read_file(hammer2_inode_t *ip, struct uio *uio,
@@ -64,7 +66,8 @@ static int hammer2_write_file(hammer2_inode_t *ip, struct uio *uio,
 				int ioflag, int seqcount);
 static void hammer2_extend_file(hammer2_inode_t *ip, hammer2_key_t nsize);
 static void hammer2_truncate_file(hammer2_inode_t *ip, hammer2_key_t nsize);
-static void hammer2_decompress_callback(struct bio *bio);
+static void hammer2_decompress_LZ4_callback(struct bio *bio);
+static void hammer2_decompress_ZLIB_callback(struct bio *bio);
 
 struct objcache *cache_buffer_read;
 struct objcache *cache_buffer_write;
