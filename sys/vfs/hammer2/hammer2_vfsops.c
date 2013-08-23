@@ -210,6 +210,12 @@ static void hammer2_compress_LZ4_and_write_t(struct buf *bp, hammer2_trans_t *tr
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase, int ioflag,
 				int pblksize, int *errorp);
+static void hammer2_compress_ZLIB_and_write_t(struct buf *bp, hammer2_trans_t *trans,
+				hammer2_inode_t *ip,
+				hammer2_inode_data_t *ipdata,
+				hammer2_chain_t **parentp,
+				hammer2_key_t lbase, int ioflag,
+				int pblksize, int *errorp);
 static void hammer2_zero_check_and_write_t(struct buf *bp,
 				hammer2_trans_t *trans, hammer2_inode_t *ip,
 				hammer2_inode_data_t *ipdata,
@@ -891,7 +897,7 @@ hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
 		//bp->b_flags |= B_AGE;
 		//bdwrite(bp); //get rid of this, no need to bdwrite() anymore
 	} else if (ipdata->comp_algo == HAMMER2_COMP_ZLIB) {
-		hammer2_compress_LZ4_and_write_t(bp, trans, ip,
+		hammer2_compress_ZLIB_and_write_t(bp, trans, ip,
 					   ipdata, parentp,
 					   lbase, ioflag,
 					   pblksize, errorp);
