@@ -239,8 +239,8 @@ hammer2_decompress_ZLIB_callback(struct bio *bio)
 		objcache_put(cache_buffer_read, compressed_buffer);
 		obp->b_resid = 0;
 		obp->b_flags |= B_AGE;
+		ret = inflateEnd(&strm_decompress);
 	}
-	ret = inflateEnd(&strm_decompress);
 	biodone(obio);
 	bqrelse(bp);
 }
