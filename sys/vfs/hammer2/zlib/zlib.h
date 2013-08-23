@@ -220,6 +220,8 @@ ZEXTERN const char * ZEXPORT zlibVersion OF((void));
    is automatically made by deflateInit and inflateInit.
  */
 
+ZEXTERN int ZEXPORT deflateInit OF((z_streamp strm, int level));
+
 /*
 ZEXTERN int ZEXPORT deflateInit OF((z_streamp strm, int level));
 
@@ -363,6 +365,7 @@ ZEXTERN int ZEXPORT deflateEnd OF((z_streamp strm));
    deallocated).
 */
 
+ZEXTERN int ZEXPORT inflateInit OF((z_streamp strm));
 
 /*
 ZEXTERN int ZEXPORT inflateInit OF((z_streamp strm));
