@@ -249,7 +249,7 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
 //#else
         //strm->zalloc = zcalloc;
         strm->opaque = (voidpf)0;
-#endif
+//#endif
     }
     //if (strm->zfree == (free_func)0)
 //#ifdef Z_SOLO
