@@ -39,8 +39,8 @@ int ZEXPORT uncompress (dest, destLen, source, sourceLen)
     stream.avail_out = (uInt)*destLen;
     if ((uLong)stream.avail_out != *destLen) return Z_BUF_ERROR;
 
-    stream.zalloc = (alloc_func)0;
-    stream.zfree = (free_func)0;
+    //stream.zalloc = (alloc_func)0;
+    //stream.zfree = (free_func)0;
 
     err = inflateInit(&stream);
     if (err != Z_OK) return err;
