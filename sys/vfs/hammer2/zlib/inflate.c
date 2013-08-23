@@ -198,14 +198,14 @@ int stream_size;
         return Z_VERSION_ERROR;
     if (strm == Z_NULL) return Z_STREAM_ERROR;
     strm->msg = Z_NULL;                 /* in case we return an error */
-    if (strm->zalloc == (alloc_func)0) {
-#ifdef Z_SOLO
-        return Z_STREAM_ERROR;
-#else
-        strm->zalloc = zcalloc;
+    //if (strm->zalloc == (alloc_func)0) {
+//#ifdef Z_SOLO
+        //return Z_STREAM_ERROR;
+//#else
+        //strm->zalloc = zcalloc;
         strm->opaque = (voidpf)0;
-#endif
-    }
+//#endif
+    //}
     if (strm->zfree == (free_func)0)
 #ifdef Z_SOLO
         return Z_STREAM_ERROR;
@@ -1263,7 +1263,7 @@ int ZEXPORT inflateEnd(strm)
 z_streamp strm;
 {
     struct inflate_state FAR *state;
-    if (strm == Z_NULL || strm->state == Z_NULL || strm->zfree == (free_func)0)
+    if (strm == Z_NULL || strm->state == Z_NULL)
         return Z_STREAM_ERROR;
     state = (struct inflate_state FAR *)strm->state;
     if (state->window != Z_NULL) kfree(state->window, C_ZLIB_BUFFER_INFLATE);
