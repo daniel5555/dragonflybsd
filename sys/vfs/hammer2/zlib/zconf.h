@@ -430,7 +430,7 @@ typedef uLong FAR uLongf;
 
 #ifdef _WIN32
 #  ifndef Z_SOLO
-#    include <stddef.h>         /* for wchar_t */
+//#    include <stddef.h>         /* for wchar_t */
 #  endif
 #endif
 
