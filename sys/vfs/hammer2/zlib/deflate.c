@@ -1001,10 +1001,14 @@ int ZEXPORT deflateEnd (strm)
     }
 
     /* Deallocate in reverse order of allocations: */
-    TRY_FREE(strm, strm->state->pending_buf);
-    TRY_FREE(strm, strm->state->head);
-    TRY_FREE(strm, strm->state->prev);
-    TRY_FREE(strm, strm->state->window);
+    //TRY_FREE(strm, strm->state->pending_buf);
+    kfree(strm->state->pending_buf, C_ZLIB_BUFFER_DEFLATE);
+    //TRY_FREE(strm, strm->state->head);
+    kfree(strm->state->head, C_ZLIB_BUFFER_DEFLATE);
+    //TRY_FREE(strm, strm->state->prev);
+    kfree(strm->state->prev, C_ZLIB_BUFFER_DEFLATE);
+    //TRY_FREE(strm, strm->state->window);
+    kfree(strm->state->window, C_ZLIB_BUFFER_DEFLATE);
 
     kfree(strm->state, C_ZLIB_BUFFER_DEFLATE);
     //ZFREE(strm, strm->state);
