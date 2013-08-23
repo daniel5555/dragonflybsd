@@ -109,24 +109,24 @@ typedef z_stream FAR *z_streamp;
      gzip header information passed to and from zlib routines.  See RFC 1952
   for more details on the meanings of these fields.
 */
-typedef struct gz_header_s {
-    int     text;       /* true if compressed data believed to be text */
-    uLong   time;       /* modification time */
-    int     xflags;     /* extra flags (not used when writing a gzip file) */
-    int     os;         /* operating system */
-    Bytef   *extra;     /* pointer to extra field or Z_NULL if none */
-    uInt    extra_len;  /* extra field length (valid if extra != Z_NULL) */
-    uInt    extra_max;  /* space at extra (only when reading header) */
-    Bytef   *name;      /* pointer to zero-terminated file name or Z_NULL */
-    uInt    name_max;   /* space at name (only when reading header) */
-    Bytef   *comment;   /* pointer to zero-terminated comment or Z_NULL */
-    uInt    comm_max;   /* space at comment (only when reading header) */
-    int     hcrc;       /* true if there was or will be a header crc */
-    int     done;       /* true when done reading gzip header (not used
-                           when writing a gzip file) */
-} gz_header;
+//typedef struct gz_header_s {
+    //int     text;       /* true if compressed data believed to be text */
+    //uLong   time;       /* modification time */
+    //int     xflags;     /* extra flags (not used when writing a gzip file) */
+    //int     os;         /* operating system */
+    //Bytef   *extra;     /* pointer to extra field or Z_NULL if none */
+    //uInt    extra_len;  /* extra field length (valid if extra != Z_NULL) */
+    //uInt    extra_max;  /* space at extra (only when reading header) */
+    //Bytef   *name;      /* pointer to zero-terminated file name or Z_NULL */
+    //uInt    name_max;   /* space at name (only when reading header) */
+    //Bytef   *comment;   /* pointer to zero-terminated comment or Z_NULL */
+    //uInt    comm_max;   /* space at comment (only when reading header) */
+    //int     hcrc;       /* true if there was or will be a header crc */
+    //int     done;       /* true when done reading gzip header (not used
+                           //when writing a gzip file) */
+//} gz_header;
 
-typedef gz_header FAR *gz_headerp;
+//typedef gz_header FAR *gz_headerp;
 
 /*
      The application must update next_in and avail_in when avail_in has dropped
@@ -1692,37 +1692,37 @@ int inflateInit_(z_streamp strm,
  * without large file support, _LFS64_LARGEFILE must also be true
  */
 #ifdef Z_LARGE64
-   gzFile gzopen64(const char *, const char *);
-   z_off64_t gzseek64(gzFile, z_off64_t, int);
-   z_off64_t gztell64(gzFile);
-   z_off64_t gzoffset64(gzFile);
-   uLong adler32_combine64(uLong, uLong, z_off64_t);
-   uLong crc32_zlib_combine64(uLong, uLong, z_off64_t);
+   //gzFile gzopen64(const char *, const char *);
+   //z_off64_t gzseek64(gzFile, z_off64_t, int);
+   //z_off64_t gztell64(gzFile);
+   //z_off64_t gzoffset64(gzFile);
+   //uLong adler32_combine64(uLong, uLong, z_off64_t);
+   //uLong crc32_zlib_combine64(uLong, uLong, z_off64_t);
 #endif
 
 #if !defined(ZLIB_INTERNAL) && defined(Z_WANT64)
 #  ifdef Z_PREFIX_SET
-#    define z_gzopen z_gzopen64
-#    define z_gzseek z_gzseek64
-#    define z_gztell z_gztell64
-#    define z_gzoffset z_gzoffset64
-#    define z_adler32_combine z_adler32_combine64
-#    define z_crc32_zlib_combine z_crc32_zlib_combine64
+//#    define z_gzopen z_gzopen64
+//#    define z_gzseek z_gzseek64
+//#    define z_gztell z_gztell64
+//#    define z_gzoffset z_gzoffset64
+//#    define z_adler32_combine z_adler32_combine64
+//#    define z_crc32_zlib_combine z_crc32_zlib_combine64
 #  else
-#    define gzopen gzopen64
-#    define gzseek gzseek64
-#    define gztell gztell64
-#    define gzoffset gzoffset64
-#    define adler32_combine adler32_combine64
-#    define crc32_zlib_combine crc32_zlib_combine64
+//#    define gzopen gzopen64
+//#    define gzseek gzseek64
+//#    define gztell gztell64
+//#    define gzoffset gzoffset64
+//#    define adler32_combine adler32_combine64
+//#    define crc32_zlib_combine crc32_zlib_combine64
 #  endif
 #  ifndef Z_LARGE64
-     gzFile gzopen64(const char *, const char *);
-     z_off_t gzseek64(gzFile, z_off_t, int);
-     z_off_t gztell64(gzFile);
-     z_off_t gzoffset64(gzFile);
-     uLong adler32_combine64(uLong, uLong, z_off_t);
-     uLong crc32_zlib_combine64(uLong, uLong, z_off_t);
+     //gzFile gzopen64(const char *, const char *);
+     //z_off_t gzseek64(gzFile, z_off_t, int);
+     //z_off_t gztell64(gzFile);
+     //z_off_t gzoffset64(gzFile);
+     //uLong adler32_combine64(uLong, uLong, z_off_t);
+     //uLong crc32_zlib_combine64(uLong, uLong, z_off_t);
 #  endif
 #else
    //ZEXTERN gzFile ZEXPORT gzopen OF((const char *, const char *));
@@ -1735,8 +1735,8 @@ int inflateInit_(z_streamp strm,
 
 #else /* Z_SOLO */
 
-   uLong adler32_combine(uLong, uLong, z_off_t);
-   uLong crc32_zlib_combine(uLong, uLong, z_off_t);
+   //uLong adler32_combine(uLong, uLong, z_off_t);
+   //uLong crc32_zlib_combine(uLong, uLong, z_off_t);
 
 #endif /* !Z_SOLO */
 
@@ -1753,8 +1753,8 @@ int inflateInit_(z_streamp strm,
 //ZEXTERN int            ZEXPORT inflateResetKeep OF((z_streamp));
 //ZEXTERN int            ZEXPORT deflateResetKeep OF((z_streamp));
 #if defined(_WIN32) && !defined(Z_SOLO)
-gzFile         gzopen_w(const wchar_t *path,
-                                            const char *mode);
+//gzFile         gzopen_w(const wchar_t *path,
+                                            //const char *mode);
 #endif
 #if defined(STDC) || defined(Z_HAVE_STDARG_H)
 #  ifndef Z_SOLO
