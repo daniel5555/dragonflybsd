@@ -211,7 +211,7 @@ int stream_size;
 #else
         strm->zfree = zcfree;
 #endif
-    state = (struct inflate_state FAR *) kmalloc(sizeof(struct inflate_state), C_ZLIB_BUFFER, M_INTWAIT);
+    state = (struct inflate_state FAR *) kmalloc(sizeof(struct inflate_state), C_ZLIB_BUFFER_INFLATE, M_INTWAIT);
             /*ZALLOC(strm, 1, sizeof(struct inflate_state));*/
     if (state == Z_NULL) return Z_MEM_ERROR;
     Tracev((stderr, "inflate: allocated\n"));
@@ -219,7 +219,7 @@ int stream_size;
     state->window = Z_NULL;
     ret = inflateReset2(strm, windowBits);
     if (ret != Z_OK) {
-		kfree(state, C_ZLIB_BUFFER);
+		kfree(state, C_ZLIB_BUFFER_INFLATE);
         /*ZFREE(strm, state);*/
         strm->state = Z_NULL;
     }

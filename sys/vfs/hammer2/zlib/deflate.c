@@ -280,7 +280,7 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
         return Z_STREAM_ERROR;
     }
     if (windowBits == 8) windowBits = 9;  /* until 256-byte window bug fixed */
-    s = (deflate_state *) kmalloc(sizeof(*s), C_ZLIB_BUFFER, M_INTWAIT);
+    s = (deflate_state *) kmalloc(sizeof(*s), C_ZLIB_BUFFER_DEFLATE, M_INTWAIT);
     if (s == Z_NULL) return Z_MEM_ERROR;
     strm->state = (struct internal_state FAR *)s;
     s->strm = strm;
@@ -296,15 +296,15 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     s->hash_mask = s->hash_size - 1;
     s->hash_shift =  ((s->hash_bits+MIN_MATCH-1)/MIN_MATCH);
 
-    s->window = (Bytef *) kmalloc((s->w_size)*2*sizeof(Byte), C_ZLIB_BUFFER, M_INTWAIT);
-    s->prev   = (Posf *)  kmalloc((s->w_size)*sizeof(Pos), C_ZLIB_BUFFER, M_INTWAIT);
-    s->head   = (Posf *)  kmalloc((s->hash_size)*sizeof(Pos), C_ZLIB_BUFFER, M_INTWAIT);
+    s->window = (Bytef *) kmalloc((s->w_size)*2*sizeof(Byte), C_ZLIB_BUFFER_DEFLATE, M_INTWAIT);
+    s->prev   = (Posf *)  kmalloc((s->w_size)*sizeof(Pos), C_ZLIB_BUFFER_DEFLATE, M_INTWAIT);
+    s->head   = (Posf *)  kmalloc((s->hash_size)*sizeof(Pos), C_ZLIB_BUFFER_DEFLATE, M_INTWAIT);
 
     s->high_water = 0;      /* nothing written to s->window yet */
 
     s->lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
 
-    overlay = (ushf *) kmalloc((s->lit_bufsize)*(sizeof(ush)+2), C_ZLIB_BUFFER, M_INTWAIT);
+    overlay = (ushf *) kmalloc((s->lit_bufsize)*(sizeof(ush)+2), C_ZLIB_BUFFER_DEFLATE, M_INTWAIT);
     s->pending_buf = (uchf *) overlay;
     s->pending_buf_size = (ulg)s->lit_bufsize * (sizeof(ush)+2L);
 
