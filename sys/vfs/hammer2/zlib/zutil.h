@@ -171,7 +171,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #if !defined(_WIN32) && \
     (!defined(_LARGEFILE64_SOURCE) || _LFS64_LARGEFILE-0 == 0)
     uLong adler32_combine64(uLong, uLong, z_off_t);
-    uLong crc32_zlib_combine64(uLong, uLong, z_off_t);
+    //uLong crc32_zlib_combine64(uLong, uLong, z_off_t);
 #endif
 
         /* common defaults */

@@ -696,47 +696,47 @@ int deflate (strm, flush)
     if (s->status == INIT_STATE) {
 #ifdef GZIP
         if (s->wrap == 2) {
-            strm->adler = crc32_zlib(0L, Z_NULL, 0);
-            put_byte(s, 31);
-            put_byte(s, 139);
-            put_byte(s, 8);
-            if (s->gzhead == Z_NULL) {
-                put_byte(s, 0);
-                put_byte(s, 0);
-                put_byte(s, 0);
-                put_byte(s, 0);
-                put_byte(s, 0);
-                put_byte(s, s->level == 9 ? 2 :
-                            (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ?
-                             4 : 0));
-                put_byte(s, OS_CODE);
-                s->status = BUSY_STATE;
-            }
-            else {
-                put_byte(s, (s->gzhead->text ? 1 : 0) +
-                            (s->gzhead->hcrc ? 2 : 0) +
-                            (s->gzhead->extra == Z_NULL ? 0 : 4) +
-                            (s->gzhead->name == Z_NULL ? 0 : 8) +
-                            (s->gzhead->comment == Z_NULL ? 0 : 16)
-                        );
-                put_byte(s, (Byte)(s->gzhead->time & 0xff));
-                put_byte(s, (Byte)((s->gzhead->time >> 8) & 0xff));
-                put_byte(s, (Byte)((s->gzhead->time >> 16) & 0xff));
-                put_byte(s, (Byte)((s->gzhead->time >> 24) & 0xff));
-                put_byte(s, s->level == 9 ? 2 :
-                            (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ?
-                             4 : 0));
-                put_byte(s, s->gzhead->os & 0xff);
-                if (s->gzhead->extra != Z_NULL) {
-                    put_byte(s, s->gzhead->extra_len & 0xff);
-                    put_byte(s, (s->gzhead->extra_len >> 8) & 0xff);
-                }
-                if (s->gzhead->hcrc)
-                    strm->adler = crc32_zlib(strm->adler, s->pending_buf,
-                                        s->pending);
-                s->gzindex = 0;
-                s->status = EXTRA_STATE;
-            }
+            //strm->adler = crc32_zlib(0L, Z_NULL, 0);
+            //put_byte(s, 31);
+            //put_byte(s, 139);
+            //put_byte(s, 8);
+            //if (s->gzhead == Z_NULL) {
+                //put_byte(s, 0);
+                //put_byte(s, 0);
+                //put_byte(s, 0);
+                //put_byte(s, 0);
+                //put_byte(s, 0);
+                //put_byte(s, s->level == 9 ? 2 :
+                            //(s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ?
+                             //4 : 0));
+                //put_byte(s, OS_CODE);
+                //s->status = BUSY_STATE;
+            //}
+            //else {
+                //put_byte(s, (s->gzhead->text ? 1 : 0) +
+                            //(s->gzhead->hcrc ? 2 : 0) +
+                            //(s->gzhead->extra == Z_NULL ? 0 : 4) +
+                            //(s->gzhead->name == Z_NULL ? 0 : 8) +
+                            //(s->gzhead->comment == Z_NULL ? 0 : 16)
+                        //);
+                //put_byte(s, (Byte)(s->gzhead->time & 0xff));
+                //put_byte(s, (Byte)((s->gzhead->time >> 8) & 0xff));
+                //put_byte(s, (Byte)((s->gzhead->time >> 16) & 0xff));
+                //put_byte(s, (Byte)((s->gzhead->time >> 24) & 0xff));
+                //put_byte(s, s->level == 9 ? 2 :
+                            //(s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ?
+                             //4 : 0));
+                //put_byte(s, s->gzhead->os & 0xff);
+                //if (s->gzhead->extra != Z_NULL) {
+                    //put_byte(s, s->gzhead->extra_len & 0xff);
+                    //put_byte(s, (s->gzhead->extra_len >> 8) & 0xff);
+                //}
+                //if (s->gzhead->hcrc)
+                    //strm->adler = crc32_zlib(strm->adler, s->pending_buf,
+                                        //s->pending);
+                //s->gzindex = 0;
+                //s->status = EXTRA_STATE;
+            //}
         }
         else
 #endif
