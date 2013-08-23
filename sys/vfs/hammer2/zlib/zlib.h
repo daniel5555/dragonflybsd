@@ -220,7 +220,7 @@ typedef gz_header FAR *gz_headerp;
    is automatically made by deflateInit and inflateInit.
  */
 
-int deflateInit((z_streamp strm, int level));
+int deflateInit(z_streamp strm, int level);
 
 /*
 ZEXTERN int ZEXPORT deflateInit OF((z_streamp strm, int level));
@@ -245,7 +245,7 @@ ZEXTERN int ZEXPORT deflateInit OF((z_streamp strm, int level));
 */
 
 
-int deflate((z_streamp strm, int flush));
+int deflate(z_streamp strm, int flush);
 /*
     deflate compresses as much data as possible, and stops when the input
   buffer becomes empty or the output buffer becomes full.  It may introduce
