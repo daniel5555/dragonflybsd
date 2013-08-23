@@ -15,10 +15,6 @@
 #include "inflate.h"
 #include "inffast.h"
 
-MALLOC_DECLARE(C_ZLIB_BUFFER_INFBACK);
-MALLOC_DEFINE(C_ZLIB_BUFFER_INFBACK, "compzlibbufferinfback",
-	"A private buffer used by zlib library for infback file."); //rework this...
-
 /* function prototypes */
 local void fixedtables OF((struct inflate_state FAR *state));
 
@@ -637,7 +633,7 @@ z_streamp strm;
 {
     if (strm == Z_NULL || strm->state == Z_NULL || strm->zfree == (free_func)0)
         return Z_STREAM_ERROR;
-    kfree(strm->state, C_ZLIB_BUFFER_INFBACK);
+    kfree(strm->state, C_ZLIB_BUFFER_INFLATE);
     //ZFREE(strm, strm->state);
     strm->state = Z_NULL;
     Tracev((stderr, "inflate: end\n"));
