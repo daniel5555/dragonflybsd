@@ -244,27 +244,25 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
 
     strm->msg = Z_NULL;
     //if (strm->zalloc == (alloc_func)0) {
-//#ifdef Z_SOLO
-        //return Z_STREAM_ERROR;
-//#else
+#ifdef Z_SOLO
+        return Z_STREAM_ERROR;
+#else
         //strm->zalloc = zcalloc;
         strm->opaque = (voidpf)0;
-//#endif
-    }
+#endif
+    //}
     //if (strm->zfree == (free_func)0)
-//#ifdef Z_SOLO
-        //return Z_STREAM_ERROR;
-//#else
+#ifdef Z_SOLO
+        return Z_STREAM_ERROR;
+#else
         //strm->zfree = zcfree;
-//#endif
+#endif
 
-//#ifdef FASTEST
-    //if (level != 0) level = 1;
-//#else
-    //if (level == Z_DEFAULT_COMPRESSION) level = 6;
-//#endif
-
-	level = 6;
+#ifdef FASTEST
+    if (level != 0) level = 1;
+#else
+    if (level == Z_DEFAULT_COMPRESSION) level = 6;
+#endif
 
     if (windowBits < 0) { /* suppress zlib wrapper */
         wrap = 0;
