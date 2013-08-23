@@ -85,6 +85,10 @@
 #include "inflate.h"
 #include "inffast.h"
 
+MALLOC_DECLARE(C_ZLIB_BUFFER);
+MALLOC_DEFINE(C_ZLIB_BUFFER, "compzlibbuffer",
+	"A private buffer used by zlib library.");
+
 #ifdef MAKEFIXED
 #  ifndef BUILDFIXED
 #    define BUILDFIXED
@@ -205,15 +209,16 @@ int stream_size;
 #else
         strm->zfree = zcfree;
 #endif
-    state = (struct inflate_state FAR *)
-            ZALLOC(strm, 1, sizeof(struct inflate_state));
+    state = (struct inflate_state FAR *) kmalloc(sizeof(struct inflate_state), C_ZLIB_BUFFER, M_INTWAIT);
+            /*ZALLOC(strm, 1, sizeof(struct inflate_state));*/
     if (state == Z_NULL) return Z_MEM_ERROR;
     Tracev((stderr, "inflate: allocated\n"));
     strm->state = (struct internal_state FAR *)state;
     state->window = Z_NULL;
     ret = inflateReset2(strm, windowBits);
     if (ret != Z_OK) {
-        ZFREE(strm, state);
+		kfree(state, C_ZLIB_BUFFER);
+        /*ZFREE(strm, state);*/
         strm->state = Z_NULL;
     }
     return ret;
@@ -387,12 +392,12 @@ unsigned copy;
     state = (struct inflate_state FAR *)strm->state;
 
     /* if it hasn't been done already, allocate space for the window */
-    if (state->window == Z_NULL) {
-        state->window = (unsigned char FAR *)
-                        ZALLOC(strm, 1U << state->wbits,
-                               sizeof(unsigned char));
-        if (state->window == Z_NULL) return 1;
-    }
+    //if (state->window == Z_NULL) {
+        //state->window = (unsigned char FAR *)
+                        //ZALLOC(strm, 1U << state->wbits,
+                               //sizeof(unsigned char));
+        //if (state->window == Z_NULL) return 1;
+    //}
 
     /* if window not in use yet, initialize */
     if (state->wsize == 0) {
@@ -1451,13 +1456,13 @@ z_streamp source;
     state = (struct inflate_state FAR *)source->state;
 
     /* allocate space */
-    copy = (struct inflate_state FAR *)
-           ZALLOC(source, 1, sizeof(struct inflate_state));
+    //copy = (struct inflate_state FAR *)
+           //ZALLOC(source, 1, sizeof(struct inflate_state));
     if (copy == Z_NULL) return Z_MEM_ERROR;
     window = Z_NULL;
     if (state->window != Z_NULL) {
-        window = (unsigned char FAR *)
-                 ZALLOC(source, 1U << state->wbits, sizeof(unsigned char));
+        //window = (unsigned char FAR *)
+                 //ZALLOC(source, 1U << state->wbits, sizeof(unsigned char));
         if (window == Z_NULL) {
             ZFREE(source, copy);
             return Z_MEM_ERROR;

@@ -46,7 +46,11 @@ cmd_setcomp(char* comp_string, char* file_string)
 	} else if (strcmp(comp_string, "2") == 0) {
 		printf("Will set LZ4 compression on directory/file %s.\n", file_string);
 		comp_method = HAMMER2_COMP_LZ4;
-	} else {
+	}else if (strcmp(comp_string, "3") == 0) {
+		printf("Will set ZLIB (slowest) compression on directory/file %s.\n", file_string);
+		comp_method = HAMMER2_COMP_ZLIB;
+	}
+	else {
 		printf("ERROR: Unknown compression method.\n");
 		return 1;
 	}
@@ -96,7 +100,11 @@ cmd_setcomp_recursive(char* option_string, char* comp_string, char* file_string)
 	} else if (strcmp(comp_string, "2") == 0) {
 		printf("Will set LZ4 compression on directory/file %s.\n", file_string);
 		comp_method = HAMMER2_COMP_LZ4;
-	} else {
+	} else if (strcmp(comp_string, "3") == 0) {
+		printf("Will set ZLIB (slowest) compression on directory/file %s.\n", file_string);
+		comp_method = HAMMER2_COMP_ZLIB;
+	}
+	else {
 		printf("Unknown compression method.\n");
 		return 1;
 	}

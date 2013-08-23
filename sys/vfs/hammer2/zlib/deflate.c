@@ -274,7 +274,7 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
         return Z_STREAM_ERROR;
     }
     if (windowBits == 8) windowBits = 9;  /* until 256-byte window bug fixed */
-    s = (deflate_state *) ZALLOC(strm, 1, sizeof(deflate_state));
+    s = (deflate_state *) kmalloc(sizeof(struct deflate_state), C_ZLIB_BUFFER, M_INTWAIT);
     if (s == Z_NULL) return Z_MEM_ERROR;
     strm->state = (struct internal_state FAR *)s;
     s->strm = strm;
@@ -290,15 +290,15 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     s->hash_mask = s->hash_size - 1;
     s->hash_shift =  ((s->hash_bits+MIN_MATCH-1)/MIN_MATCH);
 
-    s->window = (Bytef *) ZALLOC(strm, s->w_size, 2*sizeof(Byte));
-    s->prev   = (Posf *)  ZALLOC(strm, s->w_size, sizeof(Pos));
-    s->head   = (Posf *)  ZALLOC(strm, s->hash_size, sizeof(Pos));
+    s->window = (Bytef *) kmalloc((s->w_size)*2*sizeof(Byte), C_ZLIB_BUFFER, M_INTWAIT);
+    s->prev   = (Posf *)  kmalloc((s->w_size)*sizeof(Pos), C_ZLIB_BUFFER, M_INTWAIT);
+    s->head   = (Posf *)  kmalloc((s->hash_size)*sizeof(Pos), C_ZLIB_BUFFER, M_INTWAIT);
 
     s->high_water = 0;      /* nothing written to s->window yet */
 
     s->lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
 
-    overlay = (ushf *) ZALLOC(strm, s->lit_bufsize, sizeof(ush)+2);
+    overlay = (ushf *) kmalloc((s->lit_bufsize)*(sizeof(ush)+2), C_ZLIB_BUFFER, M_INTWAIT);
     s->pending_buf = (uchf *) overlay;
     s->pending_buf_size = (ulg)s->lit_bufsize * (sizeof(ush)+2L);
 
@@ -1031,16 +1031,16 @@ int ZEXPORT deflateCopy (dest, source)
 
     zmemcpy((voidpf)dest, (voidpf)source, sizeof(z_stream));
 
-    ds = (deflate_state *) ZALLOC(dest, 1, sizeof(deflate_state));
+    //ds = (deflate_state *) ZALLOC(dest, 1, sizeof(deflate_state));
     if (ds == Z_NULL) return Z_MEM_ERROR;
     dest->state = (struct internal_state FAR *) ds;
     zmemcpy((voidpf)ds, (voidpf)ss, sizeof(deflate_state));
     ds->strm = dest;
 
-    ds->window = (Bytef *) ZALLOC(dest, ds->w_size, 2*sizeof(Byte));
-    ds->prev   = (Posf *)  ZALLOC(dest, ds->w_size, sizeof(Pos));
-    ds->head   = (Posf *)  ZALLOC(dest, ds->hash_size, sizeof(Pos));
-    overlay = (ushf *) ZALLOC(dest, ds->lit_bufsize, sizeof(ush)+2);
+    //ds->window = (Bytef *) ZALLOC(dest, ds->w_size, 2*sizeof(Byte));
+    //ds->prev   = (Posf *)  ZALLOC(dest, ds->w_size, sizeof(Pos));
+    //ds->head   = (Posf *)  ZALLOC(dest, ds->hash_size, sizeof(Pos));
+    //overlay = (ushf *) ZALLOC(dest, ds->lit_bufsize, sizeof(ush)+2);
     ds->pending_buf = (uchf *) overlay;
 
     if (ds->window == Z_NULL || ds->prev == Z_NULL || ds->head == Z_NULL ||

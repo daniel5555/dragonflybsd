@@ -55,8 +55,8 @@ int stream_size;
 #else
     strm->zfree = zcfree;
 #endif
-    state = (struct inflate_state FAR *)ZALLOC(strm, 1,
-                                               sizeof(struct inflate_state));
+    //state = (struct inflate_state FAR *)ZALLOC(strm, 1,
+                                               //sizeof(struct inflate_state));
     if (state == Z_NULL) return Z_MEM_ERROR;
     Tracev((stderr, "inflate: allocated\n"));
     strm->state = (struct internal_state FAR *)state;

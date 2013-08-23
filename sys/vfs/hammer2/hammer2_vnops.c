@@ -74,7 +74,7 @@ struct objcache *cache_buffer_write;
  */
 static
 void
-hammer2_decompress_callback(struct bio *bio)
+hammer2_decompress_LZ4_callback(struct bio *bio)
 {
 	struct buf *bp = bio->bio_buf;
 	struct buf *obp;
@@ -132,6 +132,103 @@ hammer2_decompress_callback(struct bio *bio)
 			/* make sure it isn't random garbage */
 			bzero(compressed_buffer, obp->b_bufsize);
 		}
+		KKASSERT(result <= obp->b_bufsize);
+		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
+		if (result < obp->b_bufsize)
+			bzero(obp->b_data + result, obp->b_bufsize - result);
+		objcache_put(cache_buffer_read, compressed_buffer);
+		obp->b_resid = 0;
+		obp->b_flags |= B_AGE;
+	}
+	biodone(obio);
+	bqrelse(bp);
+}
+
+static
+void
+hammer2_decompress_ZLIB_callback(struct bio *bio)
+{
+	struct buf *bp = bio->bio_buf;
+	struct buf *obp;
+	struct bio *obio;
+	int loff;
+
+	/*
+	 * If BIO_DONE is already set the device buffer was already
+	 * fully valid (B_CACHE).  If it is not set then I/O was issued
+	 * and we have to run I/O completion as the last bio.
+	 *
+	 * Nobody is waiting for our device I/O to complete, we are
+	 * responsible for bqrelse()ing it which means we also have to do
+	 * the equivalent of biowait() and clear BIO_DONE (which breadcb()
+	 * may have set).
+	 *
+	 * Any preexisting device buffer should match the requested size,
+	 * but due to bigblock recycling and other factors there is some
+	 * fragility there, so we assert that the device buffer covers
+	 * the request.
+	 */
+	if ((bio->bio_flags & BIO_DONE) == 0)
+		bpdone(bp, 0);
+	bio->bio_flags &= ~(BIO_DONE | BIO_SYNC);
+
+	obio = bio->bio_caller_info1.ptr;
+	obp = obio->bio_buf;
+	loff = obio->bio_caller_info3.value;
+
+	if (bp->b_flags & B_ERROR) {
+		obp->b_flags |= B_ERROR;
+		obp->b_error = bp->b_error;
+	} else if (obio->bio_caller_info2.index &&
+		   obio->bio_caller_info1.uvalue32 !=
+		    crc32(bp->b_data, bp->b_bufsize)) {
+		obp->b_flags |= B_ERROR;
+		obp->b_error = EIO;
+	} else {
+		KKASSERT(obp->b_bufsize <= 65536);
+		
+		char *buffer;
+		char *compressed_buffer;
+		//int *compressed_size;
+		int ret;
+		
+		z_stream strm_decompress;
+		
+		strm_decompress.zalloc = Z_NULL;
+		strm_decompress.zfree = Z_NULL;
+		strm_decompress.opaque = Z_NULL;
+		strm_decompress.avail_in = 0;
+		strm_decompress.next_in = Z_NULL;
+		
+		ret = inflateInit(&strm_decompress);
+		
+		if (ret != Z_OK)
+				printf("HAMMER2 ZLIB: Fatal error in inflateInit.\n");
+		
+		buffer = bp->b_data + loff;
+		//compressed_size = (int*)buffer;
+		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
+		//KKASSERT((unsigned int)*compressed_size <= 65536);
+		strm_decompress.next_in = compressed_buffer;
+		strm_decompress.avail_in = 65536;
+		strm_decompress.avail_out = obp->b_bufsize;
+		strm_decompress.next_out = compressed_buffer;
+		
+		ret = inflate(&strm_decompress, Z_FINISH);
+		if (ret != Z_STREAM_END) {
+			kprintf("HAMMER2 ZLIB: Fatar error during decompression.\n");
+			kprintf("bio %016jx/%d loff=%d\n");
+			bzero(compressed_buffer, obp->b_bufsize);
+		}
+		//int result = LZ4_decompress_safe(&buffer[sizeof(int)],
+			//compressed_buffer, *compressed_size, obp->b_bufsize);
+		//if (result < 0) {
+			//kprintf("READ PATH: Error during decompression."
+				//"bio %016jx/%d loff=%d\n",
+				//(intmax_t)bio->bio_offset, bio->bio_buf->b_bufsize, loff);
+			///* make sure it isn't random garbage */
+			//bzero(compressed_buffer, obp->b_bufsize);
+		//}
 		KKASSERT(result <= obp->b_bufsize);
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
 		if (result < obp->b_bufsize)
@@ -1923,10 +2020,28 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 				      ~HAMMER2_OFF_MASK_RADIX) - pbase);
 			nbio->bio_caller_info3.value = loff;
 			breadcb(chain->hmp->devvp, pbase, psize,
-				hammer2_decompress_callback, nbio);
+				hammer2_decompress_LZ4_callback, nbio);
 			/* XXX async read dev blk not protected by chain lk */
 			hammer2_chain_unlock(chain);
-		} else {
+		} else if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_ZLIB) {
+			hammer2_blockref_t *bref;
+			hammer2_off_t pbase;
+			hammer2_off_t pmask;
+			size_t psize;
+				
+			bref = &chain->bref;
+			psize = hammer2_devblksize(chain->bytes);
+			pmask = (hammer2_off_t)psize - 1;
+			pbase = bref->data_off & ~pmask;
+			loff = (int)((bref->data_off &
+				      ~HAMMER2_OFF_MASK_RADIX) - pbase);
+			nbio->bio_caller_info3.value = loff;
+			breadcb(chain->hmp->devvp, pbase, psize,
+				hammer2_decompress_ZLIB_callback, nbio);
+			/* XXX async read dev blk not protected by chain lk */
+			hammer2_chain_unlock(chain);
+		}
+		else {
 			hammer2_chain_load_async(chain,
 						 hammer2_strategy_read_callback,
 						 nbio);
