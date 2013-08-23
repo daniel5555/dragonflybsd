@@ -1114,8 +1114,6 @@ hammer2_compress_ZLIB_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 		
 		z_stream strm_compress;
 		
-		strm_compress.zalloc = Z_NULL;
-		strm_compress.zfree = Z_NULL;
 		strm_compress.opaque = Z_NULL;
 		ret = deflateInit(&strm_compress, 6);
 		if (ret != Z_OK)
