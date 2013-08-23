@@ -1113,7 +1113,7 @@ hammer2_compress_ZLIB_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 		strm_compress.opaque = Z_NULL;
 		ret = deflateInit(&strm_compress, 6);
 		if (ret != Z_OK)
-			kprintfprintf("HAMMER2 ZLIB: fatal error on deflateInit.\n");
+			kprintf("HAMMER2 ZLIB: fatal error on deflateInit.\n");
 		
 		if (ipdata->reserved85 < 8) {
 			compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
