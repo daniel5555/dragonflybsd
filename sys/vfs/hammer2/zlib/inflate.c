@@ -98,14 +98,14 @@ MALLOC_DEFINE(C_ZLIB_BUFFER_INFLATE, "compzlibbufferinflate",
 #endif
 
 /* function prototypes */
-local void fixedtables((struct inflate_state FAR *state));
-local int updatewindow((z_streamp strm, const unsigned char FAR *end,
-                           unsigned copy));
+local void fixedtables(struct inflate_state FAR *state);
+local int updatewindow(z_streamp strm, const unsigned char FAR *end,
+                           unsigned copy);
 #ifdef BUILDFIXED
-   void makefixed((void));
+   void makefixed(void);
 #endif
-local unsigned syncsearch((unsigned FAR *have, const unsigned char FAR *buf,
-                              unsigned len));
+local unsigned syncsearch(unsigned FAR *have, const unsigned char FAR *buf,
+                              unsigned len);
 
 int inflateResetKeep(strm)
 z_streamp strm;
