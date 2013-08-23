@@ -62,7 +62,7 @@ local uLong adler32_combine_ OF((uLong adler1, uLong adler2, z_off64_t len2));
 #endif
 
 /* ========================================================================= */
-uLong ZEXPORT adler32(adler, buf, len)
+uLong adler32(adler, buf, len)
     uLong adler;
     const Bytef *buf;
     uInt len;
@@ -162,7 +162,7 @@ local uLong adler32_combine_(adler1, adler2, len2)
 }
 
 /* ========================================================================= */
-uLong ZEXPORT adler32_combine(adler1, adler2, len2)
+uLong adler32_combine(adler1, adler2, len2)
     uLong adler1;
     uLong adler2;
     z_off_t len2;
@@ -170,7 +170,7 @@ uLong ZEXPORT adler32_combine(adler1, adler2, len2)
     return adler32_combine_(adler1, adler2, len2);
 }
 
-uLong ZEXPORT adler32_combine64(adler1, adler2, len2)
+uLong adler32_combine64(adler1, adler2, len2)
     uLong adler1;
     uLong adler2;
     z_off64_t len2;
