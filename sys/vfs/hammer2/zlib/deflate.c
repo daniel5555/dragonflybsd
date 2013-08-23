@@ -280,7 +280,7 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
         return Z_STREAM_ERROR;
     }
     if (windowBits == 8) windowBits = 9;  /* until 256-byte window bug fixed */
-    s = (deflate_state *) kmalloc(sizeof(struct deflate_state), C_ZLIB_BUFFER, M_INTWAIT);
+    s = (deflate_state *) kmalloc(sizeof(*s), C_ZLIB_BUFFER, M_INTWAIT);
     if (s == Z_NULL) return Z_MEM_ERROR;
     strm->state = (struct internal_state FAR *)s;
     s->strm = strm;
