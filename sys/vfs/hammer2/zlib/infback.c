@@ -248,13 +248,13 @@ struct inflate_state FAR *state;
    inflateBack() can also return Z_STREAM_ERROR if the input parameters
    are not correct, i.e. strm is Z_NULL or the state was not initialized.
  */
-//int ZEXPORT inflateBack(strm, in, in_desc, out, out_desc)
+int ZEXPORT inflateBack(strm, in, in_desc, out, out_desc)
 //z_streamp strm;
 //in_func in;
 //void FAR *in_desc;
 //out_func out;
 //void FAR *out_desc;
-//{
+{
     //struct inflate_state FAR *state;
     //z_const unsigned char FAR *next;    /* next input */
     //unsigned char FAR *put;     /* next output */
@@ -627,7 +627,7 @@ struct inflate_state FAR *state;
     //strm->next_in = next;
     //strm->avail_in = have;
     //return ret;
-//}
+}
 
 int ZEXPORT inflateBackEnd(strm)
 z_streamp strm;
