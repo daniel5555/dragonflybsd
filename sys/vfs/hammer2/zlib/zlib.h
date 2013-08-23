@@ -1633,10 +1633,10 @@ ZEXTERN uLong ZEXPORT crc32_zlib_combine OF((uLong crc1, uLong crc2, z_off_t len
 /* deflateInit and inflateInit are macros to allow checking the zlib version
  * and the compiler's view of z_stream:
  */
-//ZEXTERN int ZEXPORT deflateInit_ OF((z_streamp strm, int level,
-                                     //const char *version, int stream_size));
-//ZEXTERN int ZEXPORT inflateInit_ OF((z_streamp strm,
-                                     //const char *version, int stream_size));
+ZEXTERN int ZEXPORT deflateInit_ OF((z_streamp strm, int level,
+                                     const char *version, int stream_size));
+ZEXTERN int ZEXPORT inflateInit_ OF((z_streamp strm,
+                                     const char *version, int stream_size));
 //ZEXTERN int ZEXPORT deflateInit2_ OF((z_streamp strm, int  level, int  method,
                                       //int windowBits, int memLevel,
                                       //int strategy, const char *version,
@@ -1725,12 +1725,12 @@ ZEXTERN uLong ZEXPORT crc32_zlib_combine OF((uLong crc1, uLong crc2, z_off_t len
      ZEXTERN uLong ZEXPORT crc32_zlib_combine64 OF((uLong, uLong, z_off_t));
 #  endif
 #else
-   ZEXTERN gzFile ZEXPORT gzopen OF((const char *, const char *));
-   ZEXTERN z_off_t ZEXPORT gzseek OF((gzFile, z_off_t, int));
-   ZEXTERN z_off_t ZEXPORT gztell OF((gzFile));
-   ZEXTERN z_off_t ZEXPORT gzoffset OF((gzFile));
-   ZEXTERN uLong ZEXPORT adler32_combine OF((uLong, uLong, z_off_t));
-   ZEXTERN uLong ZEXPORT crc32_zlib_combine OF((uLong, uLong, z_off_t));
+   //ZEXTERN gzFile ZEXPORT gzopen OF((const char *, const char *));
+   //ZEXTERN z_off_t ZEXPORT gzseek OF((gzFile, z_off_t, int));
+   //ZEXTERN z_off_t ZEXPORT gztell OF((gzFile));
+   //ZEXTERN z_off_t ZEXPORT gzoffset OF((gzFile));
+   //ZEXTERN uLong ZEXPORT adler32_combine OF((uLong, uLong, z_off_t));
+   //ZEXTERN uLong ZEXPORT crc32_zlib_combine OF((uLong, uLong, z_off_t));
 #endif
 
 #else /* Z_SOLO */
