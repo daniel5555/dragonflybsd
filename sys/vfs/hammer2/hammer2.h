@@ -267,10 +267,6 @@ RB_PROTOTYPE(hammer2_chain_tree, hammer2_chain, rbnode, hammer2_chain_cmp);
  */
 #define HAMMER2_FLUSH_DEPTH_LIMIT	40	/* stack recursion limit */
 
-MALLOC_DECLARE(C_ZLIB_BUFFER_INFLATE);
-MALLOC_DEFINE(C_ZLIB_BUFFER_INFLATE, "compzlibbufferinflate",
-	"A private buffer used by zlib library for inflate function.");
-
 /*
  * HAMMER2 IN-MEMORY CACHE OF MEDIA STRUCTURES
  *

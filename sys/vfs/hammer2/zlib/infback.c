@@ -14,7 +14,7 @@
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast.h"
-#include "../hammer2.h"
+//#include "../hammer2.h"
 
 /* function prototypes */
 local void fixedtables OF((struct inflate_state FAR *state));
@@ -632,11 +632,11 @@ void FAR *out_desc;
 int ZEXPORT inflateBackEnd(strm)
 z_streamp strm;
 {
-    if (strm == Z_NULL || strm->state == Z_NULL || strm->zfree == (free_func)0)
-        return Z_STREAM_ERROR;
-    kfree(strm->state, C_ZLIB_BUFFER_INFLATE);
-    //ZFREE(strm, strm->state);
-    strm->state = Z_NULL;
-    Tracev((stderr, "inflate: end\n"));
-    return Z_OK;
+    //if (strm == Z_NULL || strm->state == Z_NULL || strm->zfree == (free_func)0)
+        //return Z_STREAM_ERROR;
+    //kfree(strm->state, C_ZLIB_BUFFER_INFLATE);
+    ////ZFREE(strm, strm->state);
+    //strm->state = Z_NULL;
+    //Tracev((stderr, "inflate: end\n"));
+    //return Z_OK;
 }
