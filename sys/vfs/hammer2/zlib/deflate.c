@@ -768,108 +768,108 @@ int deflate (strm, flush)
         }
     }
 #ifdef GZIP
-    if (s->status == EXTRA_STATE) {
-        if (s->gzhead->extra != Z_NULL) {
-            uInt beg = s->pending;  /* start of bytes to update crc */
+    //if (s->status == EXTRA_STATE) {
+        //if (s->gzhead->extra != Z_NULL) {
+            //uInt beg = s->pending;  /* start of bytes to update crc */
 
-            while (s->gzindex < (s->gzhead->extra_len & 0xffff)) {
-                if (s->pending == s->pending_buf_size) {
-                    if (s->gzhead->hcrc && s->pending > beg)
-                        strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
-                                            s->pending - beg);
-                    flush_pending(strm);
-                    beg = s->pending;
-                    if (s->pending == s->pending_buf_size)
-                        break;
-                }
-                put_byte(s, s->gzhead->extra[s->gzindex]);
-                s->gzindex++;
-            }
-            if (s->gzhead->hcrc && s->pending > beg)
-                strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
-                                    s->pending - beg);
-            if (s->gzindex == s->gzhead->extra_len) {
-                s->gzindex = 0;
-                s->status = NAME_STATE;
-            }
-        }
-        else
-            s->status = NAME_STATE;
-    }
-    if (s->status == NAME_STATE) {
-        if (s->gzhead->name != Z_NULL) {
-            uInt beg = s->pending;  /* start of bytes to update crc */
-            int val;
+            //while (s->gzindex < (s->gzhead->extra_len & 0xffff)) {
+                //if (s->pending == s->pending_buf_size) {
+                    //if (s->gzhead->hcrc && s->pending > beg)
+                        //strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
+                                            //s->pending - beg);
+                    //flush_pending(strm);
+                    //beg = s->pending;
+                    //if (s->pending == s->pending_buf_size)
+                        //break;
+                //}
+                //put_byte(s, s->gzhead->extra[s->gzindex]);
+                //s->gzindex++;
+            //}
+            //if (s->gzhead->hcrc && s->pending > beg)
+                //strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
+                                    //s->pending - beg);
+            //if (s->gzindex == s->gzhead->extra_len) {
+                //s->gzindex = 0;
+                //s->status = NAME_STATE;
+            //}
+        //}
+        //else
+            //s->status = NAME_STATE;
+    //}
+    //if (s->status == NAME_STATE) {
+        //if (s->gzhead->name != Z_NULL) {
+            //uInt beg = s->pending;  /* start of bytes to update crc */
+            //int val;
 
-            do {
-                if (s->pending == s->pending_buf_size) {
-                    if (s->gzhead->hcrc && s->pending > beg)
-                        strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
-                                            s->pending - beg);
-                    flush_pending(strm);
-                    beg = s->pending;
-                    if (s->pending == s->pending_buf_size) {
-                        val = 1;
-                        break;
-                    }
-                }
-                val = s->gzhead->name[s->gzindex++];
-                put_byte(s, val);
-            } while (val != 0);
-            if (s->gzhead->hcrc && s->pending > beg)
-                strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
-                                    s->pending - beg);
-            if (val == 0) {
-                s->gzindex = 0;
-                s->status = COMMENT_STATE;
-            }
-        }
-        else
-            s->status = COMMENT_STATE;
-    }
-    if (s->status == COMMENT_STATE) {
-        if (s->gzhead->comment != Z_NULL) {
-            uInt beg = s->pending;  /* start of bytes to update crc */
-            int val;
+            //do {
+                //if (s->pending == s->pending_buf_size) {
+                    //if (s->gzhead->hcrc && s->pending > beg)
+                        //strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
+                                            //s->pending - beg);
+                    //flush_pending(strm);
+                    //beg = s->pending;
+                    //if (s->pending == s->pending_buf_size) {
+                        //val = 1;
+                        //break;
+                    //}
+                //}
+                //val = s->gzhead->name[s->gzindex++];
+                //put_byte(s, val);
+            //} while (val != 0);
+            //if (s->gzhead->hcrc && s->pending > beg)
+                //strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
+                                    //s->pending - beg);
+            //if (val == 0) {
+                //s->gzindex = 0;
+                //s->status = COMMENT_STATE;
+            //}
+        //}
+        //else
+            //s->status = COMMENT_STATE;
+    //}
+    //if (s->status == COMMENT_STATE) {
+        //if (s->gzhead->comment != Z_NULL) {
+            //uInt beg = s->pending;  /* start of bytes to update crc */
+            //int val;
 
-            do {
-                if (s->pending == s->pending_buf_size) {
-                    if (s->gzhead->hcrc && s->pending > beg)
-                        strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
-                                            s->pending - beg);
-                    flush_pending(strm);
-                    beg = s->pending;
-                    if (s->pending == s->pending_buf_size) {
-                        val = 1;
-                        break;
-                    }
-                }
-                val = s->gzhead->comment[s->gzindex++];
-                put_byte(s, val);
-            } while (val != 0);
-            if (s->gzhead->hcrc && s->pending > beg)
-                strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
-                                    s->pending - beg);
-            if (val == 0)
-                s->status = HCRC_STATE;
-        }
-        else
-            s->status = HCRC_STATE;
-    }
-    if (s->status == HCRC_STATE) {
-        if (s->gzhead->hcrc) {
-            if (s->pending + 2 > s->pending_buf_size)
-                flush_pending(strm);
-            if (s->pending + 2 <= s->pending_buf_size) {
-                put_byte(s, (Byte)(strm->adler & 0xff));
-                put_byte(s, (Byte)((strm->adler >> 8) & 0xff));
-                strm->adler = crc32_zlib(0L, Z_NULL, 0);
-                s->status = BUSY_STATE;
-            }
-        }
-        else
-            s->status = BUSY_STATE;
-    }
+            //do {
+                //if (s->pending == s->pending_buf_size) {
+                    //if (s->gzhead->hcrc && s->pending > beg)
+                        //strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
+                                            //s->pending - beg);
+                    //flush_pending(strm);
+                    //beg = s->pending;
+                    //if (s->pending == s->pending_buf_size) {
+                        //val = 1;
+                        //break;
+                    //}
+                //}
+                //val = s->gzhead->comment[s->gzindex++];
+                //put_byte(s, val);
+            //} while (val != 0);
+            //if (s->gzhead->hcrc && s->pending > beg)
+                //strm->adler = crc32_zlib(strm->adler, s->pending_buf + beg,
+                                    //s->pending - beg);
+            //if (val == 0)
+                //s->status = HCRC_STATE;
+        //}
+        //else
+            //s->status = HCRC_STATE;
+    //}
+    //if (s->status == HCRC_STATE) {
+        //if (s->gzhead->hcrc) {
+            //if (s->pending + 2 > s->pending_buf_size)
+                //flush_pending(strm);
+            //if (s->pending + 2 <= s->pending_buf_size) {
+                //put_byte(s, (Byte)(strm->adler & 0xff));
+                //put_byte(s, (Byte)((strm->adler >> 8) & 0xff));
+                //strm->adler = crc32_zlib(0L, Z_NULL, 0);
+                //s->status = BUSY_STATE;
+            //}
+        //}
+        //else
+            //s->status = BUSY_STATE;
+    //}
 #endif
 
     /* Flush as much pending output as possible */
