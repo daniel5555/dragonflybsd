@@ -243,20 +243,20 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     if (strm == Z_NULL) return Z_STREAM_ERROR;
 
     strm->msg = Z_NULL;
-    if (strm->zalloc == (alloc_func)0) {
-#ifdef Z_SOLO
-        return Z_STREAM_ERROR;
-#else
-        strm->zalloc = zcalloc;
+    //if (strm->zalloc == (alloc_func)0) {
+//#ifdef Z_SOLO
+        //return Z_STREAM_ERROR;
+//#else
+        //strm->zalloc = zcalloc;
         strm->opaque = (voidpf)0;
 #endif
     }
-    if (strm->zfree == (free_func)0)
-#ifdef Z_SOLO
-        return Z_STREAM_ERROR;
-#else
-        strm->zfree = zcfree;
-#endif
+    //if (strm->zfree == (free_func)0)
+//#ifdef Z_SOLO
+        //return Z_STREAM_ERROR;
+//#else
+        //strm->zfree = zcfree;
+//#endif
 
 #ifdef FASTEST
     if (level != 0) level = 1;
@@ -400,10 +400,10 @@ int ZEXPORT deflateResetKeep (strm)
 {
     deflate_state *s;
 
-    if (strm == Z_NULL || strm->state == Z_NULL ||
-        strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0) {
-        return Z_STREAM_ERROR;
-    }
+    //if (strm == Z_NULL || strm->state == Z_NULL ||
+        //strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0) {
+        //return Z_STREAM_ERROR;
+    //}
 
     strm->total_in = strm->total_out = 0;
     strm->msg = Z_NULL; /* use zfree if we ever allocate msg dynamically */
