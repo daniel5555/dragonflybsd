@@ -345,7 +345,7 @@ void FAR *out_desc;
                 ROOM();
                 if (copy > have) copy = have;
                 if (copy > left) copy = left;
-                zmemcpy(put, next, copy);
+                //zmemcpy(put, next, copy); -> probably it's a good idea to get rid of this whole file alltogether
                 have -= copy;
                 next += copy;
                 left -= copy;
