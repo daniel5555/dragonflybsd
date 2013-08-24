@@ -626,7 +626,7 @@ int inflateBack(strm, in, in_desc, out, out_desc)
   //inf_leave:
     //strm->next_in = next;
     //strm->avail_in = have;
-    //return ret;
+    return ret;
 }
 
 int inflateBackEnd(strm)
@@ -638,5 +638,5 @@ z_streamp strm;
     ////ZFREE(strm, strm->state);
     //strm->state = Z_NULL;
     //Tracev((stderr, "inflate: end\n"));
-    //return Z_OK;
+    return Z_OK;
 }

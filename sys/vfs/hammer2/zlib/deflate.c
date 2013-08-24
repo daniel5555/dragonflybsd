@@ -103,6 +103,11 @@ local  void check_match(deflate_state *s, IPos start, IPos match,
                             int length);
 #endif
 
+int deflateInit2_(z_streamp strm, int level, int method, int windowBits, int memLevel, int strategy,
+                  const char *version, int stream_size);
+int deflateReset (z_stream strm);
+int deflateResetKeep (z_stream strm);
+
 /* ===========================================================================
  * Local data
  */
@@ -395,51 +400,51 @@ int deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
 //}
 
 /* ========================================================================= */
-//int ZEXPORT deflateResetKeep (strm)
-    //z_streamp strm;
-//{
-    //deflate_state *s;
+int deflateResetKeep (strm)
+    z_streamp strm;
+{
+    deflate_state *s;
 
-    ////if (strm == Z_NULL || strm->state == Z_NULL ||
-        ////strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0) {
-        ////return Z_STREAM_ERROR;
-    ////}
-
-    //strm->total_in = strm->total_out = 0;
-    //strm->msg = Z_NULL; /* use zfree if we ever allocate msg dynamically */
-    //strm->data_type = Z_UNKNOWN;
-
-    //s = (deflate_state *)strm->state;
-    //s->pending = 0;
-    //s->pending_out = s->pending_buf;
-
-    //if (s->wrap < 0) {
-        //s->wrap = -s->wrap; /* was made negative by deflate(..., Z_FINISH); */
+    //if (strm == Z_NULL || strm->state == Z_NULL ||
+        //strm->zalloc == (alloc_func)0 || strm->zfree == (free_func)0) {
+        //return Z_STREAM_ERROR;
     //}
-    //s->status = s->wrap ? INIT_STATE : BUSY_STATE;
-    //strm->adler =
-//#ifdef GZIP
-        //s->wrap == 2 ? crc32_zlib(0L, Z_NULL, 0) :
-//#endif
-        //adler32(0L, Z_NULL, 0);
-    //s->last_flush = Z_NO_FLUSH;
 
-    //_tr_init(s);
+    strm->total_in = strm->total_out = 0;
+    strm->msg = Z_NULL; /* use zfree if we ever allocate msg dynamically */
+    strm->data_type = Z_UNKNOWN;
 
-    //return Z_OK;
-//}
+    s = (deflate_state *)strm->state;
+    s->pending = 0;
+    s->pending_out = s->pending_buf;
+
+    if (s->wrap < 0) {
+        s->wrap = -s->wrap; /* was made negative by deflate(..., Z_FINISH); */
+    }
+    s->status = s->wrap ? INIT_STATE : BUSY_STATE;
+    strm->adler =
+#ifdef GZIP
+        s->wrap == 2 ? crc32_zlib(0L, Z_NULL, 0) :
+#endif
+        adler32(0L, Z_NULL, 0);
+    s->last_flush = Z_NO_FLUSH;
+
+    _tr_init(s);
+
+    return Z_OK;
+}
 
 /* ========================================================================= */
-//int ZEXPORT deflateReset (strm)
-    //z_streamp strm;
-//{
-    //int ret;
+int deflateReset (strm)
+    z_streamp strm;
+{
+    int ret;
 
-    //ret = deflateResetKeep(strm);
-    //if (ret == Z_OK)
-        //lm_init(strm->state);
-    //return ret;
-//}
+    ret = deflateResetKeep(strm);
+    if (ret == Z_OK)
+        lm_init(strm->state);
+    return ret;
+}
 
 /* ========================================================================= */
 //int ZEXPORT deflateSetHeader (strm, head)
@@ -1360,33 +1365,33 @@ int deflateEnd (strm)
 
 #endif /* FASTEST */
 
-//#ifdef DEBUG
-///* ===========================================================================
- //* Check that the match at match_start is indeed a match.
- //*/
-//local void check_match(s, start, match, length)
-    //deflate_state *s;
-    //IPos start, match;
-    //int length;
-//{
-    ///* check that the match is indeed a match */
-    //if (zmemcmp(s->window + match,
-                //s->window + start, length) != EQUAL) {
-        //fprintf(stderr, " start %u, match %u, length %d\n",
-                //start, match, length);
-        //do {
-            //fprintf(stderr, "%c%c", s->window[match++], s->window[start++]);
-        //} while (--length != 0);
-        //z_error("invalid match");
-    //}
-    //if (z_verbose > 1) {
-        //fprintf(stderr,"\\[%d,%d]", start-match, length);
-        //do { putc(s->window[start++], stderr); } while (--length != 0);
-    //}
-//}
-//#else
-//#  define check_match(s, start, match, length)
-//#endif /* DEBUG */
+#ifdef DEBUG
+/* ===========================================================================
+ * Check that the match at match_start is indeed a match.
+ */
+local void check_match(s, start, match, length)
+    deflate_state *s;
+    IPos start, match;
+    int length;
+{
+    /* check that the match is indeed a match */
+    if (zmemcmp(s->window + match,
+                s->window + start, length) != EQUAL) {
+        fprintf(stderr, " start %u, match %u, length %d\n",
+                start, match, length);
+        do {
+            fprintf(stderr, "%c%c", s->window[match++], s->window[start++]);
+        } while (--length != 0);
+        z_error("invalid match");
+    }
+    if (z_verbose > 1) {
+        fprintf(stderr,"\\[%d,%d]", start-match, length);
+        do { putc(s->window[start++], stderr); } while (--length != 0);
+    }
+}
+#else
+#  define check_match(s, start, match, length)
+#endif /* DEBUG */
 
 /* ===========================================================================
  * Fill the window when the lookahead becomes insufficient.

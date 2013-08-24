@@ -437,12 +437,14 @@ unsigned copy;
 /* Macros for inflate(): */
 
 /* check function to use adler32() for zlib or crc32_zlib() for gzip */
-#ifdef GUNZIP
+//#ifdef GUNZIP
 //#  define UPDATE(check, buf, len) \
     //(state->flags ? crc32_zlib(check, buf, len) : adler32(check, buf, len))
-#else
-#  define UPDATE(check, buf, len) adler32(check, buf, len)
-#endif
+//#else
+//#  define UPDATE(check, buf, len) adler32(check, buf, len)
+//#endif
+
+#define UPDATE(check, buf, len) adler32(check, buf, len)
 
 /* check macros for header crc */
 #ifdef GUNZIP
