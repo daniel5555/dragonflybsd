@@ -255,6 +255,7 @@ int inflateBack(strm, in, in_desc, out, out_desc)
 //out_func out;
 //void FAR *out_desc;
 {
+    int ret = 0;
     //struct inflate_state FAR *state;
     //z_const unsigned char FAR *next;    /* next input */
     //unsigned char FAR *put;     /* next output */
