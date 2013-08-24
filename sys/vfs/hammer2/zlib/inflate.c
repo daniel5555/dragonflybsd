@@ -122,7 +122,7 @@ z_streamp strm;
     state->last = 0;
     state->havedict = 0;
     state->dmax = 32768U;
-    state->head = Z_NULL;
+    //state->head = Z_NULL;
     state->hold = 0;
     state->bits = 0;
     state->lencode = state->distcode = state->next = state->codes;
