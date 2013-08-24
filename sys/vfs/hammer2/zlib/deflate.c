@@ -103,10 +103,10 @@ local  void check_match(deflate_state *s, IPos start, IPos match,
                             int length);
 #endif
 
-int deflateInit2_(z_streamp strm, int level, int method, int windowBits, int memLevel, int strategy,
+int deflateInit2_(z_stream strm, int level, int method, int windowBits, int memLevel, int strategy,
                   const char *version, int stream_size);
 int deflateReset (z_stream strm);
-int deflateResetKeep (z_stream strm);
+int deflateResetKeep (z_streamp strm);
 
 /* ===========================================================================
  * Local data
@@ -423,9 +423,9 @@ int deflateResetKeep (strm)
     }
     s->status = s->wrap ? INIT_STATE : BUSY_STATE;
     strm->adler =
-#ifdef GZIP
-        s->wrap == 2 ? crc32_zlib(0L, Z_NULL, 0) :
-#endif
+//#ifdef GZIP
+        //s->wrap == 2 ? crc32_zlib(0L, Z_NULL, 0) :
+//#endif
         adler32(0L, Z_NULL, 0);
     s->last_flush = Z_NO_FLUSH;
 
