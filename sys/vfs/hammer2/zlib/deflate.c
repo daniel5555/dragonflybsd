@@ -103,9 +103,9 @@ local  void check_match(deflate_state *s, IPos start, IPos match,
                             int length);
 #endif
 
-int deflateInit2_(z_stream strm, int level, int method, int windowBits, int memLevel, int strategy,
+int deflateInit2_(z_streamp strm, int level, int method, int windowBits, int memLevel, int strategy,
                   const char *version, int stream_size);
-int deflateReset (z_stream strm);
+int deflateReset (z_streamp strm);
 int deflateResetKeep (z_streamp strm);
 
 /* ===========================================================================
