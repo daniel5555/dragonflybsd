@@ -438,29 +438,29 @@ unsigned copy;
 
 /* check function to use adler32() for zlib or crc32_zlib() for gzip */
 #ifdef GUNZIP
-#  define UPDATE(check, buf, len) \
-    (state->flags ? crc32_zlib(check, buf, len) : adler32(check, buf, len))
+//#  define UPDATE(check, buf, len) \
+    //(state->flags ? crc32_zlib(check, buf, len) : adler32(check, buf, len))
 #else
 #  define UPDATE(check, buf, len) adler32(check, buf, len)
 #endif
 
 /* check macros for header crc */
 #ifdef GUNZIP
-#  define CRC2(check, word) \
-    do { \
-        hbuf[0] = (unsigned char)(word); \
-        hbuf[1] = (unsigned char)((word) >> 8); \
-        check = crc32_zlib(check, hbuf, 2); \
-    } while (0)
+//#  define CRC2(check, word) \
+    //do { \
+        //hbuf[0] = (unsigned char)(word); \
+        //hbuf[1] = (unsigned char)((word) >> 8); \
+        //check = crc32_zlib(check, hbuf, 2); \
+    //} while (0)
 
-#  define CRC4(check, word) \
-    do { \
-        hbuf[0] = (unsigned char)(word); \
-        hbuf[1] = (unsigned char)((word) >> 8); \
-        hbuf[2] = (unsigned char)((word) >> 16); \
-        hbuf[3] = (unsigned char)((word) >> 24); \
-        check = crc32_zlib(check, hbuf, 4); \
-    } while (0)
+//#  define CRC4(check, word) \
+    //do { \
+        //hbuf[0] = (unsigned char)(word); \
+        //hbuf[1] = (unsigned char)((word) >> 8); \
+        //hbuf[2] = (unsigned char)((word) >> 16); \
+        //hbuf[3] = (unsigned char)((word) >> 24); \
+        //check = crc32_zlib(check, hbuf, 4); \
+    //} while (0)
 #endif
 
 /* Load registers with state in inflate() for speed */
@@ -652,17 +652,17 @@ int flush;
             }
             NEEDBITS(16);
 #ifdef GUNZIP
-            if ((state->wrap & 2) && hold == 0x8b1f) {  /* gzip header */
-                state->check = crc32_zlib(0L, Z_NULL, 0);
-                CRC2(state->check, hold);
-                INITBITS();
-                state->mode = FLAGS;
-                break;
-            }
-            state->flags = 0;           /* expect zlib header */
-            if (state->head != Z_NULL)
-                state->head->done = -1;
-            if (!(state->wrap & 1) ||   /* check if zlib header allowed */
+            //if ((state->wrap & 2) && hold == 0x8b1f) {  /* gzip header */
+                //state->check = crc32_zlib(0L, Z_NULL, 0);
+                //CRC2(state->check, hold);
+                //INITBITS();
+                //state->mode = FLAGS;
+                //break;
+            //}
+            //state->flags = 0;           /* expect zlib header */
+            //if (state->head != Z_NULL)
+                //state->head->done = -1;
+            //if (!(state->wrap & 1) ||   /* check if zlib header allowed */
 #else
             if (
 #endif
@@ -692,132 +692,132 @@ int flush;
             INITBITS();
             break;
 #ifdef GUNZIP
-        case FLAGS:
-            NEEDBITS(16);
-            state->flags = (int)(hold);
-            if ((state->flags & 0xff) != Z_DEFLATED) {
-                strm->msg = (char *)"unknown compression method";
-                state->mode = BAD;
-                break;
-            }
-            if (state->flags & 0xe000) {
-                strm->msg = (char *)"unknown header flags set";
-                state->mode = BAD;
-                break;
-            }
-            if (state->head != Z_NULL)
-                state->head->text = (int)((hold >> 8) & 1);
-            if (state->flags & 0x0200) CRC2(state->check, hold);
-            INITBITS();
-            state->mode = TIME;
-        case TIME:
-            NEEDBITS(32);
-            if (state->head != Z_NULL)
-                state->head->time = hold;
-            if (state->flags & 0x0200) CRC4(state->check, hold);
-            INITBITS();
-            state->mode = OS;
-        case OS:
-            NEEDBITS(16);
-            if (state->head != Z_NULL) {
-                state->head->xflags = (int)(hold & 0xff);
-                state->head->os = (int)(hold >> 8);
-            }
-            if (state->flags & 0x0200) CRC2(state->check, hold);
-            INITBITS();
-            state->mode = EXLEN;
-        case EXLEN:
-            if (state->flags & 0x0400) {
-                NEEDBITS(16);
-                state->length = (unsigned)(hold);
-                if (state->head != Z_NULL)
-                    state->head->extra_len = (unsigned)hold;
-                if (state->flags & 0x0200) CRC2(state->check, hold);
-                INITBITS();
-            }
-            else if (state->head != Z_NULL)
-                state->head->extra = Z_NULL;
-            state->mode = EXTRA;
-        case EXTRA:
-            if (state->flags & 0x0400) {
-                copy = state->length;
-                if (copy > have) copy = have;
-                if (copy) {
-                    if (state->head != Z_NULL &&
-                        state->head->extra != Z_NULL) {
-                        len = state->head->extra_len - state->length;
-                        zmemcpy(state->head->extra + len, next,
-                                len + copy > state->head->extra_max ?
-                                state->head->extra_max - len : copy);
-                    }
-                    if (state->flags & 0x0200)
-                        state->check = crc32_zlib(state->check, next, copy);
-                    have -= copy;
-                    next += copy;
-                    state->length -= copy;
-                }
-                if (state->length) goto inf_leave;
-            }
-            state->length = 0;
-            state->mode = NAME;
-        case NAME:
-            if (state->flags & 0x0800) {
-                if (have == 0) goto inf_leave;
-                copy = 0;
-                do {
-                    len = (unsigned)(next[copy++]);
-                    if (state->head != Z_NULL &&
-                            state->head->name != Z_NULL &&
-                            state->length < state->head->name_max)
-                        state->head->name[state->length++] = len;
-                } while (len && copy < have);
-                if (state->flags & 0x0200)
-                    state->check = crc32_zlib(state->check, next, copy);
-                have -= copy;
-                next += copy;
-                if (len) goto inf_leave;
-            }
-            else if (state->head != Z_NULL)
-                state->head->name = Z_NULL;
-            state->length = 0;
-            state->mode = COMMENT;
-        case COMMENT:
-            if (state->flags & 0x1000) {
-                if (have == 0) goto inf_leave;
-                copy = 0;
-                do {
-                    len = (unsigned)(next[copy++]);
-                    if (state->head != Z_NULL &&
-                            state->head->comment != Z_NULL &&
-                            state->length < state->head->comm_max)
-                        state->head->comment[state->length++] = len;
-                } while (len && copy < have);
-                if (state->flags & 0x0200)
-                    state->check = crc32_zlib(state->check, next, copy);
-                have -= copy;
-                next += copy;
-                if (len) goto inf_leave;
-            }
-            else if (state->head != Z_NULL)
-                state->head->comment = Z_NULL;
-            state->mode = HCRC;
-        case HCRC:
-            if (state->flags & 0x0200) {
-                NEEDBITS(16);
-                if (hold != (state->check & 0xffff)) {
-                    strm->msg = (char *)"header crc mismatch";
-                    state->mode = BAD;
-                    break;
-                }
-                INITBITS();
-            }
-            if (state->head != Z_NULL) {
-                state->head->hcrc = (int)((state->flags >> 9) & 1);
-                state->head->done = 1;
-            }
-            strm->adler = state->check = crc32_zlib(0L, Z_NULL, 0);
-            state->mode = TYPE;
-            break;
+        //case FLAGS:
+            //NEEDBITS(16);
+            //state->flags = (int)(hold);
+            //if ((state->flags & 0xff) != Z_DEFLATED) {
+                //strm->msg = (char *)"unknown compression method";
+                //state->mode = BAD;
+                //break;
+            //}
+            //if (state->flags & 0xe000) {
+                //strm->msg = (char *)"unknown header flags set";
+                //state->mode = BAD;
+                //break;
+            //}
+            //if (state->head != Z_NULL)
+                //state->head->text = (int)((hold >> 8) & 1);
+            //if (state->flags & 0x0200) CRC2(state->check, hold);
+            //INITBITS();
+            //state->mode = TIME;
+        //case TIME:
+            //NEEDBITS(32);
+            //if (state->head != Z_NULL)
+                //state->head->time = hold;
+            //if (state->flags & 0x0200) CRC4(state->check, hold);
+            //INITBITS();
+            //state->mode = OS;
+        //case OS:
+            //NEEDBITS(16);
+            //if (state->head != Z_NULL) {
+                //state->head->xflags = (int)(hold & 0xff);
+                //state->head->os = (int)(hold >> 8);
+            //}
+            //if (state->flags & 0x0200) CRC2(state->check, hold);
+            //INITBITS();
+            //state->mode = EXLEN;
+        //case EXLEN:
+            //if (state->flags & 0x0400) {
+                //NEEDBITS(16);
+                //state->length = (unsigned)(hold);
+                //if (state->head != Z_NULL)
+                    //state->head->extra_len = (unsigned)hold;
+                //if (state->flags & 0x0200) CRC2(state->check, hold);
+                //INITBITS();
+            //}
+            //else if (state->head != Z_NULL)
+                //state->head->extra = Z_NULL;
+            //state->mode = EXTRA;
+        //case EXTRA:
+            //if (state->flags & 0x0400) {
+                //copy = state->length;
+                //if (copy > have) copy = have;
+                //if (copy) {
+                    //if (state->head != Z_NULL &&
+                        //state->head->extra != Z_NULL) {
+                        //len = state->head->extra_len - state->length;
+                        //zmemcpy(state->head->extra + len, next,
+                                //len + copy > state->head->extra_max ?
+                                //state->head->extra_max - len : copy);
+                    //}
+                    //if (state->flags & 0x0200)
+                        //state->check = crc32_zlib(state->check, next, copy);
+                    //have -= copy;
+                    //next += copy;
+                    //state->length -= copy;
+                //}
+                //if (state->length) goto inf_leave;
+            //}
+            //state->length = 0;
+            //state->mode = NAME;
+        //case NAME:
+            //if (state->flags & 0x0800) {
+                //if (have == 0) goto inf_leave;
+                //copy = 0;
+                //do {
+                    //len = (unsigned)(next[copy++]);
+                    //if (state->head != Z_NULL &&
+                            //state->head->name != Z_NULL &&
+                            //state->length < state->head->name_max)
+                        //state->head->name[state->length++] = len;
+                //} while (len && copy < have);
+                //if (state->flags & 0x0200)
+                    //state->check = crc32_zlib(state->check, next, copy);
+                //have -= copy;
+                //next += copy;
+                //if (len) goto inf_leave;
+            //}
+            //else if (state->head != Z_NULL)
+                //state->head->name = Z_NULL;
+            //state->length = 0;
+            //state->mode = COMMENT;
+        //case COMMENT:
+            //if (state->flags & 0x1000) {
+                //if (have == 0) goto inf_leave;
+                //copy = 0;
+                //do {
+                    //len = (unsigned)(next[copy++]);
+                    //if (state->head != Z_NULL &&
+                            //state->head->comment != Z_NULL &&
+                            //state->length < state->head->comm_max)
+                        //state->head->comment[state->length++] = len;
+                //} while (len && copy < have);
+                //if (state->flags & 0x0200)
+                    //state->check = crc32_zlib(state->check, next, copy);
+                //have -= copy;
+                //next += copy;
+                //if (len) goto inf_leave;
+            //}
+            //else if (state->head != Z_NULL)
+                //state->head->comment = Z_NULL;
+            //state->mode = HCRC;
+        //case HCRC:
+            //if (state->flags & 0x0200) {
+                //NEEDBITS(16);
+                //if (hold != (state->check & 0xffff)) {
+                    //strm->msg = (char *)"header crc mismatch";
+                    //state->mode = BAD;
+                    //break;
+                //}
+                //INITBITS();
+            //}
+            //if (state->head != Z_NULL) {
+                //state->head->hcrc = (int)((state->flags >> 9) & 1);
+                //state->head->done = 1;
+            //}
+            //strm->adler = state->check = crc32_zlib(0L, Z_NULL, 0);
+            //state->mode = TYPE;
+            //break;
 #endif
         case DICTID:
             NEEDBITS(32);
@@ -1191,7 +1191,7 @@ int flush;
                 out = left;
                 if ((
 #ifdef GUNZIP
-                     state->flags ? hold :
+                     //state->flags ? hold :
 #endif
                      ZSWAP32(hold)) != state->check) {
                     strm->msg = (char *)"incorrect data check";
@@ -1202,18 +1202,18 @@ int flush;
                 Tracev((stderr, "inflate:   check matches trailer\n"));
             }
 #ifdef GUNZIP
-            state->mode = LENGTH;
-        case LENGTH:
-            if (state->wrap && state->flags) {
-                NEEDBITS(32);
-                if (hold != (state->total & 0xffffffffUL)) {
-                    strm->msg = (char *)"incorrect length check";
-                    state->mode = BAD;
-                    break;
-                }
-                INITBITS();
-                Tracev((stderr, "inflate:   length matches trailer\n"));
-            }
+            //state->mode = LENGTH;
+        //case LENGTH:
+            //if (state->wrap && state->flags) {
+                //NEEDBITS(32);
+                //if (hold != (state->total & 0xffffffffUL)) {
+                    //strm->msg = (char *)"incorrect length check";
+                    //state->mode = BAD;
+                    //break;
+                //}
+                //INITBITS();
+                //Tracev((stderr, "inflate:   length matches trailer\n"));
+            //}
 #endif
             state->mode = DONE;
         case DONE:

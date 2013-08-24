@@ -286,7 +286,7 @@ int deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
     s->strm = strm;
 
     s->wrap = wrap;
-    s->gzhead = Z_NULL;
+    //s->gzhead = Z_NULL;
     s->w_bits = windowBits;
     s->w_size = 1 << s->w_bits;
     s->w_mask = s->w_size - 1;
@@ -958,14 +958,14 @@ int deflate (strm, flush)
     /* Write the trailer */
 #ifdef GZIP
     if (s->wrap == 2) {
-        put_byte(s, (Byte)(strm->adler & 0xff));
-        put_byte(s, (Byte)((strm->adler >> 8) & 0xff));
-        put_byte(s, (Byte)((strm->adler >> 16) & 0xff));
-        put_byte(s, (Byte)((strm->adler >> 24) & 0xff));
-        put_byte(s, (Byte)(strm->total_in & 0xff));
-        put_byte(s, (Byte)((strm->total_in >> 8) & 0xff));
-        put_byte(s, (Byte)((strm->total_in >> 16) & 0xff));
-        put_byte(s, (Byte)((strm->total_in >> 24) & 0xff));
+        //put_byte(s, (Byte)(strm->adler & 0xff));
+        //put_byte(s, (Byte)((strm->adler >> 8) & 0xff));
+        //put_byte(s, (Byte)((strm->adler >> 16) & 0xff));
+        //put_byte(s, (Byte)((strm->adler >> 24) & 0xff));
+        //put_byte(s, (Byte)(strm->total_in & 0xff));
+        //put_byte(s, (Byte)((strm->total_in >> 8) & 0xff));
+        //put_byte(s, (Byte)((strm->total_in >> 16) & 0xff));
+        //put_byte(s, (Byte)((strm->total_in >> 24) & 0xff));
     }
     else
 #endif
