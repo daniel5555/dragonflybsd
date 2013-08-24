@@ -651,7 +651,7 @@ int flush;
                 break;
             }
             NEEDBITS(16);
-#ifdef GUNZIP
+//#ifdef GUNZIP
             //if ((state->wrap & 2) && hold == 0x8b1f) {  /* gzip header */
                 //state->check = crc32_zlib(0L, Z_NULL, 0);
                 //CRC2(state->check, hold);
@@ -663,9 +663,9 @@ int flush;
             //if (state->head != Z_NULL)
                 //state->head->done = -1;
             //if (!(state->wrap & 1) ||   /* check if zlib header allowed */
-#else
+//#else
             if (
-#endif
+//#endif
                 ((BITS(8) << 8) + (hold >> 8)) % 31) {
                 strm->msg = (char *)"incorrect header check";
                 state->mode = BAD;
