@@ -61,6 +61,8 @@ local uLong adler32_combine_ (uLong adler1, uLong adler2, z_off64_t len2);
 #  define MOD63(a) a %= BASE
 #endif
 
+local uLong adler32_combine_(uLong adler1, uLong adler2, z_off64_t len2);
+
 /* ========================================================================= */
 uLong adler32(adler, buf, len)
     uLong adler;

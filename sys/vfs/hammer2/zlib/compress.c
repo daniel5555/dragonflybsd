@@ -8,6 +8,10 @@
 #define ZLIB_INTERNAL
 #include "zlib.h"
 
+int compress2 (Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen, int level);
+int compress (Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen);
+uLong compressBound (uLong sourceLen);
+
 /* ===========================================================================
      Compresses the source buffer into the destination buffer. The level
    parameter has the same meaning as in deflateInit.  sourceLen is the byte

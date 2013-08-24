@@ -52,6 +52,9 @@ local unsigned long gf2_matrix_times(unsigned long *mat,
 local void gf2_matrix_square(unsigned long *square, unsigned long *mat);
 local uLong crc32_zlib_combine_(uLong crc1, uLong crc2, z_off64_t len2);
 
+const z_crc_t FAR * get_crc_table();
+uLong crc32_zlib_combine(uLong crc1, uLong crc2, z_off_t len2);
+uLong crc32_zlib_combine64(uLong crc1, uLong crc2, z_off64_t len2);
 
 #ifdef DYNAMIC_CRC_TABLE
 

@@ -80,8 +80,8 @@ typedef block_state (*compress_func)(deflate_state *s, int flush);
 /* Compression function. Returns the block state after the call. */
 
 local void fill_window (deflate_state *s);
-local block_state deflate_stored(deflate_state *s, int flush);
-local block_state deflate_fast(deflate_state *s, int flush);
+//local block_state deflate_stored(deflate_state *s, int flush);
+//local block_state deflate_fast(deflate_state *s, int flush);
 #ifndef FASTEST
 local block_state deflate_slow(deflate_state *s, int flush);
 #endif
@@ -1089,63 +1089,63 @@ int deflateEnd (strm)
  * allocating a large strm->next_in buffer and copying from it.
  * (See also flush_pending()).
  */
-//local int read_buf(strm, buf, size)
-    //z_streamp strm;
-    //Bytef *buf;
-    //unsigned size;
-//{
-    //unsigned len = strm->avail_in;
+local int read_buf(strm, buf, size)
+    z_streamp strm;
+    Bytef *buf;
+    unsigned size;
+{
+    unsigned len = strm->avail_in;
 
-    //if (len > size) len = size;
-    //if (len == 0) return 0;
+    if (len > size) len = size;
+    if (len == 0) return 0;
 
-    //strm->avail_in  -= len;
+    strm->avail_in  -= len;
 
-    //zmemcpy(buf, strm->next_in, len);
-    //if (strm->state->wrap == 1) {
-        //strm->adler = adler32(strm->adler, buf, len);
-    //}
-//#ifdef GZIP
-    //else if (strm->state->wrap == 2) {
-        //strm->adler = crc32_zlib(strm->adler, buf, len);
-    //}
-//#endif
-    //strm->next_in  += len;
-    //strm->total_in += len;
+    zmemcpy(buf, strm->next_in, len);
+    if (strm->state->wrap == 1) {
+        strm->adler = adler32(strm->adler, buf, len);
+    }
+#ifdef GZIP
+    else if (strm->state->wrap == 2) {
+        strm->adler = crc32_zlib(strm->adler, buf, len);
+    }
+#endif
+    strm->next_in  += len;
+    strm->total_in += len;
 
-    //return (int)len;
-//}
+    return (int)len;
+}
 
 /* ===========================================================================
  * Initialize the "longest match" routines for a new zlib stream
  */
-//local void lm_init (s)
-    //deflate_state *s;
-//{
-    //s->window_size = (ulg)2L*s->w_size;
+local void lm_init (s)
+    deflate_state *s;
+{
+    s->window_size = (ulg)2L*s->w_size;
 
-    //CLEAR_HASH(s);
+    CLEAR_HASH(s);
 
-    ///* Set the default configuration parameters:
-     //*/
-    //s->max_lazy_match   = configuration_table[s->level].max_lazy;
-    //s->good_match       = configuration_table[s->level].good_length;
-    //s->nice_match       = configuration_table[s->level].nice_length;
-    //s->max_chain_length = configuration_table[s->level].max_chain;
+    /* Set the default configuration parameters:
+     */
+    s->max_lazy_match   = configuration_table[s->level].max_lazy;
+    s->good_match       = configuration_table[s->level].good_length;
+    s->nice_match       = configuration_table[s->level].nice_length;
+    s->max_chain_length = configuration_table[s->level].max_chain;
 
-    //s->strstart = 0;
-    //s->block_start = 0L;
-    //s->lookahead = 0;
-    //s->insert = 0;
-    //s->match_length = s->prev_length = MIN_MATCH-1;
-    //s->match_available = 0;
-    //s->ins_h = 0;
-//#ifndef FASTEST
-//#ifdef ASMV
-    //match_init(); /* initialize the asm code */
-//#endif
-//#endif
-//}
+    s->strstart = 0;
+    s->block_start = 0L;
+    s->lookahead = 0;
+    s->insert = 0;
+    s->match_length = s->prev_length = MIN_MATCH-1;
+    s->match_available = 0;
+    s->ins_h = 0;
+#ifndef FASTEST
+#ifdef ASMV
+    match_init(); /* initialize the asm code */
+#endif
+#endif
+}
 
 #ifndef FASTEST
 /* ===========================================================================
@@ -1161,148 +1161,148 @@ int deflateEnd (strm)
 /* For 80x86 and 680x0, an optimized version will be provided in match.asm or
  * match.S. The code will be functionally equivalent.
  */
-//local uInt longest_match(s, cur_match)
-    //deflate_state *s;
-    //IPos cur_match;                             /* current match */
-//{
-    //unsigned chain_length = s->max_chain_length;/* max hash chain length */
-    //register Bytef *scan = s->window + s->strstart; /* current string */
-    //register Bytef *match;                       /* matched string */
-    //register int len;                           /* length of current match */
-    //int best_len = s->prev_length;              /* best match length so far */
-    //int nice_match = s->nice_match;             /* stop if match long enough */
-    //IPos limit = s->strstart > (IPos)MAX_DIST(s) ?
-        //s->strstart - (IPos)MAX_DIST(s) : NIL;
-    ///* Stop when cur_match becomes <= limit. To simplify the code,
-     //* we prevent matches with the string of window index 0.
-     //*/
-    //Posf *prev = s->prev;
-    //uInt wmask = s->w_mask;
+local uInt longest_match(s, cur_match)
+    deflate_state *s;
+    IPos cur_match;                             /* current match */
+{
+    unsigned chain_length = s->max_chain_length;/* max hash chain length */
+    register Bytef *scan = s->window + s->strstart; /* current string */
+    register Bytef *match;                       /* matched string */
+    register int len;                           /* length of current match */
+    int best_len = s->prev_length;              /* best match length so far */
+    int nice_match = s->nice_match;             /* stop if match long enough */
+    IPos limit = s->strstart > (IPos)MAX_DIST(s) ?
+        s->strstart - (IPos)MAX_DIST(s) : NIL;
+    /* Stop when cur_match becomes <= limit. To simplify the code,
+     * we prevent matches with the string of window index 0.
+     */
+    Posf *prev = s->prev;
+    uInt wmask = s->w_mask;
 
-//#ifdef UNALIGNED_OK
-    ///* Compare two bytes at a time. Note: this is not always beneficial.
-     //* Try with and without -DUNALIGNED_OK to check.
-     //*/
-    //register Bytef *strend = s->window + s->strstart + MAX_MATCH - 1;
-    //register ush scan_start = *(ushf*)scan;
-    //register ush scan_end   = *(ushf*)(scan+best_len-1);
-//#else
-    //register Bytef *strend = s->window + s->strstart + MAX_MATCH;
-    //register Byte scan_end1  = scan[best_len-1];
-    //register Byte scan_end   = scan[best_len];
-//#endif
+#ifdef UNALIGNED_OK
+    /* Compare two bytes at a time. Note: this is not always beneficial.
+     * Try with and without -DUNALIGNED_OK to check.
+     */
+    register Bytef *strend = s->window + s->strstart + MAX_MATCH - 1;
+    register ush scan_start = *(ushf*)scan;
+    register ush scan_end   = *(ushf*)(scan+best_len-1);
+#else
+    register Bytef *strend = s->window + s->strstart + MAX_MATCH;
+    register Byte scan_end1  = scan[best_len-1];
+    register Byte scan_end   = scan[best_len];
+#endif
 
-    ///* The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of 16.
-     //* It is easy to get rid of this optimization if necessary.
-     //*/
-    //Assert(s->hash_bits >= 8 && MAX_MATCH == 258, "Code too clever");
+    /* The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of 16.
+     * It is easy to get rid of this optimization if necessary.
+     */
+    Assert(s->hash_bits >= 8 && MAX_MATCH == 258, "Code too clever");
 
-    ///* Do not waste too much time if we already have a good match: */
-    //if (s->prev_length >= s->good_match) {
-        //chain_length >>= 2;
-    //}
-    ///* Do not look for matches beyond the end of the input. This is necessary
-     //* to make deflate deterministic.
-     //*/
-    //if ((uInt)nice_match > s->lookahead) nice_match = s->lookahead;
+    /* Do not waste too much time if we already have a good match: */
+    if (s->prev_length >= s->good_match) {
+        chain_length >>= 2;
+    }
+    /* Do not look for matches beyond the end of the input. This is necessary
+     * to make deflate deterministic.
+     */
+    if ((uInt)nice_match > s->lookahead) nice_match = s->lookahead;
 
-    //Assert((ulg)s->strstart <= s->window_size-MIN_LOOKAHEAD, "need lookahead");
+    Assert((ulg)s->strstart <= s->window_size-MIN_LOOKAHEAD, "need lookahead");
 
-    //do {
-        //Assert(cur_match < s->strstart, "no future");
-        //match = s->window + cur_match;
+    do {
+        Assert(cur_match < s->strstart, "no future");
+        match = s->window + cur_match;
 
-        ///* Skip to next match if the match length cannot increase
-         //* or if the match length is less than 2.  Note that the checks below
-         //* for insufficient lookahead only occur occasionally for performance
-         //* reasons.  Therefore uninitialized memory will be accessed, and
-         //* conditional jumps will be made that depend on those values.
-         //* However the length of the match is limited to the lookahead, so
-         //* the output of deflate is not affected by the uninitialized values.
-         //*/
-//#if (defined(UNALIGNED_OK) && MAX_MATCH == 258)
-        ///* This code assumes sizeof(unsigned short) == 2. Do not use
-         //* UNALIGNED_OK if your compiler uses a different size.
-         //*/
-        //if (*(ushf*)(match+best_len-1) != scan_end ||
-            //*(ushf*)match != scan_start) continue;
+        /* Skip to next match if the match length cannot increase
+         * or if the match length is less than 2.  Note that the checks below
+         * for insufficient lookahead only occur occasionally for performance
+         * reasons.  Therefore uninitialized memory will be accessed, and
+         * conditional jumps will be made that depend on those values.
+         * However the length of the match is limited to the lookahead, so
+         * the output of deflate is not affected by the uninitialized values.
+         */
+#if (defined(UNALIGNED_OK) && MAX_MATCH == 258)
+        /* This code assumes sizeof(unsigned short) == 2. Do not use
+         * UNALIGNED_OK if your compiler uses a different size.
+         */
+        if (*(ushf*)(match+best_len-1) != scan_end ||
+            *(ushf*)match != scan_start) continue;
 
-        ///* It is not necessary to compare scan[2] and match[2] since they are
-         //* always equal when the other bytes match, given that the hash keys
-         //* are equal and that HASH_BITS >= 8. Compare 2 bytes at a time at
-         //* strstart+3, +5, ... up to strstart+257. We check for insufficient
-         //* lookahead only every 4th comparison; the 128th check will be made
-         //* at strstart+257. If MAX_MATCH-2 is not a multiple of 8, it is
-         //* necessary to put more guard bytes at the end of the window, or
-         //* to check more often for insufficient lookahead.
-         //*/
-        //Assert(scan[2] == match[2], "scan[2]?");
-        //scan++, match++;
-        //do {
-        //} while (*(ushf*)(scan+=2) == *(ushf*)(match+=2) &&
-                 //*(ushf*)(scan+=2) == *(ushf*)(match+=2) &&
-                 //*(ushf*)(scan+=2) == *(ushf*)(match+=2) &&
-                 //*(ushf*)(scan+=2) == *(ushf*)(match+=2) &&
-                 //scan < strend);
-        ///* The funny "do {}" generates better code on most compilers */
+        /* It is not necessary to compare scan[2] and match[2] since they are
+         * always equal when the other bytes match, given that the hash keys
+         * are equal and that HASH_BITS >= 8. Compare 2 bytes at a time at
+         * strstart+3, +5, ... up to strstart+257. We check for insufficient
+         * lookahead only every 4th comparison; the 128th check will be made
+         * at strstart+257. If MAX_MATCH-2 is not a multiple of 8, it is
+         * necessary to put more guard bytes at the end of the window, or
+         * to check more often for insufficient lookahead.
+         */
+        Assert(scan[2] == match[2], "scan[2]?");
+        scan++, match++;
+        do {
+        } while (*(ushf*)(scan+=2) == *(ushf*)(match+=2) &&
+                 *(ushf*)(scan+=2) == *(ushf*)(match+=2) &&
+                 *(ushf*)(scan+=2) == *(ushf*)(match+=2) &&
+                 *(ushf*)(scan+=2) == *(ushf*)(match+=2) &&
+                 scan < strend);
+        /* The funny "do {}" generates better code on most compilers */
 
-        ///* Here, scan <= window+strstart+257 */
-        //Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
-        //if (*scan == *match) scan++;
+        /* Here, scan <= window+strstart+257 */
+        Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
+        if (*scan == *match) scan++;
 
-        //len = (MAX_MATCH - 1) - (int)(strend-scan);
-        //scan = strend - (MAX_MATCH-1);
+        len = (MAX_MATCH - 1) - (int)(strend-scan);
+        scan = strend - (MAX_MATCH-1);
 
-//#else /* UNALIGNED_OK */
+#else /* UNALIGNED_OK */
 
-        //if (match[best_len]   != scan_end  ||
-            //match[best_len-1] != scan_end1 ||
-            //*match            != *scan     ||
-            //*++match          != scan[1])      continue;
+        if (match[best_len]   != scan_end  ||
+            match[best_len-1] != scan_end1 ||
+            *match            != *scan     ||
+            *++match          != scan[1])      continue;
 
-        ///* The check at best_len-1 can be removed because it will be made
-         //* again later. (This heuristic is not always a win.)
-         //* It is not necessary to compare scan[2] and match[2] since they
-         //* are always equal when the other bytes match, given that
-         //* the hash keys are equal and that HASH_BITS >= 8.
-         //*/
-        //scan += 2, match++;
-        //Assert(*scan == *match, "match[2]?");
+        /* The check at best_len-1 can be removed because it will be made
+         * again later. (This heuristic is not always a win.)
+         * It is not necessary to compare scan[2] and match[2] since they
+         * are always equal when the other bytes match, given that
+         * the hash keys are equal and that HASH_BITS >= 8.
+         */
+        scan += 2, match++;
+        Assert(*scan == *match, "match[2]?");
 
-        ///* We check for insufficient lookahead only every 8th comparison;
-         //* the 256th check will be made at strstart+258.
-         //*/
-        //do {
-        //} while (*++scan == *++match && *++scan == *++match &&
-                 //*++scan == *++match && *++scan == *++match &&
-                 //*++scan == *++match && *++scan == *++match &&
-                 //*++scan == *++match && *++scan == *++match &&
-                 //scan < strend);
+        /* We check for insufficient lookahead only every 8th comparison;
+         * the 256th check will be made at strstart+258.
+         */
+        do {
+        } while (*++scan == *++match && *++scan == *++match &&
+                 *++scan == *++match && *++scan == *++match &&
+                 *++scan == *++match && *++scan == *++match &&
+                 *++scan == *++match && *++scan == *++match &&
+                 scan < strend);
 
-        //Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
+        Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
 
-        //len = MAX_MATCH - (int)(strend - scan);
-        //scan = strend - MAX_MATCH;
+        len = MAX_MATCH - (int)(strend - scan);
+        scan = strend - MAX_MATCH;
 
-//#endif /* UNALIGNED_OK */
+#endif /* UNALIGNED_OK */
 
-        //if (len > best_len) {
-            //s->match_start = cur_match;
-            //best_len = len;
-            //if (len >= nice_match) break;
-//#ifdef UNALIGNED_OK
-            //scan_end = *(ushf*)(scan+best_len-1);
-//#else
-            //scan_end1  = scan[best_len-1];
-            //scan_end   = scan[best_len];
-//#endif
-        //}
-    //} while ((cur_match = prev[cur_match & wmask]) > limit
-             //&& --chain_length != 0);
+        if (len > best_len) {
+            s->match_start = cur_match;
+            best_len = len;
+            if (len >= nice_match) break;
+#ifdef UNALIGNED_OK
+            scan_end = *(ushf*)(scan+best_len-1);
+#else
+            scan_end1  = scan[best_len-1];
+            scan_end   = scan[best_len];
+#endif
+        }
+    } while ((cur_match = prev[cur_match & wmask]) > limit
+             && --chain_length != 0);
 
-    //if ((uInt)best_len <= s->lookahead) return (uInt)best_len;
-    //return s->lookahead;
-//}
+    if ((uInt)best_len <= s->lookahead) return (uInt)best_len;
+    return s->lookahead;
+}
 #endif /* ASMV */
 
 #else /* FASTEST */
@@ -1310,58 +1310,58 @@ int deflateEnd (strm)
 /* ---------------------------------------------------------------------------
  * Optimized version for FASTEST only
  */
-//local uInt longest_match(s, cur_match)
-    //deflate_state *s;
-    //IPos cur_match;                             /* current match */
-//{
-    //register Bytef *scan = s->window + s->strstart; /* current string */
-    //register Bytef *match;                       /* matched string */
-    //register int len;                           /* length of current match */
-    //register Bytef *strend = s->window + s->strstart + MAX_MATCH;
+local uInt longest_match(s, cur_match)
+    deflate_state *s;
+    IPos cur_match;                             /* current match */
+{
+    register Bytef *scan = s->window + s->strstart; /* current string */
+    register Bytef *match;                       /* matched string */
+    register int len;                           /* length of current match */
+    register Bytef *strend = s->window + s->strstart + MAX_MATCH;
 
-    ///* The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of 16.
-     //* It is easy to get rid of this optimization if necessary.
-     //*/
-    //Assert(s->hash_bits >= 8 && MAX_MATCH == 258, "Code too clever");
+    /* The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of 16.
+     * It is easy to get rid of this optimization if necessary.
+     */
+    Assert(s->hash_bits >= 8 && MAX_MATCH == 258, "Code too clever");
 
-    //Assert((ulg)s->strstart <= s->window_size-MIN_LOOKAHEAD, "need lookahead");
+    Assert((ulg)s->strstart <= s->window_size-MIN_LOOKAHEAD, "need lookahead");
 
-    //Assert(cur_match < s->strstart, "no future");
+    Assert(cur_match < s->strstart, "no future");
 
-    //match = s->window + cur_match;
+    match = s->window + cur_match;
 
-    ///* Return failure if the match length is less than 2:
-     //*/
-    //if (match[0] != scan[0] || match[1] != scan[1]) return MIN_MATCH-1;
+    /* Return failure if the match length is less than 2:
+     */
+    if (match[0] != scan[0] || match[1] != scan[1]) return MIN_MATCH-1;
 
-    ///* The check at best_len-1 can be removed because it will be made
-     //* again later. (This heuristic is not always a win.)
-     //* It is not necessary to compare scan[2] and match[2] since they
-     //* are always equal when the other bytes match, given that
-     //* the hash keys are equal and that HASH_BITS >= 8.
-     //*/
-    //scan += 2, match += 2;
-    //Assert(*scan == *match, "match[2]?");
+    /* The check at best_len-1 can be removed because it will be made
+     * again later. (This heuristic is not always a win.)
+     * It is not necessary to compare scan[2] and match[2] since they
+     * are always equal when the other bytes match, given that
+     * the hash keys are equal and that HASH_BITS >= 8.
+     */
+    scan += 2, match += 2;
+    Assert(*scan == *match, "match[2]?");
 
-    ///* We check for insufficient lookahead only every 8th comparison;
-     //* the 256th check will be made at strstart+258.
-     //*/
-    //do {
-    //} while (*++scan == *++match && *++scan == *++match &&
-             //*++scan == *++match && *++scan == *++match &&
-             //*++scan == *++match && *++scan == *++match &&
-             //*++scan == *++match && *++scan == *++match &&
-             //scan < strend);
+    /* We check for insufficient lookahead only every 8th comparison;
+     * the 256th check will be made at strstart+258.
+     */
+    do {
+    } while (*++scan == *++match && *++scan == *++match &&
+             *++scan == *++match && *++scan == *++match &&
+             *++scan == *++match && *++scan == *++match &&
+             *++scan == *++match && *++scan == *++match &&
+             scan < strend);
 
-    //Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
+    Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
 
-    //len = MAX_MATCH - (int)(strend - scan);
+    len = MAX_MATCH - (int)(strend - scan);
 
-    //if (len < MIN_MATCH) return MIN_MATCH - 1;
+    if (len < MIN_MATCH) return MIN_MATCH - 1;
 
-    //s->match_start = cur_match;
-    //return (uInt)len <= s->lookahead ? (uInt)len : s->lookahead;
-//}
+    s->match_start = cur_match;
+    return (uInt)len <= s->lookahead ? (uInt)len : s->lookahead;
+}
 
 #endif /* FASTEST */
 
@@ -1403,149 +1403,149 @@ local void check_match(s, start, match, length)
  *    performed for at least two bytes (required for the zip translate_eol
  *    option -- not supported here).
  */
-//local void fill_window(s)
-    //deflate_state *s;
-//{
-    //register unsigned n, m;
-    //register Posf *p;
-    //unsigned more;    /* Amount of free space at the end of the window. */
-    //uInt wsize = s->w_size;
+local void fill_window(s)
+    deflate_state *s;
+{
+    register unsigned n, m;
+    register Posf *p;
+    unsigned more;    /* Amount of free space at the end of the window. */
+    uInt wsize = s->w_size;
 
-    //Assert(s->lookahead < MIN_LOOKAHEAD, "already enough lookahead");
+    Assert(s->lookahead < MIN_LOOKAHEAD, "already enough lookahead");
 
-    //do {
-        //more = (unsigned)(s->window_size -(ulg)s->lookahead -(ulg)s->strstart);
+    do {
+        more = (unsigned)(s->window_size -(ulg)s->lookahead -(ulg)s->strstart);
 
-        ///* Deal with !@#$% 64K limit: */
-        //if (sizeof(int) <= 2) {
-            //if (more == 0 && s->strstart == 0 && s->lookahead == 0) {
-                //more = wsize;
+        /* Deal with !@#$% 64K limit: */
+        if (sizeof(int) <= 2) {
+            if (more == 0 && s->strstart == 0 && s->lookahead == 0) {
+                more = wsize;
 
-            //} else if (more == (unsigned)(-1)) {
-                ///* Very unlikely, but possible on 16 bit machine if
-                 //* strstart == 0 && lookahead == 1 (input done a byte at time)
-                 //*/
-                //more--;
-            //}
-        //}
+            } else if (more == (unsigned)(-1)) {
+                /* Very unlikely, but possible on 16 bit machine if
+                 * strstart == 0 && lookahead == 1 (input done a byte at time)
+                 */
+                more--;
+            }
+        }
 
-        ///* If the window is almost full and there is insufficient lookahead,
-         //* move the upper half to the lower one to make room in the upper half.
-         //*/
-        //if (s->strstart >= wsize+MAX_DIST(s)) {
+        /* If the window is almost full and there is insufficient lookahead,
+         * move the upper half to the lower one to make room in the upper half.
+         */
+        if (s->strstart >= wsize+MAX_DIST(s)) {
 
-            //zmemcpy(s->window, s->window+wsize, (unsigned)wsize);
-            //s->match_start -= wsize;
-            //s->strstart    -= wsize; /* we now have strstart >= MAX_DIST */
-            //s->block_start -= (long) wsize;
+            zmemcpy(s->window, s->window+wsize, (unsigned)wsize);
+            s->match_start -= wsize;
+            s->strstart    -= wsize; /* we now have strstart >= MAX_DIST */
+            s->block_start -= (long) wsize;
 
-            ///* Slide the hash table (could be avoided with 32 bit values
-               //at the expense of memory usage). We slide even when level == 0
-               //to keep the hash table consistent if we switch back to level > 0
-               //later. (Using level 0 permanently is not an optimal usage of
-               //zlib, so we don't care about this pathological case.)
-             //*/
-            //n = s->hash_size;
-            //p = &s->head[n];
-            //do {
-                //m = *--p;
-                //*p = (Pos)(m >= wsize ? m-wsize : NIL);
-            //} while (--n);
+            /* Slide the hash table (could be avoided with 32 bit values
+               at the expense of memory usage). We slide even when level == 0
+               to keep the hash table consistent if we switch back to level > 0
+               later. (Using level 0 permanently is not an optimal usage of
+               zlib, so we don't care about this pathological case.)
+             */
+            n = s->hash_size;
+            p = &s->head[n];
+            do {
+                m = *--p;
+                *p = (Pos)(m >= wsize ? m-wsize : NIL);
+            } while (--n);
 
-            //n = wsize;
-//#ifndef FASTEST
-            //p = &s->prev[n];
-            //do {
-                //m = *--p;
-                //*p = (Pos)(m >= wsize ? m-wsize : NIL);
-                ///* If n is not on any hash chain, prev[n] is garbage but
-                 //* its value will never be used.
-                 //*/
-            //} while (--n);
-//#endif
-            //more += wsize;
-        //}
-        //if (s->strm->avail_in == 0) break;
+            n = wsize;
+#ifndef FASTEST
+            p = &s->prev[n];
+            do {
+                m = *--p;
+                *p = (Pos)(m >= wsize ? m-wsize : NIL);
+                /* If n is not on any hash chain, prev[n] is garbage but
+                 * its value will never be used.
+                 */
+            } while (--n);
+#endif
+            more += wsize;
+        }
+        if (s->strm->avail_in == 0) break;
 
-        ///* If there was no sliding:
-         //*    strstart <= WSIZE+MAX_DIST-1 && lookahead <= MIN_LOOKAHEAD - 1 &&
-         //*    more == window_size - lookahead - strstart
-         //* => more >= window_size - (MIN_LOOKAHEAD-1 + WSIZE + MAX_DIST-1)
-         //* => more >= window_size - 2*WSIZE + 2
-         //* In the BIG_MEM or MMAP case (not yet supported),
-         //*   window_size == input_size + MIN_LOOKAHEAD  &&
-         //*   strstart + s->lookahead <= input_size => more >= MIN_LOOKAHEAD.
-         //* Otherwise, window_size == 2*WSIZE so more >= 2.
-         //* If there was sliding, more >= WSIZE. So in all cases, more >= 2.
-         //*/
-        //Assert(more >= 2, "more < 2");
+        /* If there was no sliding:
+         *    strstart <= WSIZE+MAX_DIST-1 && lookahead <= MIN_LOOKAHEAD - 1 &&
+         *    more == window_size - lookahead - strstart
+         * => more >= window_size - (MIN_LOOKAHEAD-1 + WSIZE + MAX_DIST-1)
+         * => more >= window_size - 2*WSIZE + 2
+         * In the BIG_MEM or MMAP case (not yet supported),
+         *   window_size == input_size + MIN_LOOKAHEAD  &&
+         *   strstart + s->lookahead <= input_size => more >= MIN_LOOKAHEAD.
+         * Otherwise, window_size == 2*WSIZE so more >= 2.
+         * If there was sliding, more >= WSIZE. So in all cases, more >= 2.
+         */
+        Assert(more >= 2, "more < 2");
 
-        //n = read_buf(s->strm, s->window + s->strstart + s->lookahead, more);
-        //s->lookahead += n;
+        n = read_buf(s->strm, s->window + s->strstart + s->lookahead, more);
+        s->lookahead += n;
 
-        ///* Initialize the hash value now that we have some input: */
-        //if (s->lookahead + s->insert >= MIN_MATCH) {
-            //uInt str = s->strstart - s->insert;
-            //s->ins_h = s->window[str];
-            //UPDATE_HASH(s, s->ins_h, s->window[str + 1]);
-//#if MIN_MATCH != 3
-            //Call UPDATE_HASH() MIN_MATCH-3 more times
-//#endif
-            //while (s->insert) {
-                //UPDATE_HASH(s, s->ins_h, s->window[str + MIN_MATCH-1]);
-//#ifndef FASTEST
-                //s->prev[str & s->w_mask] = s->head[s->ins_h];
-//#endif
-                //s->head[s->ins_h] = (Pos)str;
-                //str++;
-                //s->insert--;
-                //if (s->lookahead + s->insert < MIN_MATCH)
-                    //break;
-            //}
-        //}
-        ///* If the whole input has less than MIN_MATCH bytes, ins_h is garbage,
-         //* but this is not important since only literal bytes will be emitted.
-         //*/
+        /* Initialize the hash value now that we have some input: */
+        if (s->lookahead + s->insert >= MIN_MATCH) {
+            uInt str = s->strstart - s->insert;
+            s->ins_h = s->window[str];
+            UPDATE_HASH(s, s->ins_h, s->window[str + 1]);
+#if MIN_MATCH != 3
+            Call UPDATE_HASH() MIN_MATCH-3 more times
+#endif
+            while (s->insert) {
+                UPDATE_HASH(s, s->ins_h, s->window[str + MIN_MATCH-1]);
+#ifndef FASTEST
+                s->prev[str & s->w_mask] = s->head[s->ins_h];
+#endif
+                s->head[s->ins_h] = (Pos)str;
+                str++;
+                s->insert--;
+                if (s->lookahead + s->insert < MIN_MATCH)
+                    break;
+            }
+        }
+        /* If the whole input has less than MIN_MATCH bytes, ins_h is garbage,
+         * but this is not important since only literal bytes will be emitted.
+         */
 
-    //} while (s->lookahead < MIN_LOOKAHEAD && s->strm->avail_in != 0);
+    } while (s->lookahead < MIN_LOOKAHEAD && s->strm->avail_in != 0);
 
-    ///* If the WIN_INIT bytes after the end of the current data have never been
-     //* written, then zero those bytes in order to avoid memory check reports of
-     //* the use of uninitialized (or uninitialised as Julian writes) bytes by
-     //* the longest match routines.  Update the high water mark for the next
-     //* time through here.  WIN_INIT is set to MAX_MATCH since the longest match
-     //* routines allow scanning to strstart + MAX_MATCH, ignoring lookahead.
-     //*/
-    //if (s->high_water < s->window_size) {
-        //ulg curr = s->strstart + (ulg)(s->lookahead);
-        //ulg init;
+    /* If the WIN_INIT bytes after the end of the current data have never been
+     * written, then zero those bytes in order to avoid memory check reports of
+     * the use of uninitialized (or uninitialised as Julian writes) bytes by
+     * the longest match routines.  Update the high water mark for the next
+     * time through here.  WIN_INIT is set to MAX_MATCH since the longest match
+     * routines allow scanning to strstart + MAX_MATCH, ignoring lookahead.
+     */
+    if (s->high_water < s->window_size) {
+        ulg curr = s->strstart + (ulg)(s->lookahead);
+        ulg init;
 
-        //if (s->high_water < curr) {
-            ///* Previous high water mark below current data -- zero WIN_INIT
-             //* bytes or up to end of window, whichever is less.
-             //*/
-            //init = s->window_size - curr;
-            //if (init > WIN_INIT)
-                //init = WIN_INIT;
-            //zmemzero(s->window + curr, (unsigned)init);
-            //s->high_water = curr + init;
-        //}
-        //else if (s->high_water < (ulg)curr + WIN_INIT) {
-            ///* High water mark at or above current data, but below current data
-             //* plus WIN_INIT -- zero out to current data plus WIN_INIT, or up
-             //* to end of window, whichever is less.
-             //*/
-            //init = (ulg)curr + WIN_INIT - s->high_water;
-            //if (init > s->window_size - s->high_water)
-                //init = s->window_size - s->high_water;
-            //zmemzero(s->window + s->high_water, (unsigned)init);
-            //s->high_water += init;
-        //}
-    //}
+        if (s->high_water < curr) {
+            /* Previous high water mark below current data -- zero WIN_INIT
+             * bytes or up to end of window, whichever is less.
+             */
+            init = s->window_size - curr;
+            if (init > WIN_INIT)
+                init = WIN_INIT;
+            zmemzero(s->window + curr, (unsigned)init);
+            s->high_water = curr + init;
+        }
+        else if (s->high_water < (ulg)curr + WIN_INIT) {
+            /* High water mark at or above current data, but below current data
+             * plus WIN_INIT -- zero out to current data plus WIN_INIT, or up
+             * to end of window, whichever is less.
+             */
+            init = (ulg)curr + WIN_INIT - s->high_water;
+            if (init > s->window_size - s->high_water)
+                init = s->window_size - s->high_water;
+            zmemzero(s->window + s->high_water, (unsigned)init);
+            s->high_water += init;
+        }
+    }
 
-    //Assert((ulg)s->strstart <= s->window_size - MIN_LOOKAHEAD,
-           //"not enough room for search");
-//}
+    Assert((ulg)s->strstart <= s->window_size - MIN_LOOKAHEAD,
+           "not enough room for search");
+}
 
 /* ===========================================================================
  * Flush the current block, with given end-of-file flag.
