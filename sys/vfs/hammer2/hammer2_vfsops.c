@@ -1165,8 +1165,8 @@ hammer2_compress_ZLIB_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			else {
 				panic("Weird compressed_size value.\n");
 			}
-			c_size = (int*)compressed_buffer;
-			*c_size = compressed_size;
+			//c_size = (int*)compressed_buffer;
+			//*c_size = compressed_size;
 		}
 		
 		ret = deflateEnd(&strm_compress);
