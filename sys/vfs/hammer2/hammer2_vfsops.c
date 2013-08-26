@@ -61,7 +61,7 @@
 #include "hammer2.h"
 #include "hammer2_lz4.h"
 
-#include "zlib/zlib.h"
+#include "hammer2_zlib.h"
 
 #define REPORT_REFS_ERRORS 1	/* XXX remove me */
 
