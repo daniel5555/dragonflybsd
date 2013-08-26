@@ -34,9 +34,9 @@
 #    define compress2             z_compress2
 #    define compressBound         z_compressBound
 #  endif
-#  define crc32_zlib                 z_crc32_zlib
-#  define crc32_zlib_combine         z_crc32_zlib_combine
-#  define crc32_zlib_combine64       z_crc32_zlib_combine64
+//#  define crc32_zlib                 z_crc32_zlib
+//#  define crc32_zlib_combine         z_crc32_zlib_combine
+//#  define crc32_zlib_combine64       z_crc32_zlib_combine64
 #  define deflate               z_deflate
 #  define deflateBound          z_deflateBound
 #  define deflateCopy           z_deflateCopy
