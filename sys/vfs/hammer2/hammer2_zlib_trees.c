@@ -111,7 +111,7 @@ local int base_dist[D_CODES];
 /* First normalized distance for each code (0 = distance of 1) */
 
 #else
-#  include "trees.h"
+#  include "hammer2_zlib_trees.h"
 #endif /* GEN_TREES_H */
 
 struct static_tree_desc_s {
