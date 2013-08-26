@@ -72,24 +72,6 @@ LZ4_decompress_safe() :
 // Advanced Functions
 //****************************
 
-static inline int LZ4_compressBound(int isize)   { return ((isize) + ((isize)/255) + 16); }
-#define           LZ4_COMPRESSBOUND(    isize)            ((isize) + ((isize)/255) + 16)
-
-/*
-LZ4_compressBound() :
-    Provides the maximum size that LZ4 may output in a "worst case"
-    scenario (input data not compressible)
-    primarily useful for memory allocation of output buffer.
-	inline function is recommended for the general case,
-	macro is also provided when result needs to be evaluated at compile
-	time (such as table size allocation).
-
-    isize  : is the input size. Max supported value is ~1.9GB
-    return : maximum output size in a "worst case" scenario
-    note : this function is limited by "int" range (2^31-1)
-*/
-
-
 int LZ4_compress_limitedOutput(char* source, char* dest, int inputSize,
 						int maxOutputSize);
 
