@@ -767,8 +767,6 @@ hammer2_write_thread(void *arg)
 	wakeup(&hmp->wthread_destroy);
 	
 	mtx_unlock(&hmp->wthread_mtx);
-
-	//lwkt_exit();
 }
 
 /* From hammer2_vnops.c. */
@@ -886,8 +884,6 @@ hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
 					   ipdata, parentp,
 					   lbase, ioflag,
 					   pblksize, errorp);
-		//bp->b_flags |= B_AGE;
-		//bdwrite(bp); //get rid of this, no need to bdwrite() anymore
 	} else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
 		hammer2_zero_check_and_write_t(bp, trans, ip,
 				    ipdata, parentp, lbase,
@@ -1092,8 +1088,6 @@ hammer2_zero_check_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			hammer2_chain_unlock(chain);
 	} else {
 		zero_write_t(bp, trans, ip, ipdata, parentp, lbase);
-		//bp->b_flags |= B_AGE;
-		//bdwrite(bp);
 	}
 }
 
@@ -1207,24 +1201,7 @@ hammer2_write_bp_t(hammer2_chain_t *chain, struct buf *bp, int ioflag,
 		/* NOT REACHED */
 		break;
 	}
-	//bp->b_flags |= B_AGE;
-	//bdwrite(bp);
 }
-
-/* Another empty thread. */
-//static void
-//hammer2_read_thread(void *arg)
-//{
-	//hammer2_mount_t* hmp;
-	
-	//hmp = arg;
-
-	//while (destroy == 0) {
-		//tsleep(&destroy, 0, "read_sleep", 0);
-	//}
-
-	//lwkt_exit();
-//}
 
 static
 int
@@ -1409,17 +1386,6 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 		kfree(hmp, M_HAMMER2);
 	}
 	lockmgr(&hammer2_mntlk, LK_RELEASE);
-	
-	//hmp->wthread_destroy = 1;
-	//wakeup(&hmp->wthread_destroy);
-	
-	//mtx_lock(&hmp->wthread_mtx);
-	//while (hmp->wthread_destroy != -1) {
-		//mtxsleep(&(hmp->wthread_destroy), &hmp->wthread_mtx, 0,
-		//"umount-sleep",	0);
-	//}
-	//mtx_unlock(&hmp->wthread_mtx);
-	//wakeup(&destroy);
 
 	return (error);
 }
