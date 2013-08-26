@@ -92,9 +92,9 @@
 #    define gzwrite               z_gzwrite
 #  endif
 #  define inflate               z_inflate
-#  define inflateBack           z_inflateBack
-#  define inflateBackEnd        z_inflateBackEnd
-#  define inflateBackInit_      z_inflateBackInit_
+//#  define inflateBack           z_inflateBack
+//#  define inflateBackEnd        z_inflateBackEnd
+//#  define inflateBackInit_      z_inflateBackInit_
 #  define inflateCopy           z_inflateCopy
 #  define inflateEnd            z_inflateEnd
 #  define inflateGetHeader      z_inflateGetHeader

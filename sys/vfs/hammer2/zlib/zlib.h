@@ -1657,9 +1657,9 @@ int inflateInit_(z_streamp strm,
 #define inflateInit2(strm, windowBits) \
         inflateInit2_((strm), (windowBits), ZLIB_VERSION, \
                       (int)sizeof(z_stream))
-#define inflateBackInit(strm, windowBits, window) \
-        inflateBackInit_((strm), (windowBits), (window), \
-                      ZLIB_VERSION, (int)sizeof(z_stream))
+//#define inflateBackInit(strm, windowBits, window) \
+        //inflateBackInit_((strm), (windowBits), (window), \
+                      //ZLIB_VERSION, (int)sizeof(z_stream))
 
 #ifndef Z_SOLO
 
