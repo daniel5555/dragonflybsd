@@ -30,9 +30,9 @@
 #  define adler32_combine       z_adler32_combine
 #  define adler32_combine64     z_adler32_combine64
 #  ifndef Z_SOLO
-#    define compress              z_compress
-#    define compress2             z_compress2
-#    define compressBound         z_compressBound
+//#    define compress              z_compress
+//#    define compress2             z_compress2
+//#    define compressBound         z_compressBound
 #  endif
 //#  define crc32_zlib                 z_crc32_zlib
 //#  define crc32_zlib_combine         z_crc32_zlib_combine
@@ -502,7 +502,7 @@ typedef uLong FAR uLongf;
   #pragma map(inflateEnd,"INEND")
   #pragma map(inflateSync,"INSY")
   #pragma map(inflateSetDictionary,"INSEDI")
-  #pragma map(compressBound,"CMBND")
+  //#pragma map(compressBound,"CMBND")
   #pragma map(inflate_table,"INTABL")
   #pragma map(inflate_fast,"INFA")
   #pragma map(inflate_copyright,"INCOPY")
