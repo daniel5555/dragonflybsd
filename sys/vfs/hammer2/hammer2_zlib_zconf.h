@@ -29,14 +29,6 @@
 #  define adler32               z_adler32
 #  define adler32_combine       z_adler32_combine
 #  define adler32_combine64     z_adler32_combine64
-#  ifndef Z_SOLO
-//#    define compress              z_compress
-//#    define compress2             z_compress2
-//#    define compressBound         z_compressBound
-#  endif
-//#  define crc32_zlib                 z_crc32_zlib
-//#  define crc32_zlib_combine         z_crc32_zlib_combine
-//#  define crc32_zlib_combine64       z_crc32_zlib_combine64
 #  define deflate               z_deflate
 #  define deflateBound          z_deflateBound
 #  define deflateCopy           z_deflateCopy
@@ -92,9 +84,6 @@
 #    define gzwrite               z_gzwrite
 #  endif
 #  define inflate               z_inflate
-//#  define inflateBack           z_inflateBack
-//#  define inflateBackEnd        z_inflateBackEnd
-//#  define inflateBackInit_      z_inflateBackInit_
 #  define inflateCopy           z_inflateCopy
 #  define inflateEnd            z_inflateEnd
 #  define inflateGetHeader      z_inflateGetHeader
@@ -117,10 +106,6 @@
 #    define uncompress            z_uncompress
 #  endif
 #  define zError                z_zError
-#  ifndef Z_SOLO
-//#    define zcalloc               z_zcalloc
-//#    define zcfree                z_zcfree
-#  endif
 #  define zlibCompileFlags      z_zlibCompileFlags
 #  define zlibVersion           z_zlibVersion
 

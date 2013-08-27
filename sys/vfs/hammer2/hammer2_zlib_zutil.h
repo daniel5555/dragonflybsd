@@ -21,14 +21,6 @@
 
 #include "hammer2_zlib.h"
 
-#if defined(STDC) && !defined(Z_SOLO)
-#  if !(defined(_WIN32_WCE) && defined(_MSC_VER))
-//#    include <stddef.h>
-#  endif
-//#  include <string.h>
-//#  include <stdlib.h>
-#endif
-
 #ifdef Z_SOLO
    typedef long ptrdiff_t;  /* guess -- will be caught if guess is wrong */
 #endif
@@ -234,17 +226,6 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  define Tracec(c,x)
 #  define Tracecv(c,x)
 #endif
-
-#ifndef Z_SOLO
-   //voidpf ZLIB_INTERNAL zcalloc(voidpf opaque, unsigned items,
-                                    //unsigned size);
-   //void ZLIB_INTERNAL zcfree(voidpf opaque, voidpf ptr);
-#endif
-
-//#define ZALLOC(strm, items, size) \
-           //(*((strm)->zalloc))((strm)->opaque, (items), (size))
-//#define ZFREE(strm, addr)  (*((strm)->zfree))((strm)->opaque, (voidpf)(addr))
-//#define TRY_FREE(s, p) {if (p) ZFREE(s, p);}
 
 /* Reverse the bytes in a 32-bit value */
 #define ZSWAP32(q) ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
