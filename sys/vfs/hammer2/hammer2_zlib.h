@@ -1657,9 +1657,6 @@ int inflateInit_(z_streamp strm,
 #define inflateInit2(strm, windowBits) \
         inflateInit2_((strm), (windowBits), ZLIB_VERSION, \
                       (int)sizeof(z_stream))
-//#define inflateBackInit(strm, windowBits, window) \
-        //inflateBackInit_((strm), (windowBits), (window), \
-                      //ZLIB_VERSION, (int)sizeof(z_stream))
 
 #ifndef Z_SOLO
 
@@ -1676,14 +1673,14 @@ int inflateInit_(z_streamp strm,
     //z_off64_t pos;
 //};
 //ZEXTERN int ZEXPORT gzgetc_ OF((gzFile file));  /* backward compatibility */
-#ifdef Z_PREFIX_SET
-#  undef z_gzgetc
-#  define z_gzgetc(g) \
-          ((g)->have ? ((g)->have--, (g)->pos++, *((g)->next)++) : gzgetc(g))
-#else
-#  define gzgetc(g) \
-          ((g)->have ? ((g)->have--, (g)->pos++, *((g)->next)++) : gzgetc(g))
-#endif
+//#ifdef Z_PREFIX_SET
+//#  undef z_gzgetc
+//#  define z_gzgetc(g) \
+          //((g)->have ? ((g)->have--, (g)->pos++, *((g)->next)++) : gzgetc(g))
+//#else
+//#  define gzgetc(g) \
+          //((g)->have ? ((g)->have--, (g)->pos++, *((g)->next)++) : gzgetc(g))
+//#endif
 
 /* provide 64-bit offset functions if _LARGEFILE64_SOURCE defined, and/or
  * change the regular functions to 64 bits if _FILE_OFFSET_BITS is 64 (if

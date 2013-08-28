@@ -9,7 +9,7 @@
 
 #define local static
 
-local uLong adler32_combine_ (uLong adler1, uLong adler2, z_off64_t len2);
+//local uLong adler32_combine_ (uLong adler1, uLong adler2, z_off64_t len2);
 
 #define BASE 65521      /* largest prime smaller than 65536 */
 #define NMAX 5552
@@ -62,12 +62,10 @@ local uLong adler32_combine_ (uLong adler1, uLong adler2, z_off64_t len2);
 #endif
 
 local uLong adler32_combine_(uLong adler1, uLong adler2, z_off64_t len2);
+uLong adler32_combine(uLong adler1, uLong adler2, z_off_t len2);
 
 /* ========================================================================= */
-uLong adler32(adler, buf, len)
-    uLong adler;
-    const Bytef *buf;
-    uInt len;
+uLong adler32(uLong adler, Bytef *buf, uInt len)
 {
     unsigned long sum2;
     unsigned n;
@@ -164,18 +162,12 @@ local uLong adler32_combine_(adler1, adler2, len2)
 }
 
 /* ========================================================================= */
-uLong adler32_combine(adler1, adler2, len2)
-    uLong adler1;
-    uLong adler2;
-    z_off_t len2;
+uLong adler32_combine(uLong adler1, uLong adler2, z_off_t len2)
 {
     return adler32_combine_(adler1, adler2, len2);
 }
 
-uLong adler32_combine64(adler1, adler2, len2)
-    uLong adler1;
-    uLong adler2;
-    z_off64_t len2;
+uLong adler32_combine64(uLong adler1, uLong adler2, z_off64_t len2)
 {
     return adler32_combine_(adler1, adler2, len2);
 }
