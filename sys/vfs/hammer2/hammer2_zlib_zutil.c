@@ -23,6 +23,9 @@ z_const char * const z_errmsg[10] = {
 "incompatible version",/* Z_VERSION_ERROR (-6) */
 ""};
 
+const char * zlibVersion(void);
+uLong zlibCompileFlags(void);
+const char * zError(int err);
 
 const char * zlibVersion(void)
 {
