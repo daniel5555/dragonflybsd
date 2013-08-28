@@ -24,12 +24,12 @@ z_const char * const z_errmsg[10] = {
 ""};
 
 
-const char * zlibVersion()
+const char * zlibVersion(void)
 {
     return ZLIB_VERSION;
 }
 
-uLong zlibCompileFlags()
+uLong zlibCompileFlags(void)
 {
     uLong flags;
 
@@ -119,8 +119,7 @@ uLong zlibCompileFlags()
 #  endif
 int ZLIB_INTERNAL z_verbose = verbose;
 
-void ZLIB_INTERNAL z_error (m)
-    char *m;
+void ZLIB_INTERNAL z_error (char *m)
 {
     fprintf(stderr, "%s\n", m);
     exit(1);
@@ -130,8 +129,7 @@ void ZLIB_INTERNAL z_error (m)
 /* exported to allow conversion of error code to string for compress() and
  * uncompress()
  */
-const char * zError(err)
-    int err;
+const char * zError(int err)
 {
     return ERR_MSG(err);
 }
@@ -146,10 +144,7 @@ const char * zError(err)
 
 #ifndef HAVE_MEMCPY
 
-void ZLIB_INTERNAL zmemcpy(dest, source, len)
-    Bytef* dest;
-    const Bytef* source;
-    uInt  len;
+void ZLIB_INTERNAL zmemcpy(Bytef* dest, const Bytef* source, uInt  len)
 {
     if (len == 0) return;
     do {
@@ -157,10 +152,7 @@ void ZLIB_INTERNAL zmemcpy(dest, source, len)
     } while (--len != 0);
 }
 
-int ZLIB_INTERNAL zmemcmp(s1, s2, len)
-    const Bytef* s1;
-    const Bytef* s2;
-    uInt  len;
+int ZLIB_INTERNAL zmemcmp(const Bytef* s1, const Bytef* s2, uInt len)
 {
     uInt j;
 
@@ -170,9 +162,7 @@ int ZLIB_INTERNAL zmemcmp(s1, s2, len)
     return 0;
 }
 
-void ZLIB_INTERNAL zmemzero(dest, len)
-    Bytef* dest;
-    uInt  len;
+void ZLIB_INTERNAL zmemzero(Bytef* dest, uInt len)
 {
     if (len == 0) return;
     do {
