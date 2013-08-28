@@ -65,7 +65,7 @@ local uLong adler32_combine_(uLong adler1, uLong adler2, z_off64_t len2);
 uLong adler32_combine(uLong adler1, uLong adler2, z_off_t len2);
 
 /* ========================================================================= */
-uLong adler32(uLong adler, Bytef *buf, uInt len)
+uLong adler32(uLong adler, const Bytef *buf, uInt len)
 {
     unsigned long sum2;
     unsigned n;

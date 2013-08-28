@@ -1569,7 +1569,7 @@ ZEXTERN z_off_t ZEXPORT gzoffset OF((gzFile file));
    library.
 */
 
-uLong adler32(uLong adler, Bytef *buf, uInt len);
+uLong adler32(uLong adler, const Bytef *buf, uInt len);
 /*
      Update a running Adler-32 checksum with the bytes buf[0..len-1] and
    return the updated checksum.  If buf is Z_NULL, this function returns the
