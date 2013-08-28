@@ -101,6 +101,10 @@ MALLOC_DEFINE(C_ZLIB_BUFFER_INFLATE, "compzlibbufferinflate",
 int inflateResetKeep(z_streamp strm);
 int inflateReset(z_streamp strm);
 int inflateReset2(z_streamp strm, int windowBits);
+int inflateInit2_(z_streamp strm, int windowBits, const char *version,
+				int stream_size);
+int inflateInit_(z_streamp strm, const char *version, int stream_size);
+int inflatePrime(z_streamp strm, int bits, int value);
 local void fixedtables(struct inflate_state FAR *state);
 local int updatewindow(z_streamp strm, const unsigned char FAR *end,
                            unsigned copy);
@@ -181,11 +185,8 @@ int inflateReset2(z_streamp strm, int windowBits)
     return inflateReset(strm);
 }
 
-int inflateInit2_(strm, windowBits, version, stream_size)
-z_streamp strm;
-int windowBits;
-const char *version;
-int stream_size;
+int inflateInit2_(z_streamp strm, int windowBits, const char *version,
+				int stream_size)
 {
     int ret;
     struct inflate_state FAR *state;
@@ -209,18 +210,12 @@ int stream_size;
     return ret;
 }
 
-int inflateInit_(strm, version, stream_size)
-z_streamp strm;
-const char *version;
-int stream_size;
+int inflateInit_(z_streamp strm, const char *version, int stream_size)
 {
     return inflateInit2_(strm, DEF_WBITS, version, stream_size);
 }
 
-int inflatePrime(strm, bits, value)
-z_streamp strm;
-int bits;
-int value;
+int inflatePrime(z_streamp strm, int bits, int value)
 {
     struct inflate_state FAR *state;
 
@@ -248,8 +243,7 @@ int value;
    used for threaded applications, since the rewriting of the tables and virgin
    may not be thread-safe.
  */
-local void fixedtables(state)
-struct inflate_state FAR *state;
+local void fixedtables(struct inflate_state FAR *state);
 {
 #ifdef BUILDFIXED
     static int virgin = 1;
@@ -366,10 +360,7 @@ void makefixed()
    output will fall in the output data, making match copies simpler and faster.
    The advantage may be dependent on the size of the processor's data caches.
  */
-local int updatewindow(strm, end, copy)
-z_streamp strm;
-const Bytef *end;
-unsigned copy;
+local int updatewindow(z_streamp strm, const Bytef *end, unsigned copy)
 {
     struct inflate_state FAR *state;
     unsigned dist;
@@ -566,9 +557,7 @@ unsigned copy;
    will return Z_BUF_ERROR if it has not reached the end of the stream.
  */
 
-int inflate(strm, flush)
-z_streamp strm;
-int flush;
+int inflate(z_streamp strm, int flush)
 {
     struct inflate_state FAR *state;
     z_const unsigned char FAR *next;    /* next input */
@@ -1054,8 +1043,7 @@ int flush;
     return ret;
 }
 
-int inflateEnd(strm)
-z_streamp strm;
+int inflateEnd(z_streamp strm)
 {
     struct inflate_state FAR *state;
     if (strm == Z_NULL || strm->state == Z_NULL)
