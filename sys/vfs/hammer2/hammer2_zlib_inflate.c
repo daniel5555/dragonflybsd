@@ -98,6 +98,9 @@ MALLOC_DEFINE(C_ZLIB_BUFFER_INFLATE, "compzlibbufferinflate",
 #endif
 
 /* function prototypes */
+int inflateResetKeep(z_streamp strm);
+int inflateReset(z_streamp strm);
+int inflateReset2(z_streamp strm, int windowBits);
 local void fixedtables(struct inflate_state FAR *state);
 local int updatewindow(z_streamp strm, const unsigned char FAR *end,
                            unsigned copy);
@@ -107,8 +110,7 @@ local int updatewindow(z_streamp strm, const unsigned char FAR *end,
 local unsigned syncsearch(unsigned FAR *have, const unsigned char FAR *buf,
                               unsigned len);
 
-int inflateResetKeep(strm)
-z_streamp strm;
+int inflateResetKeep(z_streamp strm)
 {
     struct inflate_state FAR *state;
 
@@ -131,8 +133,7 @@ z_streamp strm;
     return Z_OK;
 }
 
-int inflateReset(strm)
-z_streamp strm;
+int inflateReset(z_streamp strm)
 {
     struct inflate_state FAR *state;
 
@@ -144,9 +145,7 @@ z_streamp strm;
     return inflateResetKeep(strm);
 }
 
-int inflateReset2(strm, windowBits)
-z_streamp strm;
-int windowBits;
+int inflateReset2(z_streamp strm, int windowBits)
 {
     int wrap;
     struct inflate_state FAR *state;
