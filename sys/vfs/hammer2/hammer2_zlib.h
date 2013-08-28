@@ -1660,59 +1660,14 @@ int inflateInit_(z_streamp strm,
 
 #ifndef Z_SOLO
 
-/* gzgetc() macro and its supporting function and exposed data structure.  Note
- * that the real internal state is much larger than the exposed structure.
- * This abbreviated structure exposes just enough for the gzgetc() macro.  The
- * user should not mess with these exposed elements, since their names or
- * behavior could change in the future, perhaps even capriciously.  They can
- * only be used by the gzgetc() macro.  You have been warned.
- */
-//struct gzFile_s {
-    //unsigned have;
-    //unsigned char *next;
-    //z_off64_t pos;
-//};
-//ZEXTERN int ZEXPORT gzgetc_ OF((gzFile file));  /* backward compatibility */
-//#ifdef Z_PREFIX_SET
-//#  undef z_gzgetc
-//#  define z_gzgetc(g) \
-          //((g)->have ? ((g)->have--, (g)->pos++, *((g)->next)++) : gzgetc(g))
-//#else
-//#  define gzgetc(g) \
-          //((g)->have ? ((g)->have--, (g)->pos++, *((g)->next)++) : gzgetc(g))
-//#endif
-
 /* provide 64-bit offset functions if _LARGEFILE64_SOURCE defined, and/or
  * change the regular functions to 64 bits if _FILE_OFFSET_BITS is 64 (if
  * both are true, the application gets the *64 functions, and the regular
  * functions are changed to 64 bits) -- in case these are set on systems
  * without large file support, _LFS64_LARGEFILE must also be true
  */
-#ifdef Z_LARGE64
-   //gzFile gzopen64(const char *, const char *);
-   //z_off64_t gzseek64(gzFile, z_off64_t, int);
-   //z_off64_t gztell64(gzFile);
-   //z_off64_t gzoffset64(gzFile);
-   //uLong adler32_combine64(uLong, uLong, z_off64_t);
-   //uLong crc32_zlib_combine64(uLong, uLong, z_off64_t);
-#endif
 
 #if !defined(ZLIB_INTERNAL) && defined(Z_WANT64)
-#  ifdef Z_PREFIX_SET
-//#    define z_gzopen z_gzopen64
-//#    define z_gzseek z_gzseek64
-//#    define z_gztell z_gztell64
-//#    define z_gzoffset z_gzoffset64
-//#    define z_adler32_combine z_adler32_combine64
-//#    define z_crc32_zlib_combine z_crc32_zlib_combine64
-#  else
-//#    define gzopen gzopen64
-//#    define gzseek gzseek64
-//#    define gztell gztell64
-//#    define gzoffset gzoffset64
-//#    define adler32_combine adler32_combine64
-//#    define crc32_zlib_combine crc32_zlib_combine64
-#  endif
 #  ifndef Z_LARGE64
      //gzFile gzopen64(const char *, const char *);
      //z_off_t gzseek64(gzFile, z_off_t, int);
