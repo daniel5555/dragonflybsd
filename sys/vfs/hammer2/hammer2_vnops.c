@@ -207,7 +207,6 @@ hammer2_decompress_ZLIB_callback(struct bio *bio)
 				kprintf("HAMMER2 ZLIB: Fatal error in inflateInit.\n");
 		
 		buffer = bp->b_data + loff;
-		//compressed_size = (int*)buffer;
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
 		//KKASSERT((unsigned int)*compressed_size <= 65536);
 		strm_decompress.next_in = buffer;
@@ -220,16 +219,6 @@ hammer2_decompress_ZLIB_callback(struct bio *bio)
 			kprintf("HAMMER2 ZLIB: Fatar error during decompression.\n");
 			bzero(compressed_buffer, obp->b_bufsize);
 		}
-		//int result = LZ4_decompress_safe(&buffer[sizeof(int)],
-			//compressed_buffer, *compressed_size, obp->b_bufsize);
-		//if (result < 0) {
-			//kprintf("READ PATH: Error during decompression."
-				//"bio %016jx/%d loff=%d\n",
-				//(intmax_t)bio->bio_offset, bio->bio_buf->b_bufsize, loff);
-			///* make sure it isn't random garbage */
-			//bzero(compressed_buffer, obp->b_bufsize);
-		//}
-		//KKASSERT(result <= obp->b_bufsize);
 		bcopy(compressed_buffer, obp->b_data, obp->b_bufsize);
 		int result = obp->b_bufsize - strm_decompress.avail_out;
 		if (result < obp->b_bufsize)

@@ -877,7 +877,6 @@ hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
 			int *errorp)
 {
 	hammer2_chain_t *chain;
-	//maybe we need to add here an error check (if comp_algo > HAMMER2_COMP_ZLIB)
 	if (ipdata->comp_algo > HAMMER2_COMP_AUTOZERO) {
 		hammer2_compress_and_write_t(bp, trans, ip,
 					   ipdata, parentp,
@@ -927,7 +926,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 		
 		if (ipdata->reserved85 < 8) {
 			if (comp_method == HAMMER2_COMP_LZ4) {
-				kprintf("LZ4 compression activated.\n");
+				//kprintf("LZ4 compression activated.\n");
 				int *c_size;
 				compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 				objcache_present = 1;
@@ -936,10 +935,10 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				    pblksize/2 - sizeof(int));
 				c_size = (int*)compressed_buffer;
 				*c_size = compressed_size;
-				kprintf("Compressed size = %d.\n", compressed_size);
+				//kprintf("Compressed size = %d.\n", compressed_size);
 			}
 			else if (comp_method == HAMMER2_COMP_ZLIB) {
-				kprintf("ZLIB compression activated.\n");
+				//kprintf("ZLIB compression activated.\n");
 				z_stream strm_compress;
 				int ret;
 		
@@ -962,7 +961,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 					compressed_size = 0;
 				}
 				ret = deflateEnd(&strm_compress);
-				kprintf("Compressed size = %d.\n", compressed_size);
+				//kprintf("Compressed size = %d.\n", compressed_size);
 			}
 			else {
 				kprintf("Fatal error: Unknown compression method.\n");
