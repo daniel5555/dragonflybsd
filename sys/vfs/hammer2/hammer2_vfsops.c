@@ -203,6 +203,12 @@ static void hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_chain_t **parentp,
 				hammer2_key_t lbase, int ioflag, int pblksize,
 				int *errorp);
+//static void hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
+				//hammer2_inode_t *ip,
+				//hammer2_inode_data_t *ipdata,
+				//hammer2_chain_t **parentp,
+				//hammer2_key_t lbase, int ioflag,
+				//int pblksize, int *errorp, int comp_method);
 static void hammer2_compress_LZ4_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				hammer2_inode_t *ip,
 				hammer2_inode_data_t *ipdata,
@@ -1105,16 +1111,22 @@ hammer2_compress_ZLIB_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 		char objcache_present = 0;
 
 		KKASSERT(pblksize / 2 - sizeof(int) <= 32768);
-		//compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 		
-		z_stream strm_compress;
+		//z_stream strm_compress;
 		
-		strm_compress.opaque = Z_NULL;
-		ret = deflateInit(&strm_compress, 6);
-		if (ret != Z_OK)
-			kprintf("HAMMER2 ZLIB: fatal error on deflateInit.\n");
+		//strm_compress.opaque = Z_NULL;
+		//ret = deflateInit(&strm_compress, 6);
+		//if (ret != Z_OK)
+			//kprintf("HAMMER2 ZLIB: fatal error on deflateInit.\n");
 		
 		if (ipdata->reserved85 < 8) {
+			z_stream strm_compress;
+		
+			strm_compress.opaque = Z_NULL;
+			ret = deflateInit(&strm_compress, 6);
+			if (ret != Z_OK)
+				kprintf("HAMMER2 ZLIB: fatal error on deflateInit.\n");
+				
 			compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 			objcache_present = 1;
 			strm_compress.next_in = bp->b_data;
@@ -1131,6 +1143,7 @@ hammer2_compress_ZLIB_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			else {
 				compressed_size = 0;
 			}
+			ret = deflateEnd(&strm_compress);
 		} else {
 			compressed_size = 0;
 		}
@@ -1163,8 +1176,6 @@ hammer2_compress_ZLIB_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			//c_size = (int*)compressed_buffer;
 			//*c_size = compressed_size;
 		}
-		
-		ret = deflateEnd(&strm_compress);
 
 		chain = hammer2_assign_physical(trans, ip, parentp,
 						lbase, compressed_block_size,
