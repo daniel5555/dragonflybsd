@@ -498,21 +498,6 @@ int inflateEnd(z_streamp strm);
     The following functions are needed only in some special applications.
 */
 
-#ifndef Z_SOLO
-
-                        /* utility functions */
-
-/*
-     The following utility functions are implemented on top of the basic
-   stream-oriented functions.  To simplify the interface, some default options
-   are assumed (compression level and memory usage, standard memory allocation
-   functions).  The source code of these utility functions can be modified if
-   you need special options.
-*/
-
-
-#endif /* !Z_SOLO */
-
                         /* checksum functions */
 
 /*
@@ -561,62 +546,9 @@ int inflateInit_(z_streamp strm,
         inflateInit2_((strm), (windowBits), ZLIB_VERSION, \
                       (int)sizeof(z_stream))
 
-#ifndef Z_SOLO
-
-/* provide 64-bit offset functions if _LARGEFILE64_SOURCE defined, and/or
- * change the regular functions to 64 bits if _FILE_OFFSET_BITS is 64 (if
- * both are true, the application gets the *64 functions, and the regular
- * functions are changed to 64 bits) -- in case these are set on systems
- * without large file support, _LFS64_LARGEFILE must also be true
- */
-
-#if !defined(ZLIB_INTERNAL) && defined(Z_WANT64)
-#  ifndef Z_LARGE64
-     //gzFile gzopen64(const char *, const char *);
-     //z_off_t gzseek64(gzFile, z_off_t, int);
-     //z_off_t gztell64(gzFile);
-     //z_off_t gzoffset64(gzFile);
-     //uLong adler32_combine64(uLong, uLong, z_off_t);
-     //uLong crc32_zlib_combine64(uLong, uLong, z_off_t);
-#  endif
-#else
-   //ZEXTERN gzFile ZEXPORT gzopen OF((const char *, const char *));
-   //ZEXTERN z_off_t ZEXPORT gzseek OF((gzFile, z_off_t, int));
-   //ZEXTERN z_off_t ZEXPORT gztell OF((gzFile));
-   //ZEXTERN z_off_t ZEXPORT gzoffset OF((gzFile));
-   //ZEXTERN uLong ZEXPORT adler32_combine OF((uLong, uLong, z_off_t));
-   //ZEXTERN uLong ZEXPORT crc32_zlib_combine OF((uLong, uLong, z_off_t));
-#endif
-
-#else /* Z_SOLO */
-
-   //uLong adler32_combine(uLong, uLong, z_off_t);
-   //uLong crc32_zlib_combine(uLong, uLong, z_off_t);
-
-#endif /* !Z_SOLO */
-
 /* hack for buggy compilers */
 #if !defined(ZUTIL_H) && !defined(NO_DUMMY_DECL)
     struct internal_state {int dummy;};
-#endif
-
-/* undocumented functions */
-//ZEXTERN const char   * ZEXPORT zError           OF((int));
-//ZEXTERN int            ZEXPORT inflateSyncPoint OF((z_streamp));
-//ZEXTERN const z_crc_t FAR * ZEXPORT get_crc_table    OF((void));
-//ZEXTERN int            ZEXPORT inflateUndermine OF((z_streamp, int));
-//ZEXTERN int            ZEXPORT inflateResetKeep OF((z_streamp));
-//ZEXTERN int            ZEXPORT deflateResetKeep OF((z_streamp));
-#if defined(_WIN32) && !defined(Z_SOLO)
-//gzFile         gzopen_w(const wchar_t *path,
-                                            //const char *mode);
-#endif
-#if defined(STDC) || defined(Z_HAVE_STDARG_H)
-#  ifndef Z_SOLO
-//ZEXTERN int            ZEXPORTVA gzvprintf Z_ARG((gzFile file,
-                                                  //const char *format,
-                                                  //va_list va));
-#  endif
 #endif
 
 #ifdef __cplusplus
