@@ -91,7 +91,7 @@ typedef struct z_stream_s {
     z_const char *msg;  /* last error message, NULL if no error */
     struct internal_state FAR *state; /* not visible by applications */
 
-    voidpf     opaque;  /* private data object passed to zalloc and zfree */
+    //voidpf     opaque;  /* private data object passed to zalloc and zfree */
 
     int     data_type;  /* best guess about the data type: binary or text */
     uLong   adler;      /* adler32 value of the uncompressed data */

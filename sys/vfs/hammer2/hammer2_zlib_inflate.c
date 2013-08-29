@@ -193,7 +193,7 @@ int inflateInit2_(z_streamp strm, int windowBits, const char *version,
         return Z_VERSION_ERROR;
     if (strm == Z_NULL) return Z_STREAM_ERROR;
     strm->msg = Z_NULL;                 /* in case we return an error */
-    strm->opaque = (voidpf)0;
+    //strm->opaque = (voidpf)0;
     state = (struct inflate_state FAR *) kmalloc(sizeof(struct inflate_state), C_ZLIB_BUFFER_INFLATE, M_INTWAIT);
     if (state == Z_NULL) return Z_MEM_ERROR;
     Tracev((stderr, "inflate: allocated\n"));

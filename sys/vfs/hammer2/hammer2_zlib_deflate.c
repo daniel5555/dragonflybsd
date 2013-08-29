@@ -241,7 +241,7 @@ int deflateInit2_(z_streamp strm, int level, int method, int windowBits,
         return Z_STREAM_ERROR;
 #else
         //strm->zalloc = zcalloc;
-        strm->opaque = (voidpf)0;
+        //strm->opaque = (voidpf)0;
 #endif
     //}
     //if (strm->zfree == (free_func)0)
