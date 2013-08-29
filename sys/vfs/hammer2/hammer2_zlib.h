@@ -491,13 +491,6 @@ int inflateEnd(z_streamp strm);
    static string (which must not be deallocated).
 */
 
-
-                        /* Advanced functions */
-
-/*
-    The following functions are needed only in some special applications.
-*/
-
                         /* checksum functions */
 
 /*
