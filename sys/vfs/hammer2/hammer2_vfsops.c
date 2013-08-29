@@ -891,17 +891,22 @@ hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
 			int *errorp)
 {
 	hammer2_chain_t *chain;
-
-	if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
-		hammer2_compress_LZ4_and_write_t(bp, trans, ip,
+	//maybe we need to add here an error check (if comp_algo > HAMMER2_COMP_ZLIB)
+	if (ipdata->comp_algo > HAMMER2_COMP_AUTOZERO) {
+		hammer2_compress_and_write_t(bp, trans, ip,
 					   ipdata, parentp,
 					   lbase, ioflag,
-					   pblksize, errorp);
-	} else if (ipdata->comp_algo == HAMMER2_COMP_ZLIB) {
-		hammer2_compress_ZLIB_and_write_t(bp, trans, ip,
-					   ipdata, parentp,
-					   lbase, ioflag,
-					   pblksize, errorp);
+					   pblksize, errorp, ipdata->comp_algo);
+	//if (ipdata->comp_algo == HAMMER2_COMP_LZ4) {
+		//hammer2_compress_LZ4_and_write_t(bp, trans, ip,
+					   //ipdata, parentp,
+					   //lbase, ioflag,
+					   //pblksize, errorp);
+	//} else if (ipdata->comp_algo == HAMMER2_COMP_ZLIB) {
+		//hammer2_compress_ZLIB_and_write_t(bp, trans, ip,
+					   //ipdata, parentp,
+					   //lbase, ioflag,
+					   //pblksize, errorp);
 	} else if (ipdata->comp_algo == HAMMER2_COMP_AUTOZERO) {
 		hammer2_zero_check_and_write_t(bp, trans, ip,
 				    ipdata, parentp, lbase,
@@ -960,6 +965,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			}
 			else if (comp_method == HAMMER2_COMP_LZ4) {
 				z_stream strm_compress;
+				int ret;
 		
 				strm_compress.opaque = Z_NULL;
 				ret = deflateInit(&strm_compress, 6);
