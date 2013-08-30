@@ -84,7 +84,7 @@
 #include "hammer2_zlib_inftrees.h"
 #include "hammer2_zlib_inflate.h"
 #include "hammer2_zlib_inffast.h"
-#include "hammer2.h"
+#include "../hammer2.h"
 #include <sys/malloc.h> //for malloc macros
 
 MALLOC_DECLARE(C_ZLIB_BUFFER_INFLATE);

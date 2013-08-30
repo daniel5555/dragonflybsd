@@ -61,7 +61,7 @@
 #include "hammer2.h"
 #include "hammer2_lz4.h"
 
-#include "hammer2_zlib.h"
+#include "zlib/hammer2_zlib.h"
 
 #define REPORT_REFS_ERRORS 1	/* XXX remove me */
 
@@ -924,7 +924,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 
 		KKASSERT(pblksize / 2 - sizeof(int) <= 32768);
 		
-		if (ipdata->reserved85 < 8) {
+		if (ipdata->reserved85 < 8 || ipdata->reserved85%8 == 0) {
 			if (comp_method == HAMMER2_COMP_LZ4) {
 				//kprintf("LZ4 compression activated.\n");
 				int *c_size;
@@ -970,7 +970,9 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 		}
 		if (compressed_size == 0) { //compression failed or turned off
 			compressed_size = pblksize;
-			if (ipdata->reserved85 < 8) ++(ipdata->reserved85);
+			++(ipdata->reserved85);
+			if (ipdata->reserved85 == 16384) //protection against overflows
+				ipdata->reserved85 = 8; //not sure if makes sense
 		} else {
 			ipdata->reserved85 = 0;
 			if (compressed_size <= 1024 - sizeof(int)) {

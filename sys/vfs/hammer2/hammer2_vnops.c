@@ -56,7 +56,7 @@
 #include "hammer2.h"
 #include "hammer2_lz4.h"
 
-#include "hammer2_zlib.h"
+#include "zlib/hammer2_zlib.h"
 
 #define ZFOFFSET	(-2LL)
 
@@ -192,7 +192,6 @@ hammer2_decompress_ZLIB_callback(struct bio *bio)
 		
 		char *buffer;
 		char *compressed_buffer;
-		//int *compressed_size;
 		int ret;
 		
 		z_stream strm_decompress;

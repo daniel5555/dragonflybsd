@@ -1,7 +1,7 @@
 # Makefile for hammer2 vfs
 #
 #
-.PATH: ${.CURDIR}
+.PATH: ${.CURDIR} ${.CURDIR/zlib}
 
 CFLAGS+= -DINVARIANTS -DSMP
 KMOD=	hammer2

@@ -50,7 +50,7 @@
 /* @(#) $Id$ */
 
 #include "hammer2_zlib_deflate.h"
-#include "hammer2.h"
+#include "../hammer2.h"
 #include <sys/malloc.h> //for malloc macros
 
 MALLOC_DECLARE(C_ZLIB_BUFFER_DEFLATE);
