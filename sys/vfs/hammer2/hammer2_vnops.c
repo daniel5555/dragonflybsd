@@ -196,8 +196,7 @@ hammer2_decompress_ZLIB_callback(struct bio *bio)
 		int ret;
 		
 		z_stream strm_decompress;
-		
-		//strm_decompress.opaque = Z_NULL;
+
 		strm_decompress.avail_in = 0;
 		strm_decompress.next_in = Z_NULL;
 		
