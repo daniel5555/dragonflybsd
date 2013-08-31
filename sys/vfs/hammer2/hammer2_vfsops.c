@@ -963,7 +963,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				//kprintf("Compressed size = %d.\n", compressed_size);
 			}
 			else {
-				kprintf("Fatal error: Unknown compression method.\n");
+				kprintf("Error: Unknown compression method.\n");
 				kprintf("Comp_method = %d.\n", comp_method);
 				//And the block will be written uncompressed...
 			}
