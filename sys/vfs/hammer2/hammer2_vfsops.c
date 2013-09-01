@@ -938,11 +938,11 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				//kprintf("Compressed size = %d.\n", compressed_size);
 			}
 			else if (comp_method == HAMMER2_COMP_ZLIB) {
-				kprintf("ZLIB compression activated.\n");
+				//kprintf("ZLIB compression activated.\n");
 				z_stream strm_compress;
 				int ret;
 
-				ret = deflateInit(&strm_compress, 9);
+				ret = deflateInit(&strm_compress, 6);
 				if (ret != Z_OK)
 					kprintf("HAMMER2 ZLIB: fatal error on deflateInit.\n");
 				
@@ -960,7 +960,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 					compressed_size = 0;
 				}
 				ret = deflateEnd(&strm_compress);
-				kprintf("Compressed size = %d.\n", compressed_size);
+				//kprintf("Compressed size = %d.\n", compressed_size);
 			}
 			else {
 				kprintf("Error: Unknown compression method.\n");
