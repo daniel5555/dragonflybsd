@@ -675,7 +675,8 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 /*
  * Handle bioq for strategy write
  */
-static void
+static
+void
 hammer2_write_thread(void *arg)
 {
 	hammer2_mount_t* hmp;

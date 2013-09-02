@@ -284,7 +284,10 @@ typedef struct _U64_S { U64 v; } _PACKED U64_S;
 //****************************
 #if LZ4_ARCH64
 
-static inline int LZ4_NbCommonBytes (register U64 val)
+static
+inline
+int
+LZ4_NbCommonBytes (register U64 val)
 {
 #if defined(LZ4_BIG_ENDIAN)
     #if defined(_MSC_VER) && !defined(LZ4_FORCE_SW_BITCOUNT)
@@ -323,7 +326,10 @@ static inline int LZ4_NbCommonBytes (register U64 val)
 
 #else
 
-static inline int LZ4_NbCommonBytes (register U32 val)
+static
+inline
+int
+LZ4_NbCommonBytes (register U32 val)
 {
 #if defined(LZ4_BIG_ENDIAN)
 #  if defined(_MSC_VER) && !defined(LZ4_FORCE_SW_BITCOUNT)

@@ -51,7 +51,8 @@ extern "C" {
 // Simple Functions
 //****************************
 
-int LZ4_decompress_safe (char* source, char* dest, int inputSize, int maxOutputSize);
+int LZ4_decompress_safe (char* source, char* dest, int inputSize,
+						int maxOutputSize);
 
 /*
 LZ4_decompress_safe() :
