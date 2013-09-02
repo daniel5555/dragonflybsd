@@ -926,7 +926,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 		
 		if (ipdata->reserved85 < 8 || ipdata->reserved85%8 == 0) {
 			if (comp_method == HAMMER2_COMP_LZ4) {
-				//kprintf("LZ4 compression activated.\n");
+				kprintf("LZ4 compression activated.\n");
 				int *c_size;
 				compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 				objcache_present = 1;
@@ -935,7 +935,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				    pblksize/2 - sizeof(int));
 				c_size = (int*)compressed_buffer;
 				*c_size = compressed_size;
-				//kprintf("Compressed size = %d.\n", compressed_size);
+				kprintf("Compressed size = %d.\n", compressed_size);
 			}
 			else if (comp_method == HAMMER2_COMP_ZLIB) {
 				//kprintf("ZLIB compression activated.\n");
