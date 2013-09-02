@@ -707,7 +707,6 @@ hammer2_write_thread(void *arg)
 		parentp = &parent;
 
 		while ((bio = bioq_takefirst(&hmp->wthread_bioq)) != NULL) {
-			//kprintf("Write thread: inner thread.\n");
 			mtx_unlock(&hmp->wthread_mtx);
 			
 			error = 0;
@@ -762,7 +761,6 @@ hammer2_write_thread(void *arg)
 		if (last_ip)
 			hammer2_trans_done(&trans);
 	}
-	kprintf("Write thread: exiting.\n");
 	hmp->wthread_destroy = -1;
 	wakeup(&hmp->wthread_destroy);
 	
@@ -927,7 +925,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 		
 		if (ipdata->reserved85 < 8 || ipdata->reserved85%8 == 0) {
 			if (comp_method == HAMMER2_COMP_LZ4) {
-				kprintf("LZ4 compression activated.\n");
+				//kprintf("LZ4 compression activated.\n");
 				int *c_size;
 				compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
 				objcache_present = 1;
@@ -936,14 +934,14 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				    pblksize/2 - sizeof(int));
 				c_size = (int*)compressed_buffer;
 				*c_size = compressed_size;
-				kprintf("Compressed size = %d.\n", compressed_size);
+				//kprintf("Compressed size = %d.\n", compressed_size);
 			}
 			else if (comp_method == HAMMER2_COMP_ZLIB) {
 				//kprintf("ZLIB compression activated.\n");
 				z_stream strm_compress;
 				int ret;
 
-				ret = deflateInit(&strm_compress, 6);
+				ret = deflateInit(&strm_compress, 9);
 				if (ret != Z_OK)
 					kprintf("HAMMER2 ZLIB: fatal error on deflateInit.\n");
 				
