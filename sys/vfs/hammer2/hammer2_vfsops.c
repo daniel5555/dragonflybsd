@@ -1566,7 +1566,7 @@ hammer2_vfs_sync(struct mount *mp, int waitfor)
 	}
 	hammer2_chain_unlock(&hmp->vchain);
 
-#if 0
+#if 1
 	/*
 	 * Rollup flush.  The fsyncs above basically just flushed
 	 * data blocks.  The flush below gets all the meta-data.
