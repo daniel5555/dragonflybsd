@@ -71,11 +71,7 @@ static int mga_driver_device_is_agp(struct drm_device * dev)
 	 * device is 0x0021 (HB6 Universal PCI-PCI bridge), we reject the
 	 * device.
 	 */
-#if __FreeBSD_version >= 700010
 	bus = device_get_parent(device_get_parent(dev->device));
-#else
-	bus = device_get_parent(dev->device);
-#endif
 	if (pci_get_device(dev->device) == 0x0525 &&
 	    pci_get_vendor(bus) == 0x3388 &&
 	    pci_get_device(bus) == 0x0021)
@@ -127,7 +123,7 @@ mga_attach(device_t kdev)
 {
 	struct drm_device *dev = device_get_softc(kdev);
 
-	dev->driver = malloc(sizeof(struct drm_driver_info), DRM_MEM_DRIVER,
+	dev->driver = kmalloc(sizeof(struct drm_driver_info), DRM_MEM_DRIVER,
 	    M_WAITOK | M_ZERO);
 
 	mga_configure(dev);
@@ -143,7 +139,7 @@ mga_detach(device_t kdev)
 
 	ret = drm_detach(kdev);
 
-	free(dev->driver, DRM_MEM_DRIVER);
+	kfree(dev->driver, DRM_MEM_DRIVER);
 
 	return ret;
 }

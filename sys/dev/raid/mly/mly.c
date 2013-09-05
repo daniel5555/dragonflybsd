@@ -1464,7 +1464,7 @@ mly_start(struct mly_command *mc)
     mc->mc_packet->generic.command_id = mc->mc_slot;
 
 #ifdef MLY_DEBUG
-    mc->mc_timestamp = time_second;
+    mc->mc_timestamp = time_uptime;
 #endif
 
     crit_enter();
@@ -1937,7 +1937,7 @@ mly_cam_attach(struct mly_softc *sc)
 		return(ENOMEM);
 	    }
 	    if (xpt_bus_register(sc->mly_cam_sim[chn], chn)) {
-		mly_printf(sc, "CAM XPT phsyical channel registration failed\n");
+		mly_printf(sc, "CAM XPT physical channel registration failed\n");
 		return(ENXIO);
 	    }
 	    debug(1, "registered physical channel %d", chn);
@@ -2649,8 +2649,8 @@ mly_print_packet(struct mly_command *mc)
     case MDACMD_SCSIPT:
     case MDACMD_SCSI:
 	mly_printf(sc, "   cdb length           %d\n", ss->cdb_length);
-	mly_printf(sc, "   cdb                  %s\n", hexncpy(ss->cdb, ss->cdb_length,
-		hexstr, HEX_NCPYLEN(ss->cdb_length), " ");
+	mly_printf(sc, "   cdb                  %s\n",
+	    hexncpy(ss->cdb, ss->cdb_length, hexstr, HEX_NCPYLEN(ss->cdb_length), " "));
 	transfer = 1;
 	break;
     case MDACMD_SCSILC:
@@ -2976,12 +2976,12 @@ mly_timeout(struct mly_softc *sc)
 	struct mly_command *mc;
 	int deadline;
 
-	deadline = time_second - MLY_CMD_TIMEOUT;
+	deadline = time_uptime - MLY_CMD_TIMEOUT;
 	TAILQ_FOREACH(mc, &sc->mly_busy, mc_link) {
 		if ((mc->mc_timestamp < deadline)) {
 			device_printf(sc->mly_dev,
 			    "COMMAND %p TIMEOUT AFTER %d SECONDS\n", mc,
-			    (int)(time_second - mc->mc_timestamp));
+			    (int)(time_uptime - mc->mc_timestamp));
 		}
 	}
 

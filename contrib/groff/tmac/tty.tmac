@@ -17,7 +17,7 @@
 .  if c\[md] \
 .    tr \[bu]\[md]
 .
-.fchar \[bu] \z+o
+.fchar \[bu] o
 .fchar \[14] 1/4
 .fchar \[12] 1/2
 .fchar \[34] 3/4
@@ -82,6 +82,9 @@
 .
 .ie '\*(.T'cp1047' \
 .  do mso cp1047.tmac
+.el \
+.  ie '\*(.T'koi8-r' \
+.    do mso koi8-r.tmac
 .el \
 .  if !'\*(.T'ascii' \
 .    do mso latin1.tmac

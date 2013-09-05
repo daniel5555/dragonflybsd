@@ -146,6 +146,9 @@ struct protosw {
 #define PR_SYNC_PORT	0x0200		/* synchronous port (no proto thrds) */
 #define PR_ASYNC_SEND	0x0400		/* async pru_send */
 #define PR_ASYNC_RCVD	0x0800		/* async pru_rcvd */
+#define PR_ASEND_HOLDTD	0x1000		/* async pru_send hold orig thread */
+#define PR_ACONN_HOLDTD	0x2000		/* async pru_connect hold orig thread */
+#define PR_RAND_INITPORT 0x4000		/* random init msgport */
 
 /*
  * The arguments to usrreq are:
@@ -226,8 +229,10 @@ struct pru_attach_info {
  *	pru_soreceive() - called synchronously from user context.  Typically
  *			  runs generic kernel code and remains synchronous.
  *
- *	pru_savefaddr() - called synchronoutly by protocol thread. Typically
- *			  save the foreign address into socket.so_faddr.
+ *	pru_preconnect() - called synchronously from user context.  Typically
+ *                         prepares for later asynchronous pru_connect, e.g.
+ *                         sets ISCONNECTING.  Non-NULL means asynchronous
+ *                         pru_connect is supported.
  */
 struct pr_usrreqs {
 	void	(*pru_abort) (netmsg_t msg);
@@ -268,9 +273,17 @@ struct pr_usrreqs {
 				      struct sockbuf *sio,
 				      struct mbuf **controlp, int *flagsp);
 
-	/* synchronously called by protocol thread */
+	/*
+	 * Synchronously called by protocol thread.  Typically save the
+	 * foreign address into socket.so_faddr.
+	 */
 	void	(*pru_savefaddr) (struct socket *so,
 				      const struct sockaddr *addr);
+
+	/* synchronously called by user thread. */
+	int	(*pru_preconnect) (struct socket *so,
+				      const struct sockaddr *addr,
+				      struct thread *td);
 };
 
 typedef int (*pru_sosend_fn_t) (struct socket *so, struct sockaddr *addr,

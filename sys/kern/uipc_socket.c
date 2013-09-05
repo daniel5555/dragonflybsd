@@ -145,6 +145,14 @@ int use_sendfile_async = 1;
 SYSCTL_INT(_kern_ipc, OID_AUTO, sendfile_async, CTLFLAG_RW,
     &use_sendfile_async, 0, "sendfile uses asynchronized pru_send");
 
+int use_soconnect_async = 1;
+SYSCTL_INT(_kern_ipc, OID_AUTO, soconnect_async, CTLFLAG_RW,
+    &use_soconnect_async, 0, "soconnect uses asynchronized pru_connect");
+
+int use_rand_initport = 1;
+SYSCTL_INT(_kern_ipc, OID_AUTO, rand_initport, CTLFLAG_RW,
+    &use_rand_initport, 0, "socket uses random initial msgport");
+
 /*
  * Socket operation routines.
  * These routines are called by the routines in
@@ -235,10 +243,16 @@ socreate(int dom, struct socket **aso, int type,
 	 * If PR_SYNC_PORT is set (unix domain sockets) there is no protocol
 	 * thread and all pr_*()/pru_*() calls are executed synchronously.
 	 */
-	if (prp->pr_flags & PR_SYNC_PORT)
+	if (prp->pr_flags & PR_SYNC_PORT) {
 		so->so_port = &netisr_sync_port;
-	else
+	} else if (prp->pr_flags & PR_RAND_INITPORT) {
+		if (use_rand_initport)
+			so->so_port = netisr_cpuport(mycpuid & ncpus2_mask);
+		else
+			so->so_port = netisr_cpuport(0);
+	} else {
 		so->so_port = netisr_cpuport(0);
+	}
 
 	TAILQ_INIT(&so->so_incomp);
 	TAILQ_INIT(&so->so_comp);
@@ -695,7 +709,8 @@ soaccept(struct socket *so, struct sockaddr **nam)
 }
 
 int
-soconnect(struct socket *so, struct sockaddr *nam, struct thread *td)
+soconnect(struct socket *so, struct sockaddr *nam, struct thread *td,
+    boolean_t sync)
 {
 	int error;
 
@@ -717,7 +732,10 @@ soconnect(struct socket *so, struct sockaddr *nam, struct thread *td)
 		 * from biting us.
 		 */
 		so->so_error = 0;
-		error = so_pru_connect(so, nam, td);
+		if (!sync && so->so_proto->pr_usrreqs->pru_preconnect)
+			error = so_pru_connect_async(so, nam, td);
+		else
+			error = so_pru_connect(so, nam, td);
 	}
 	return (error);
 }

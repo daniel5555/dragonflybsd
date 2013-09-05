@@ -189,7 +189,7 @@ static void ip_2_ip6_hdr (struct ip6_hdr *ip6, struct ip *ip);
 static int udp_connect_oncpu(struct socket *so, struct thread *td,
 			struct sockaddr_in *sin, struct sockaddr_in *if_sin);
 static int udp_output (struct inpcb *, struct mbuf *, struct sockaddr *,
-			struct thread *, int);
+			struct thread *, int, boolean_t);
 
 void
 udp_init(void)
@@ -840,7 +840,7 @@ SYSCTL_PROC(_net_inet_udp, OID_AUTO, getcred, CTLTYPE_OPAQUE|CTLFLAG_RW,
 
 static int
 udp_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *dstaddr,
-	   struct thread *td, int flags)
+    struct thread *td, int flags, boolean_t held_td)
 {
 	struct udpiphdr *ui;
 	int len = m->m_pkthdr.len;
@@ -940,6 +940,14 @@ udp_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *dstaddr,
 	ui->ui_sport = inp->inp_lport;
 	KASSERT(inp->inp_lport != 0, ("inp lport should have been bound"));
 
+	/*
+	 * Release the original thread, since it is no longer used
+	 */
+	if (held_td) {
+		lwkt_rele(td);
+		held_td = FALSE;
+	}
+
 	ui->ui_ulen = htons((u_short)len + sizeof(struct udphdr));
 
 	/*
@@ -987,6 +995,8 @@ udp_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *dstaddr,
 	return (error);
 
 release:
+	if (held_td)
+		lwkt_rele(td);
 	m_freem(m);
 	return (error);
 }
@@ -1119,10 +1129,10 @@ udp_connect(netmsg_t msg)
 		goto out;
 	}
 
-	if (msg->connect.nm_reconnect & NMSG_RECONNECT_RECONNECT) {
+	if (msg->connect.nm_flags & PRUC_RECONNECT) {
 		panic("UDP does not support RECONNECT");
 #ifdef notyet
-		msg->connect.nm_reconnect &= ~NMSG_RECONNECT_RECONNECT;
+		msg->connect.nm_flags &= ~PRUC_RECONNECT;
 		in_pcblink(inp, &udbinfo);
 #endif
 	}
@@ -1178,7 +1188,7 @@ udp_connect(netmsg_t msg)
 		in_pcbunlink(so->so_pcb, &udbinfo);
 		/* in_pcbunlink(so->so_pcb, &udbinfo[mycpu->gd_cpuid]); */
 		sosetport(so, port);
-		msg->connect.nm_reconnect |= NMSG_RECONNECT_RECONNECT;
+		msg->connect.nm_flags |= PRUC_RECONNECT;
 		msg->connect.base.nm_dispatch = udp_connect;
 
 		lwkt_forwardmsg(port, &msg->connect.base.lmsg);
@@ -1311,8 +1321,11 @@ udp_send(netmsg_t msg)
 
 		if (pru_flags & PRUS_DONTROUTE)
 			flags |= SO_DONTROUTE;
-		error = udp_output(inp, m, addr, td, flags);
+		error = udp_output(inp, m, addr, td, flags,
+		    (pru_flags & PRUS_HELDTD) ? TRUE : FALSE);
 	} else {
+		if (pru_flags & PRUS_HELDTD)
+			lwkt_rele(msg->send.nm_td);
 		m_freem(m);
 		error = EINVAL;
 	}

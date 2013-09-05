@@ -826,6 +826,8 @@ device		pass			#CAM passthrough driver
 device		sg			#Passthrough device (linux scsi generic)
 device		pt			#SCSI processor type
 device		ses			#SCSI SES/SAF-TE driver
+device		targ			#SCSI Target Mode Code
+device		targbh			#SCSI Target Mode Blackhole Device
 
 # Options for device mapper
 device		dm
@@ -1401,6 +1403,8 @@ device		"snd_cs4281"
 device		"snd_csa"
 device		"snd_ds1"
 device		"snd_emu10k1"
+device		"snd_envy24"
+device		"snd_envy24ht"
 device		"snd_es137x"
 device		"snd_fm801"
 device		"snd_hda"
@@ -1409,6 +1413,7 @@ device		"snd_maestro"
 device		"snd_maestro3"
 device		"snd_neomagic"
 device		"snd_solo"
+device		"snd_spicds"
 device		"snd_t4dwave"
 device		"snd_via8233"
 device		"snd_via82c686"
@@ -2208,10 +2213,18 @@ device		rue
 # USB wireless NICs, requires wlan_amrr
 #
 # Ralink Technology RT2501USB/RT2601USB
-#device		rum
+device		rum
+#
+# Ralink Technology RT2700U/RT2800U/RT3000U wireless driver
+device		run
+device		runfw
 #
 # Ralink Technology RT2500USB
 #device		ural
+#
+# Realtek RTL8188CU/RTL8192CU wireless driver
+device		urtwn
+device		urtwnfw
 
 # debugging options for the USB subsystem
 #

@@ -197,86 +197,109 @@ static const struct re_type {
 };
 
 static const struct re_hwrev re_hwrevs[] = {
-	{ RE_HWREV_8139CPLUS,	RE_MACVER_UNKN,		ETHERMTU,
+	{ RE_HWREV_8139CPLUS,	ETHERMTU,
 	  RE_C_HWCSUM | RE_C_8139CP | RE_C_FASTE },
 
-	{ RE_HWREV_8169,	RE_MACVER_UNKN,		ETHERMTU,
+	{ RE_HWREV_8169,	ETHERMTU,
 	  RE_C_HWCSUM | RE_C_8169 },
 
-	{ RE_HWREV_8110S,	RE_MACVER_03,		RE_MTU_6K,
+	{ RE_HWREV_8110S,	RE_MTU_6K,
 	  RE_C_HWCSUM | RE_C_8169 },
 
-	{ RE_HWREV_8169S,	RE_MACVER_03,		RE_MTU_6K,
+	{ RE_HWREV_8169S,	RE_MTU_6K,
 	  RE_C_HWCSUM | RE_C_8169 },
 
-	{ RE_HWREV_8169SB,	RE_MACVER_04,		RE_MTU_6K,
+	{ RE_HWREV_8169SB,	RE_MTU_6K,
 	  RE_C_HWCSUM | RE_C_PHYPMGT | RE_C_8169 },
 
-	{ RE_HWREV_8169SC1,	RE_MACVER_05,		RE_MTU_6K,
+	{ RE_HWREV_8169SC,	RE_MTU_6K,
 	  RE_C_HWCSUM | RE_C_PHYPMGT | RE_C_8169 },
 
-	{ RE_HWREV_8169SC2,	RE_MACVER_06,		RE_MTU_6K,
-	  RE_C_HWCSUM | RE_C_PHYPMGT | RE_C_8169 },
-
-	{ RE_HWREV_8168B1,	RE_MACVER_21,		RE_MTU_6K,
+	{ RE_HWREV_8168B1,	RE_MTU_6K,
 	  RE_C_HWIM | RE_C_HWCSUM | RE_C_PHYPMGT },
 
-	{ RE_HWREV_8168B2,	RE_MACVER_23,		RE_MTU_6K,
+	{ RE_HWREV_8168B2,	RE_MTU_6K,
 	  RE_C_HWIM | RE_C_HWCSUM | RE_C_PHYPMGT | RE_C_AUTOPAD },
 
-	{ RE_HWREV_8168B3,	RE_MACVER_23,		RE_MTU_6K,
-	  RE_C_HWIM | RE_C_HWCSUM | RE_C_PHYPMGT | RE_C_AUTOPAD },
-
-	{ RE_HWREV_8168C,	RE_MACVER_29,		RE_MTU_6K,
+	{ RE_HWREV_8168C,	RE_MTU_6K,
 	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
 	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
 
-	{ RE_HWREV_8168CP,	RE_MACVER_2B,		RE_MTU_6K,
+	{ RE_HWREV_8168CP,	RE_MTU_6K,
 	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
 	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
 
-	{ RE_HWREV_8168D,	RE_MACVER_2A,		RE_MTU_9K,
+	{ RE_HWREV_8168D,	RE_MTU_9K,
 	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
 	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
 
-	{ RE_HWREV_8168DP,	RE_MACVER_2D,		RE_MTU_9K,
+	{ RE_HWREV_8168DP,	RE_MTU_9K,
 	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
 	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
 
-	{ RE_HWREV_8168E,	RE_MACVER_UNKN,		RE_MTU_9K,
+	{ RE_HWREV_8168E,	RE_MTU_9K,
 	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
 	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
 
-	{ RE_HWREV_8168F,	RE_MACVER_UNKN,		RE_MTU_9K,
+	{ RE_HWREV_8168F,	RE_MTU_9K,
 	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
 	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
 
-	{ RE_HWREV_8111F,	RE_MACVER_UNKN,		RE_MTU_9K,
+	{ RE_HWREV_8111F,	RE_MTU_9K,
 	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
 	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
 
-	{ RE_HWREV_8100E,	RE_MACVER_UNKN,		ETHERMTU,
+	{ RE_HWREV_8411,	ETHERMTU,
+	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
+	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
+
+	{ RE_HWREV_8168G,	ETHERMTU,
+	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
+	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
+
+	{ RE_HWREV_8168EP,	ETHERMTU,
+	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
+	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
+
+	{ RE_HWREV_8168GU,	ETHERMTU,
+	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
+	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
+
+	{ RE_HWREV_8411B,	ETHERMTU,
+	  RE_C_HWIM | RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT |
+	  RE_C_AUTOPAD | RE_C_CONTIGRX | RE_C_STOP_RXTX },
+
+	{ RE_HWREV_8100E,	ETHERMTU,
 	  RE_C_HWCSUM | RE_C_FASTE },
 
-	{ RE_HWREV_8101E1,	RE_MACVER_16,		ETHERMTU,
+	{ RE_HWREV_8101E,	ETHERMTU,
 	  RE_C_HWCSUM | RE_C_FASTE },
 
-	{ RE_HWREV_8101E2,	RE_MACVER_16,		ETHERMTU,
-	  RE_C_HWCSUM | RE_C_FASTE },
-
-	{ RE_HWREV_8102E,	RE_MACVER_15,		ETHERMTU,
+	{ RE_HWREV_8102E,	ETHERMTU,
 	  RE_C_HWCSUM | RE_C_MAC2 | RE_C_AUTOPAD | RE_C_STOP_RXTX |
 	  RE_C_FASTE },
 
-	{ RE_HWREV_8102EL,	RE_MACVER_15,		ETHERMTU,
+	{ RE_HWREV_8102EL,	ETHERMTU,
 	  RE_C_HWCSUM | RE_C_MAC2 | RE_C_AUTOPAD | RE_C_STOP_RXTX |
 	  RE_C_FASTE },
 
-	{ RE_HWREV_8105E,	RE_MACVER_UNKN,		ETHERMTU,
+	{ RE_HWREV_8105E,	ETHERMTU,
 	  RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT | RE_C_AUTOPAD |
 	  RE_C_STOP_RXTX | RE_C_FASTE },
 
-	{ RE_HWREV_NULL, 0, 0, 0 }
+	{ RE_HWREV_8401E,	ETHERMTU,
+	  RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT | RE_C_AUTOPAD |
+	  RE_C_STOP_RXTX | RE_C_FASTE },
+
+	{ RE_HWREV_8402,	ETHERMTU,
+	  RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT | RE_C_AUTOPAD |
+	  RE_C_STOP_RXTX | RE_C_FASTE },
+
+	{ RE_HWREV_8106E,	ETHERMTU,
+	  RE_C_HWCSUM | RE_C_MAC2 | RE_C_PHYPMGT | RE_C_AUTOPAD |
+	  RE_C_STOP_RXTX | RE_C_FASTE },
+
+	{ RE_HWREV_NULL, 0, 0 }
 };
 
 static int	re_probe(device_t);
@@ -995,7 +1018,6 @@ re_probe(device_t dev)
 			sc = device_get_softc(dev);
 
 			sc->re_hwrev = hw_rev->re_hwrev;
-			sc->re_macver = hw_rev->re_macver;
 			sc->re_caps = hw_rev->re_caps;
 			sc->re_maxmtu = hw_rev->re_maxmtu;
 
@@ -1003,57 +1025,62 @@ re_probe(device_t dev)
 			 * Apply chip property fixup
 			 */
 			switch (sc->re_hwrev) {
-			case RE_HWREV_8101E1:
-			case RE_HWREV_8101E2:
-				if (macmode == 0)
-					sc->re_macver = RE_MACVER_11;
-				else if (macmode == 0x200000)
-					sc->re_macver = RE_MACVER_12;
+			case RE_HWREV_8168GU:
+				if (vendor == PCI_VENDOR_REALTEK &&
+				    product == PCI_PRODUCT_REALTEK_RT8101E) {
+					/* 8106EUS */
+					sc->re_caps = RE_C_HWCSUM | RE_C_MAC2 |
+					    RE_C_PHYPMGT | RE_C_AUTOPAD |
+					    RE_C_STOP_RXTX | RE_C_FASTE;
+					sc->re_maxmtu = ETHERMTU;
+					device_printf(dev, "8106EUS fixup\n");
+				} else {
+					/* 8168GU */
+					goto ee_eaddr1;
+				}
 				break;
+
+			case RE_HWREV_8168E:
+				if (vendor == PCI_VENDOR_REALTEK &&
+				    product == PCI_PRODUCT_REALTEK_RT8101E) {
+					/* 8105E */
+					sc->re_caps = RE_C_HWCSUM | RE_C_MAC2 |
+					    RE_C_PHYPMGT | RE_C_AUTOPAD |
+					    RE_C_STOP_RXTX | RE_C_FASTE;
+					sc->re_maxmtu = ETHERMTU;
+					device_printf(dev, "8105E fixup\n");
+					goto ee_eaddr0;
+				}
+				/* 8168E */
+				break;
+
+			case RE_HWREV_8101E:
 			case RE_HWREV_8102E:
 			case RE_HWREV_8102EL:
-				if (macmode == 0)
-					sc->re_macver = RE_MACVER_13;
-				else if (macmode == 0x100000)
-					sc->re_macver = RE_MACVER_14;
+			case RE_HWREV_8401E:
+			case RE_HWREV_8105E:
+			case RE_HWREV_8106E:
+ee_eaddr0:
+				sc->re_caps |= RE_C_EE_EADDR;
+				sc->re_ee_eaddr = RE_EE_EADDR0;
 				break;
-			case RE_HWREV_8168B2:
-			case RE_HWREV_8168B3:
-				if (macmode == 0)
-					sc->re_macver = RE_MACVER_22;
-				break;
-			case RE_HWREV_8168C:
-				if (macmode == 0)
-					sc->re_macver = RE_MACVER_24;
-				else if (macmode == 0x200000)
-					sc->re_macver = RE_MACVER_25;
-				else if (macmode == 0x300000)
-					sc->re_macver = RE_MACVER_27;
-				break;
-			case RE_HWREV_8168CP:
-				if (macmode == 0)
-					sc->re_macver = RE_MACVER_26;
-				else if (macmode == 0x100000)
-					sc->re_macver = RE_MACVER_28;
-				break;
-			case RE_HWREV_8168DP:
-				if (macmode == 0)
-					sc->re_macver = RE_MACVER_2B;
-				else if (macmode == 0x200000)
-					sc->re_macver = RE_MACVER_2C;
-				break;
-			case RE_HWREV_8168E:
-				if (macmode == 0x100000)
-					sc->re_macver = RE_MACVER_2E;
-				else if (macmode == 0x200000)
-					sc->re_macver = RE_MACVER_2F;
-				break;
+
 			case RE_HWREV_8168F:
 			case RE_HWREV_8111F:
-				if (macmode == 0x000000)
-					sc->re_macver = RE_MACVER_30;
-				else if (macmode == 0x100000)
-					sc->re_macver = RE_MACVER_31;
+			case RE_HWREV_8168G:
+				if (macmode == 0 ||
+				    macmode == 0x100000) {
+					sc->re_caps |= RE_C_EE_EADDR;
+					sc->re_ee_eaddr = RE_EE_EADDR1;
+				}
+				break;
+
+			case RE_HWREV_8411:
+			case RE_HWREV_8168EP:
+			case RE_HWREV_8411B:
+ee_eaddr1:
+				sc->re_caps |= RE_C_EE_EADDR;
+				sc->re_ee_eaddr = RE_EE_EADDR1;
 				break;
 			}
 			if (pci_is_pcie(dev))
@@ -1063,11 +1090,9 @@ re_probe(device_t dev)
 			return 0;
 		}
 	}
+	device_printf(dev, "unknown hwrev 0x%08x, macmode 0x%08x\n",
+	    hwrev, macmode);
 
-	if (bootverbose) {
-		device_printf(dev, "unknown hwrev 0x%08x, macmode 0x%08x\n",
-			      hwrev, macmode);
-	}
 	return ENXIO;
 }
 
@@ -1492,9 +1517,8 @@ re_attach(device_t dev)
 		if (cfg2 & RE_CFG2_PCI64)
 			sc->re_caps |= RE_C_PCI64;
 	}
-	device_printf(dev, "Hardware rev. 0x%08x; MAC ver. 0x%02x; "
-		      "PCI%s %dMHz\n",
-		      sc->re_hwrev, sc->re_macver,
+	device_printf(dev, "Hardware rev. 0x%08x; PCI%s %dMHz\n",
+		      sc->re_hwrev,
 		      (sc->re_caps & RE_C_PCIE) ?
 		      "-E" : ((sc->re_caps & RE_C_PCI64) ? "64" : "32"),
 		      sc->re_bus_speed);
@@ -3269,28 +3293,18 @@ re_get_eaddr(struct re_softc *sc, uint8_t *eaddr)
 {
 	int i;
 
-	if (sc->re_macver == RE_MACVER_11 ||
-	    sc->re_macver == RE_MACVER_12 ||
-	    sc->re_macver == RE_MACVER_30 ||
-	    sc->re_macver == RE_MACVER_31) {
+	if (sc->re_caps & RE_C_EE_EADDR) {
 		uint16_t re_did;
 
 		re_get_eewidth(sc);
 		re_read_eeprom(sc, (caddr_t)&re_did, 0, 1);
 		if (re_did == 0x8128) {
 			uint16_t as[ETHER_ADDR_LEN / 2];
-			int eaddr_off;
-
-			if (sc->re_macver == RE_MACVER_30 ||
-			    sc->re_macver == RE_MACVER_31)
-				eaddr_off = RE_EE_EADDR1;
-			else
-				eaddr_off = RE_EE_EADDR0;
 
 			/*
 			 * Get station address from the EEPROM.
 			 */
-			re_read_eeprom(sc, (caddr_t)as, eaddr_off, 3);
+			re_read_eeprom(sc, (caddr_t)as, sc->re_ee_eaddr, 3);
 			for (i = 0; i < ETHER_ADDR_LEN / 2; i++)
 				as[i] = le16toh(as[i]);
 			bcopy(as, eaddr, ETHER_ADDR_LEN);
