@@ -165,10 +165,6 @@ inflateReset2(z_streamp strm, int windowBits)
     }
     else {
         wrap = (windowBits >> 4) + 1;
-//#ifdef GUNZIP
-        //if (windowBits < 48)
-            //windowBits &= 15;
-//#endif
     }
 
     /* set number of window bits, free window if different */

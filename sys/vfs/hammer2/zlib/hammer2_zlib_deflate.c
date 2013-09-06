@@ -420,13 +420,6 @@ deflate (z_streamp strm, int flush)
     s->last_flush = flush;
 
     /* Write the header */
-    if (s->status == INIT_STATE) {
-//#ifdef GZIP
-        //if (s->wrap == 2) {
-        //}
-        //else
-//#endif
-        //{
         uInt header = (Z_DEFLATED + ((s->w_bits-8)<<4)) << 8;
         uInt level_flags;
 
@@ -451,7 +444,6 @@ deflate (z_streamp strm, int flush)
             putShortMSB(s, (uInt)(strm->adler & 0xffff));
         }
         strm->adler = adler32(0L, Z_NULL, 0);
-        //}
     }
     /* Flush as much pending output as possible */
     if (s->pending != 0) {
@@ -537,15 +529,9 @@ deflate (z_streamp strm, int flush)
     if (s->wrap <= 0) return Z_STREAM_END;
 
     /* Write the trailer */
-//#ifdef GZIP
-    //if (s->wrap == 2) {
-    //}
-    //else
-//#endif
-    //{
     putShortMSB(s, (uInt)(strm->adler >> 16));
     putShortMSB(s, (uInt)(strm->adler & 0xffff));
-    //}
+    
     flush_pending(strm);
     /* If avail_out is zero, the application will call deflate again
      * to flush the rest.
@@ -607,11 +593,7 @@ read_buf(z_streamp strm, Bytef *buf, unsigned size)
     if (strm->state->wrap == 1) {
         strm->adler = adler32(strm->adler, buf, len);
     }
-//#ifdef GZIP
-    //else if (strm->state->wrap == 2) {
-        //strm->adler = crc32_zlib(strm->adler, buf, len);
-    //}
-//#endif
+
     strm->next_in  += len;
     strm->total_in += len;
 
