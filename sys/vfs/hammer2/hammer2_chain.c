@@ -2773,6 +2773,10 @@ hammer2_chain_duplicate(hammer2_trans_t *trans, hammer2_chain_t *parent, int i,
  * locked parent.  (*chainp) is marked DELETED and atomically replaced
  * with a duplicate.  Atomicy is at the very-fine spin-lock level in
  * order to ensure that lookups do not race us.
+ *
+ * If the input chain is already marked deleted the duplicated chain will
+ * also be marked deleted.  This case can occur when an inode is removed
+ * from the filesystem but programs still have an open descriptor to it.
  */
 void
 hammer2_chain_delete_duplicate(hammer2_trans_t *trans, hammer2_chain_t **chainp,
@@ -2786,11 +2790,22 @@ hammer2_chain_delete_duplicate(hammer2_trans_t *trans, hammer2_chain_t **chainp,
 	int oflags;
 	void *odata;
 
+	ochain = *chainp;
+	oflags = ochain->flags;
+	hmp = ochain->hmp;
+
+	/*
+	 * Shortcut DELETED case if possible (only if delete_tid already matches the
+	 * transaction id).
+	 */
+	if ((oflags & HAMMER2_CHAIN_DELETED) &&
+	    ochain->delete_tid == trans->sync_tid) {
+		return;
+	}
+
 	/*
 	 * First create a duplicate of the chain structure
 	 */
-	ochain = *chainp;
-	hmp = ochain->hmp;
 	nchain = hammer2_chain_alloc(hmp, trans, &ochain->bref);    /* 1 ref */
 	if (flags & HAMMER2_DELDUP_RECORE)
 		hammer2_chain_core_alloc(nchain, NULL);
@@ -2806,9 +2821,14 @@ hammer2_chain_delete_duplicate(hammer2_trans_t *trans, hammer2_chain_t **chainp,
 	nchain->inode_count += ochain->inode_count;
 
 	/*
-	 * Lock nchain and insert into ochain's core hierarchy, marking
-	 * ochain DELETED at the same time.  Having both chains locked
-	 * is extremely important for atomicy.
+	 * Lock nchain so both chains are now locked (extremely important
+	 * for atomicy).  Mark ochain deleted and reinsert into the topology
+	 * and insert nchain all in one go.
+	 *
+	 * If the ochain is already deleted it is left alone and nchain
+	 * is inserted into the topology as a deleted chain.  This is
+	 * important because it allows ongoing operations to be executed
+	 * on a deleted inode which still has open descriptors.
 	 */
 	hammer2_chain_lock(nchain, HAMMER2_RESOLVE_NEVER);
 	hammer2_chain_dup_fixup(ochain, nchain);
@@ -2818,12 +2838,18 @@ hammer2_chain_delete_duplicate(hammer2_trans_t *trans, hammer2_chain_t **chainp,
 
 	KKASSERT(ochain->flags & HAMMER2_CHAIN_ONRBTREE);
 	spin_lock(&above->cst.spin);
+	KKASSERT(ochain->flags & HAMMER2_CHAIN_ONRBTREE);
 
-	RB_REMOVE(hammer2_chain_tree, &above->rbtree, ochain);
-	ochain->delete_tid = trans->sync_tid;
-	atomic_set_int(&ochain->flags, HAMMER2_CHAIN_DELETED);
-	if (RB_INSERT(hammer2_chain_tree, &above->rbtree, ochain))
-		panic("chain_delete: reinsertion failed %p", ochain);
+	if (oflags & HAMMER2_CHAIN_DELETED) {
+		atomic_set_int(&nchain->flags, HAMMER2_CHAIN_DELETED);
+		nchain->delete_tid = trans->sync_tid;
+	} else {
+		RB_REMOVE(hammer2_chain_tree, &above->rbtree, ochain);
+		ochain->delete_tid = trans->sync_tid;
+		atomic_set_int(&ochain->flags, HAMMER2_CHAIN_DELETED);
+		if (RB_INSERT(hammer2_chain_tree, &above->rbtree, ochain))
+			panic("chain_delete: reinsertion failed %p", ochain);
+	}
 
 	nchain->above = above;
 	atomic_set_int(&nchain->flags, HAMMER2_CHAIN_ONRBTREE);
@@ -2842,7 +2868,6 @@ hammer2_chain_delete_duplicate(hammer2_trans_t *trans, hammer2_chain_t **chainp,
 	 * case (data == NULL) to catch any extra locks that might have been
 	 * present, then transfer state to nchain.
 	 */
-	oflags = ochain->flags;
 	odata = ochain->data;
 	hammer2_chain_unlock(ochain);	/* replacing ochain */
 	KKASSERT(ochain->bref.type == HAMMER2_BREF_TYPE_INODE ||
