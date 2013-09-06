@@ -45,44 +45,44 @@
 #  define deflateTune           z_deflateTune
 #  define deflate_copyright     z_deflate_copyright
 #  define get_crc_table         z_get_crc_table
-//#  ifndef Z_SOLO
-//#    define gz_error              z_gz_error
-//#    define gz_intmax             z_gz_intmax
-//#    define gz_strwinerror        z_gz_strwinerror
-//#    define gzbuffer              z_gzbuffer
-//#    define gzclearerr            z_gzclearerr
-//#    define gzclose               z_gzclose
-//#    define gzclose_r             z_gzclose_r
-//#    define gzclose_w             z_gzclose_w
-//#    define gzdirect              z_gzdirect
-//#    define gzdopen               z_gzdopen
-//#    define gzeof                 z_gzeof
-//#    define gzerror               z_gzerror
-//#    define gzflush               z_gzflush
-//#    define gzgetc                z_gzgetc
-//#    define gzgetc_               z_gzgetc_
-//#    define gzgets                z_gzgets
-//#    define gzoffset              z_gzoffset
-//#    define gzoffset64            z_gzoffset64
-//#    define gzopen                z_gzopen
-//#    define gzopen64              z_gzopen64
-//#    ifdef _WIN32
-//#      define gzopen_w              z_gzopen_w
-//#    endif
-//#    define gzprintf              z_gzprintf
-//#    define gzvprintf             z_gzvprintf
-//#    define gzputc                z_gzputc
-//#    define gzputs                z_gzputs
-//#    define gzread                z_gzread
-//#    define gzrewind              z_gzrewind
-//#    define gzseek                z_gzseek
-//#    define gzseek64              z_gzseek64
-//#    define gzsetparams           z_gzsetparams
-//#    define gztell                z_gztell
-//#    define gztell64              z_gztell64
-//#    define gzungetc              z_gzungetc
-//#    define gzwrite               z_gzwrite
-//#  endif
+#  ifndef Z_SOLO
+#    define gz_error              z_gz_error
+#    define gz_intmax             z_gz_intmax
+#    define gz_strwinerror        z_gz_strwinerror
+#    define gzbuffer              z_gzbuffer
+#    define gzclearerr            z_gzclearerr
+#    define gzclose               z_gzclose
+#    define gzclose_r             z_gzclose_r
+#    define gzclose_w             z_gzclose_w
+#    define gzdirect              z_gzdirect
+#    define gzdopen               z_gzdopen
+#    define gzeof                 z_gzeof
+#    define gzerror               z_gzerror
+#    define gzflush               z_gzflush
+#    define gzgetc                z_gzgetc
+#    define gzgetc_               z_gzgetc_
+#    define gzgets                z_gzgets
+#    define gzoffset              z_gzoffset
+#    define gzoffset64            z_gzoffset64
+#    define gzopen                z_gzopen
+#    define gzopen64              z_gzopen64
+#    ifdef _WIN32
+#      define gzopen_w              z_gzopen_w
+#    endif
+#    define gzprintf              z_gzprintf
+#    define gzvprintf             z_gzvprintf
+#    define gzputc                z_gzputc
+#    define gzputs                z_gzputs
+#    define gzread                z_gzread
+#    define gzrewind              z_gzrewind
+#    define gzseek                z_gzseek
+#    define gzseek64              z_gzseek64
+#    define gzsetparams           z_gzsetparams
+#    define gztell                z_gztell
+#    define gztell64              z_gztell64
+#    define gzungetc              z_gzungetc
+#    define gzwrite               z_gzwrite
+#  endif
 #  define inflate               z_inflate
 #  define inflateCopy           z_inflateCopy
 #  define inflateEnd            z_inflateEnd
@@ -102,8 +102,8 @@
 #  define inflate_copyright     z_inflate_copyright
 #  define inflate_fast          z_inflate_fast
 #  define inflate_table         z_inflate_table
-//#  ifndef Z_SOLO
-//#    define uncompress            z_uncompress
+#  ifndef Z_SOLO
+#    define uncompress            z_uncompress
 #  endif
 #  define zError                z_zError
 #  define zlibCompileFlags      z_zlibCompileFlags
@@ -115,8 +115,8 @@
 #  define alloc_func            z_alloc_func
 #  define charf                 z_charf
 #  define free_func             z_free_func
-//#  ifndef Z_SOLO
-//#    define gzFile                z_gzFile
+#  ifndef Z_SOLO
+#    define gzFile                z_gzFile
 #  endif
 #  define gz_header             z_gz_header
 #  define gz_headerp            z_gz_headerp
