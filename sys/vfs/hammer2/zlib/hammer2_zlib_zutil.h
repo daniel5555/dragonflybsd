@@ -21,9 +21,9 @@
 
 #include "hammer2_zlib.h"
 
-#ifdef Z_SOLO
-   typedef long ptrdiff_t;  /* guess -- will be caught if guess is wrong */
-#endif
+//#ifdef Z_SOLO
+   //typedef long ptrdiff_t;  /* guess -- will be caught if guess is wrong */
+//#endif
 
 #ifndef local
 #  define local static
@@ -72,22 +72,22 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 
         /* target dependencies */
 
-#if defined(MSDOS) || (defined(WINDOWS) && !defined(WIN32))
-#  define OS_CODE  0x00
-#  ifndef Z_SOLO
-#    if defined(__TURBOC__) || defined(__BORLANDC__)
-#      if (__STDC__ == 1) && (defined(__LARGE__) || defined(__COMPACT__))
-         /* Allow compilation with ANSI keywords only enabled */
-         void _Cdecl farfree( void *block );
-         void *_Cdecl farmalloc( unsigned long nbytes );
-#      else
-#        include <alloc.h>
-#      endif
-#    else /* MSC or DJGPP */
-#      include <malloc.h>
-#    endif
-#  endif
-#endif
+//#if defined(MSDOS) || (defined(WINDOWS) && !defined(WIN32))
+//#  define OS_CODE  0x00
+//#  ifndef Z_SOLO
+//#    if defined(__TURBOC__) || defined(__BORLANDC__)
+//#      if (__STDC__ == 1) && (defined(__LARGE__) || defined(__COMPACT__))
+         ///* Allow compilation with ANSI keywords only enabled */
+         //void _Cdecl farfree( void *block );
+         //void *_Cdecl farmalloc( unsigned long nbytes );
+//#      else
+//#        include <alloc.h>
+//#      endif
+//#    else /* MSC or DJGPP */
+//#      include <malloc.h>
+//#    endif
+//#  endif
+//#endif
 
 #ifdef AMIGA
 #  define OS_CODE  0x01
@@ -103,25 +103,25 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  define OS_CODE  0x05
 #endif
 
-#ifdef OS2
-#  define OS_CODE  0x06
-#  if defined(M_I86) && !defined(Z_SOLO)
-#    include <malloc.h>
-#  endif
-#endif
+//#ifdef OS2
+//#  define OS_CODE  0x06
+//#  if defined(M_I86) && !defined(Z_SOLO)
+//#    include <malloc.h>
+//#  endif
+//#endif
 
-#if defined(MACOS) || defined(TARGET_OS_MAC)
-#  define OS_CODE  0x07
-#  ifndef Z_SOLO
-#    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
-#      include <unix.h> /* for fdopen */
-#    else
-#      ifndef fdopen
-#        define fdopen(fd,mode) NULL /* No fdopen() */
-#      endif
-#    endif
-#  endif
-#endif
+//#if defined(MACOS) || defined(TARGET_OS_MAC)
+//#  define OS_CODE  0x07
+//#  ifndef Z_SOLO
+//#    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
+//#      include <unix.h> /* for fdopen */
+//#    else
+//#      ifndef fdopen
+//#        define fdopen(fd,mode) NULL /* No fdopen() */
+//#      endif
+//#    endif
+//#  endif
+//#endif
 
 #ifdef TOPS20
 #  define OS_CODE  0x0a
