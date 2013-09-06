@@ -825,13 +825,6 @@ retry:
 			pbase = NOOFFSET;
 			break;
 		case HAMMER2_BREF_TYPE_DATA:
-#if 0
-			if (chain->bytes != pblksize) {
-				panic("hammer2_assign_physical: "
-				      "size mismatch %d/%d\n",
-				      pblksize, chain->bytes);
-			}
-#endif
 			if (chain->bytes != pblksize) {
 				hammer2_chain_resize(trans, ip,
 						     parent, &chain,
