@@ -102,9 +102,9 @@
 #  define inflate_copyright     z_inflate_copyright
 #  define inflate_fast          z_inflate_fast
 #  define inflate_table         z_inflate_table
-#  ifndef Z_SOLO
-#    define uncompress            z_uncompress
-#  endif
+//#  ifndef Z_SOLO
+//#    define uncompress            z_uncompress
+//#  endif
 #  define zError                z_zError
 #  define zlibCompileFlags      z_zlibCompileFlags
 #  define zlibVersion           z_zlibVersion
@@ -115,11 +115,11 @@
 #  define alloc_func            z_alloc_func
 #  define charf                 z_charf
 #  define free_func             z_free_func
-#  ifndef Z_SOLO
-#    define gzFile                z_gzFile
-#  endif
-#  define gz_header             z_gz_header
-#  define gz_headerp            z_gz_headerp
+//#  ifndef Z_SOLO
+//#    define gzFile                z_gzFile
+//#  endif
+//#  define gz_header             z_gz_header
+//#  define gz_headerp            z_gz_headerp
 #  define in_func               z_in_func
 #  define intf                  z_intf
 #  define out_func              z_out_func
@@ -132,7 +132,7 @@
 #  define voidpf                z_voidpf
 
 /* all zlib structs in zlib.h and zconf.h */
-#  define gz_header_s           z_gz_header_s
+//#  define gz_header_s           z_gz_header_s
 #  define internal_state        z_internal_state
 
 #endif
@@ -402,9 +402,9 @@ typedef uLong FAR uLongf;
 #endif
 
 #ifdef STDC
-#  ifndef Z_SOLO
-#    include <sys/types.h>      /* for off_t */
-#  endif
+//#  ifndef Z_SOLO
+//#    include <sys/types.h>      /* for off_t */
+//#  endif
 #endif
 
 #if defined(STDC) || defined(Z_HAVE_STDARG_H)
@@ -413,11 +413,11 @@ typedef uLong FAR uLongf;
 #  endif
 #endif
 
-#ifdef _WIN32
-#  ifndef Z_SOLO
-//#    include <stddef.h>         /* for wchar_t */
-#  endif
-#endif
+//#ifdef _WIN32
+//#  ifndef Z_SOLO
+////#    include <stddef.h>         /* for wchar_t */
+//#  endif
+//#endif
 
 /* a little trick to accommodate both "#define _LARGEFILE64_SOURCE" and
  * "#define _LARGEFILE64_SOURCE 1" as requesting 64-bit operations, (even
@@ -432,17 +432,17 @@ typedef uLong FAR uLongf;
 #if defined(__WATCOMC__) && !defined(Z_HAVE_UNISTD_H)
 #  define Z_HAVE_UNISTD_H
 #endif
-#ifndef Z_SOLO
-#  if defined(Z_HAVE_UNISTD_H) || defined(_LARGEFILE64_SOURCE)
-#    include <unistd.h>         /* for SEEK_*, off_t, and _LFS64_LARGEFILE */
-#    ifdef VMS
-#      include <unixio.h>       /* for off_t */
-#    endif
-#    ifndef z_off_t
-#      define z_off_t off_t
-#    endif
-#  endif
-#endif
+//#ifndef Z_SOLO
+//#  if defined(Z_HAVE_UNISTD_H) || defined(_LARGEFILE64_SOURCE)
+//#    include <unistd.h>         /* for SEEK_*, off_t, and _LFS64_LARGEFILE */
+//#    ifdef VMS
+//#      include <unixio.h>       /* for off_t */
+//#    endif
+//#    ifndef z_off_t
+//#      define z_off_t off_t
+//#    endif
+//#  endif
+//#endif
 
 #if defined(_LFS64_LARGEFILE) && _LFS64_LARGEFILE-0
 #  define Z_LFS64

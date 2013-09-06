@@ -185,59 +185,59 @@ zmemzero(Bytef* dest, uInt len)
 }
 #endif
 
-#ifndef Z_SOLO
+//#ifndef Z_SOLO
 
-#ifdef SYS16BIT
+//#ifdef SYS16BIT
 
-#ifdef __TURBOC__
-/* Turbo C in 16-bit mode */
+//#ifdef __TURBOC__
+///* Turbo C in 16-bit mode */
 
-#  define MY_ZCALLOC
+//#  define MY_ZCALLOC
 
-/* Turbo C malloc() does not allow dynamic allocation of 64K bytes
- * and farmalloc(64K) returns a pointer with an offset of 8, so we
- * must fix the pointer. Warning: the pointer must be put back to its
- * original form in order to free it, use zcfree().
- */
+///* Turbo C malloc() does not allow dynamic allocation of 64K bytes
+ //* and farmalloc(64K) returns a pointer with an offset of 8, so we
+ //* must fix the pointer. Warning: the pointer must be put back to its
+ //* original form in order to free it, use zcfree().
+ //*/
 
-#define MAX_PTR 10
-/* 10*64K = 640K */
+//#define MAX_PTR 10
+///* 10*64K = 640K */
 
-local int next_ptr = 0;
+//local int next_ptr = 0;
 
-typedef struct ptr_table_s {
-    voidpf org_ptr;
-    voidpf new_ptr;
-} ptr_table;
+//typedef struct ptr_table_s {
+    //voidpf org_ptr;
+    //voidpf new_ptr;
+//} ptr_table;
 
-local ptr_table table[MAX_PTR];
-/* This table is used to remember the original form of pointers
- * to large buffers (64K). Such pointers are normalized with a zero offset.
- * Since MSDOS is not a preemptive multitasking OS, this table is not
- * protected from concurrent access. This hack doesn't work anyway on
- * a protected system like OS/2. Use Microsoft C instead.
- */
+//local ptr_table table[MAX_PTR];
+///* This table is used to remember the original form of pointers
+ //* to large buffers (64K). Such pointers are normalized with a zero offset.
+ //* Since MSDOS is not a preemptive multitasking OS, this table is not
+ //* protected from concurrent access. This hack doesn't work anyway on
+ //* a protected system like OS/2. Use Microsoft C instead.
+ //*/
 
-#endif /* __TURBOC__ */
-
-
-#ifdef M_I86
-/* Microsoft C in 16-bit mode */
-
-#  define MY_ZCALLOC
-
-#if (!defined(_MSC_VER) || (_MSC_VER <= 600))
-#  define _halloc  halloc
-#  define _hfree   hfree
-#endif
-
-#endif /* M_I86 */
-
-#endif /* SYS16BIT */
+//#endif /* __TURBOC__ */
 
 
-#ifndef MY_ZCALLOC /* Any system without a special alloc function */
+//#ifdef M_I86
+///* Microsoft C in 16-bit mode */
 
-#endif /* MY_ZCALLOC */
+//#  define MY_ZCALLOC
 
-#endif /* !Z_SOLO */
+//#if (!defined(_MSC_VER) || (_MSC_VER <= 600))
+//#  define _halloc  halloc
+//#  define _hfree   hfree
+//#endif
+
+//#endif /* M_I86 */
+
+//#endif /* SYS16BIT */
+
+
+//#ifndef MY_ZCALLOC /* Any system without a special alloc function */
+
+//#endif /* MY_ZCALLOC */
+
+//#endif /* !Z_SOLO */
