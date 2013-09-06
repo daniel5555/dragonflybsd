@@ -31,7 +31,8 @@
 #ifndef ZLIB_H
 #define ZLIB_H
 
-#include "zconf.h"
+//#include "zconf.h"
+#include "hammer2_zlib_zconf.h"
 
 #ifdef __cplusplus
 extern "C" {
