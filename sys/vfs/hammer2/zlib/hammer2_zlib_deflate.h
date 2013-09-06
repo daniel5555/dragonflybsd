@@ -19,9 +19,9 @@
    trailer creation by deflate().  NO_GZIP would be used to avoid linking in
    the crc code when it is not needed.  For shared libraries, gzip encoding
    should be left enabled. */
-#ifndef NO_GZIP
-#  define GZIP
-#endif
+//#ifndef NO_GZIP
+//#  define GZIP
+//#endif
 
 /* ===========================================================================
  * Internal compression state.
