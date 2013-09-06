@@ -81,10 +81,10 @@ static int i915_init_phys_hws(struct drm_device *dev)
 	drm_i915_private_t *dev_priv = dev->dev_private;
 
 	/* Program Hardware Status Page */
-	DRM_UNLOCK();
+	DRM_UNLOCK(dev);
 	dev_priv->status_page_dmah =
 		drm_pci_alloc(dev, PAGE_SIZE, PAGE_SIZE, 0xffffffff);
-	DRM_LOCK();
+	DRM_LOCK(dev);
 	if (!dev_priv->status_page_dmah) {
 		DRM_ERROR("Can not allocate hardware status page\n");
 		return -ENOMEM;
@@ -148,7 +148,7 @@ static int i915_dma_cleanup(struct drm_device * dev)
 	if (dev_priv->ring.virtual_start) {
 		drm_core_ioremapfree(&dev_priv->ring.map, dev);
 		dev_priv->ring.virtual_start = NULL;
-		dev_priv->ring.map.handle = NULL;
+		dev_priv->ring.map.virtual = NULL;
 		dev_priv->ring.map.size = 0;
 	}
 
@@ -171,7 +171,7 @@ static int i915_initialize(struct drm_device * dev, drm_i915_init_t * init)
 	}
 
 	dev_priv->sarea_priv = (drm_i915_sarea_t *)
-	    ((u8 *) dev_priv->sarea->handle + init->sarea_priv_offset);
+	    ((u8 *) dev_priv->sarea->virtual + init->sarea_priv_offset);
 
 	if (init->ring_size != 0) {
 		if (dev_priv->ring.ring_obj != NULL) {
@@ -192,7 +192,7 @@ static int i915_initialize(struct drm_device * dev, drm_i915_init_t * init)
 
 		drm_core_ioremap_wc(&dev_priv->ring.map, dev);
 
-		if (dev_priv->ring.map.handle == NULL) {
+		if (dev_priv->ring.map.virtual == NULL) {
 			i915_dma_cleanup(dev);
 			DRM_ERROR("can not ioremap virtual address for"
 				  " ring buffer\n");
@@ -200,7 +200,7 @@ static int i915_initialize(struct drm_device * dev, drm_i915_init_t * init)
 		}
 	}
 
-	dev_priv->ring.virtual_start = dev_priv->ring.map.handle;
+	dev_priv->ring.virtual_start = dev_priv->ring.map.virtual;
 
 	dev_priv->cpp = init->cpp;
 	dev_priv->back_offset = init->back_offset;
@@ -226,7 +226,7 @@ static int i915_dma_resume(struct drm_device * dev)
 		return -EINVAL;
 	}
 
-	if (dev_priv->ring.map.handle == NULL) {
+	if (dev_priv->ring.map.virtual == NULL) {
 		DRM_ERROR("can not ioremap virtual address for"
 			  " ring buffer\n");
 		return -ENOMEM;
@@ -626,11 +626,11 @@ static int i915_batchbuffer(struct drm_device *dev, void *data,
 
 	RING_LOCK_TEST_WITH_RETURN(dev, file_priv);
 
-	DRM_UNLOCK();
+	DRM_UNLOCK(dev);
 	cliplen = batch->num_cliprects * sizeof(struct drm_clip_rect);
 	if (batch->num_cliprects && DRM_VERIFYAREA_READ(batch->cliprects,
 	    cliplen)) {
-		DRM_LOCK();
+		DRM_LOCK(dev);
 		return -EFAULT;
 	}
 	if (batch->num_cliprects) {
@@ -645,7 +645,7 @@ static int i915_batchbuffer(struct drm_device *dev, void *data,
 	if (sarea_priv)
 		sarea_priv->last_dispatch = READ_BREADCRUMB(dev_priv);
 
-	DRM_LOCK();
+	DRM_LOCK(dev);
 	return ret;
 }
 
@@ -664,12 +664,12 @@ static int i915_cmdbuffer(struct drm_device *dev, void *data,
 
 	RING_LOCK_TEST_WITH_RETURN(dev, file_priv);
 
-	DRM_UNLOCK();
+	DRM_UNLOCK(dev);
 	cliplen = cmdbuf->num_cliprects * sizeof(struct drm_clip_rect);
 	if (cmdbuf->num_cliprects && DRM_VERIFYAREA_READ(cmdbuf->cliprects,
 	    cliplen)) {
 		DRM_ERROR("Fault accessing cliprects\n");
-		DRM_LOCK();
+		DRM_LOCK(dev);
 		return -EFAULT;
 	}
 	if (cmdbuf->num_cliprects) {
@@ -683,7 +683,7 @@ static int i915_cmdbuffer(struct drm_device *dev, void *data,
 		vsunlock((caddr_t)cmdbuf->buf, cmdbuf->sz);
 		vsunlock((caddr_t)cmdbuf->cliprects, cliplen);
 	}
-	DRM_LOCK();
+	DRM_LOCK(dev);
 	if (ret) {
 		DRM_ERROR("i915_dispatch_cmdbuffer failed\n");
 		return ret;
@@ -803,14 +803,14 @@ static int i915_set_status_page(struct drm_device *dev, void *data,
 	dev_priv->hws_map.mtrr = 0;
 
 	drm_core_ioremap_wc(&dev_priv->hws_map, dev);
-	if (dev_priv->hws_map.handle == NULL) {
+	if (dev_priv->hws_map.virtual == NULL) {
 		i915_dma_cleanup(dev);
 		dev_priv->status_gfx_addr = 0;
 		DRM_ERROR("can not ioremap virtual address for"
 				" G33 hw status page\n");
 		return -ENOMEM;
 	}
-	dev_priv->hw_status_page = dev_priv->hws_map.handle;
+	dev_priv->hw_status_page = dev_priv->hws_map.virtual;
 
 	memset(dev_priv->hw_status_page, 0, PAGE_SIZE);
 	I915_WRITE(HWS_PGA, dev_priv->status_gfx_addr);
@@ -865,8 +865,7 @@ int i915_driver_load(struct drm_device *dev, unsigned long flags)
 		ret = i915_init_phys_hws(dev);
 		if (ret != 0) {
 			drm_rmmap(dev, dev_priv->mmio_map);
-			drm_free(dev_priv, sizeof(struct drm_i915_private),
-			    DRM_MEM_DRIVER);
+			drm_free(dev_priv, DRM_MEM_DRIVER);
 			return ret;
 		}
 	}
@@ -887,7 +886,7 @@ int i915_driver_load(struct drm_device *dev, unsigned long flags)
 
 	intel_opregion_init(dev);
 #endif
-	DRM_SPININIT(&dev_priv->user_irq_lock, "userirq");
+	spin_init(&dev_priv->user_irq_lock);
 	dev_priv->user_irq_refcount = 0;
 
 	ret = drm_vblank_init(dev, I915_NUM_PIPE);
@@ -910,10 +909,9 @@ int i915_driver_unload(struct drm_device *dev)
 #ifdef __linux__
 	intel_opregion_free(dev);
 #endif
-	DRM_SPINUNINIT(&dev_priv->user_irq_lock);
+	spin_uninit(&dev_priv->user_irq_lock);
 
-	drm_free(dev->dev_private, sizeof(drm_i915_private_t),
-		 DRM_MEM_DRIVER);
+	drm_free(dev->dev_private, DRM_MEM_DRIVER);
 
 	return 0;
 }
@@ -962,7 +960,7 @@ void i915_driver_postclose(struct drm_device *dev, struct drm_file *file_priv)
 {
 	struct drm_i915_file_private *i915_file_priv = file_priv->driver_priv;
 
-	drm_free(i915_file_priv, sizeof(*i915_file_priv), DRM_MEM_FILES);
+	drm_free(i915_file_priv, DRM_MEM_FILES);
 }
 
 struct drm_ioctl_desc i915_ioctls[] = {

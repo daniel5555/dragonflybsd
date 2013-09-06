@@ -124,7 +124,8 @@ struct protosw inetsw[] = {
 	.pr_type = SOCK_DGRAM,
 	.pr_domain = &inetdomain,
 	.pr_protocol = IPPROTO_UDP,
-	.pr_flags = PR_ATOMIC|PR_ADDR|PR_MPSAFE|PR_ASYNC_SEND,
+	.pr_flags = PR_ATOMIC|PR_ADDR|PR_MPSAFE|
+	    PR_ASYNC_SEND|PR_ASEND_HOLDTD,
 
 	.pr_input = udp_input,
 	.pr_output = NULL,
@@ -139,8 +140,9 @@ struct protosw inetsw[] = {
 	.pr_type = SOCK_STREAM,
 	.pr_domain = &inetdomain,
 	.pr_protocol = IPPROTO_TCP,
-	.pr_flags = PR_CONNREQUIRED|PR_WANTRCVD|
-	    PR_MPSAFE|PR_ASYNC_SEND|PR_ASYNC_RCVD,
+	.pr_flags = PR_CONNREQUIRED|PR_WANTRCVD|PR_MPSAFE|
+	    PR_ASYNC_SEND|PR_ASYNC_RCVD|PR_ACONN_HOLDTD|
+	    PR_RAND_INITPORT,
 
 	.pr_input = tcp_input,
 	.pr_output = NULL,

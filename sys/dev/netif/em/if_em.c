@@ -116,7 +116,7 @@
 #define DEBUG_HW 0
 
 #define EM_NAME	"Intel(R) PRO/1000 Network Connection "
-#define EM_VER	" 7.3.4"
+#define EM_VER	" 7.3.8"
 
 #define _EM_DEVICE(id, ret)	\
 	{ EM_VENDOR_ID, E1000_DEV_ID_##id, ret, EM_NAME #id EM_VER }
@@ -232,6 +232,11 @@ static const struct em_vendor_info em_vendor_info_array[] = {
 
 	EM_DEVICE(PCH2_LV_LM),
 	EM_DEVICE(PCH2_LV_V),
+
+	EM_EMX_DEVICE(PCH_LPT_I217_LM),
+	EM_EMX_DEVICE(PCH_LPT_I217_V),
+	EM_EMX_DEVICE(PCH_LPTLP_I218_LM),
+	EM_EMX_DEVICE(PCH_LPTLP_I218_V),
 
 	/* required last entry */
 	EM_DEVICE_NULL
@@ -446,7 +451,8 @@ em_attach(device_t dev)
 	    adapter->hw.mac.type == e1000_ich9lan ||
 	    adapter->hw.mac.type == e1000_ich10lan ||
 	    adapter->hw.mac.type == e1000_pchlan ||
-	    adapter->hw.mac.type == e1000_pch2lan) {
+	    adapter->hw.mac.type == e1000_pch2lan ||
+	    adapter->hw.mac.type == e1000_pch_lpt) {
 		adapter->flash_rid = EM_BAR_FLASH;
 
 		adapter->flash = bus_alloc_resource_any(dev, SYS_RES_MEMORY,
@@ -483,13 +489,9 @@ em_attach(device_t dev)
 		adapter->flags |= EM_FLAG_TSO_PULLEX;
 		/* FALL THROUGH */
 
-	case e1000_82573:
-	case e1000_82574:
-	case e1000_80003es2lan:
-		adapter->flags |= EM_FLAG_TSO;
-		break;
-
 	default:
+		if (pci_is_pcie(dev))
+			adapter->flags |= EM_FLAG_TSO;
 		break;
 	}
 
@@ -571,7 +573,8 @@ em_attach(device_t dev)
 	}
 
 	/* Set the frame limits assuming standard ethernet sized frames. */
-	adapter->max_frame_size = ETHERMTU + ETHER_HDR_LEN + ETHER_CRC_LEN;
+	adapter->hw.mac.max_frame_size =
+	    ETHERMTU + ETHER_HDR_LEN + ETHER_CRC_LEN;
 	adapter->min_frame_size = ETH_ZLEN + ETHER_CRC_LEN;
 
 	/* This controls when hardware reports transmit completion status. */
@@ -623,6 +626,9 @@ em_attach(device_t dev)
 		device_printf(dev,
 		    "PHY reset is blocked due to SOL/IDER session.\n");
 	}
+
+	/* Disable EEE */
+	adapter->hw.dev_spec.ich8lan.eee_disable = 1;
 
 	/*
 	 * Start from a known state, this is important in reading the
@@ -1066,6 +1072,7 @@ em_ioctl(struct ifnet *ifp, u_long command, caddr_t data, struct ucred *cr)
 		case e1000_ich9lan:
 		case e1000_ich10lan:
 		case e1000_pch2lan:
+		case e1000_pch_lpt:
 		case e1000_82574:
 		case e1000_82583:
 		case e1000_80003es2lan:
@@ -1093,7 +1100,7 @@ em_ioctl(struct ifnet *ifp, u_long command, caddr_t data, struct ucred *cr)
 		}
 
 		ifp->if_mtu = ifr->ifr_mtu;
-		adapter->max_frame_size =
+		adapter->hw.mac.max_frame_size =
 		    ifp->if_mtu + ETHER_HDR_LEN + ETHER_CRC_LEN;
 
 		if (ifp->if_flags & IFF_RUNNING)
@@ -2326,7 +2333,7 @@ em_reset(struct adapter *adapter)
 	switch (adapter->hw.mac.type) {
 	case e1000_82547:
 	case e1000_82547_rev_2: /* 82547: Total Packet Buffer is 40K */
-		if (adapter->max_frame_size > 8192)
+		if (adapter->hw.mac.max_frame_size > 8192)
 			pba = E1000_PBA_22K; /* 22K for Rx, 18K for Tx */
 		else
 			pba = E1000_PBA_30K; /* 30K for Rx, 10K for Tx */
@@ -2364,12 +2371,13 @@ em_reset(struct adapter *adapter)
 
 	case e1000_pchlan:
 	case e1000_pch2lan:
+	case e1000_pch_lpt:
 		pba = E1000_PBA_26K;
 		break;
 
 	default:
 		/* Devices before 82547 had a Packet Buffer of 64K.   */
-		if (adapter->max_frame_size > 8192)
+		if (adapter->hw.mac.max_frame_size > 8192)
 			pba = E1000_PBA_40K; /* 40K for Rx, 24K for Tx */
 		else
 			pba = E1000_PBA_48K; /* 48K for Rx, 16K for Tx */
@@ -2394,7 +2402,7 @@ em_reset(struct adapter *adapter)
 		(E1000_READ_REG(&adapter->hw, E1000_PBA) & 0xffff) << 10;
 
 	adapter->hw.fc.high_water = rx_buffer_size -
-				    roundup2(adapter->max_frame_size, 1024);
+	    roundup2(adapter->hw.mac.max_frame_size, 1024);
 	adapter->hw.fc.low_water = adapter->hw.fc.high_water - 1500;
 
 	if (adapter->hw.mac.type == e1000_80003es2lan)
@@ -2425,6 +2433,7 @@ em_reset(struct adapter *adapter)
 		break;
 
 	case e1000_pch2lan:
+	case e1000_pch_lpt:
 		adapter->hw.fc.high_water = 0x5C20;
 		adapter->hw.fc.low_water = 0x5048;
 		adapter->hw.fc.pause_time = 0x0650;
@@ -3075,7 +3084,7 @@ em_newbuf(struct adapter *adapter, int i, int init)
 	}
 	m->m_len = m->m_pkthdr.len = MCLBYTES;
 
-	if (adapter->max_frame_size <= MCLBYTES - ETHER_ALIGN)
+	if (adapter->hw.mac.max_frame_size <= MCLBYTES - ETHER_ALIGN)
 		m_adj(m, ETHER_ALIGN);
 
 	error = bus_dmamap_load_mbuf_segment(adapter->rxtag,
@@ -3270,7 +3279,7 @@ em_init_rx_unit(struct adapter *adapter)
 		E1000_WRITE_REG(&adapter->hw, E1000_RXDCTL(0), rxdctl | 3);
 	}
 
-	if (adapter->hw.mac.type == e1000_pch2lan) {
+	if (adapter->hw.mac.type >= e1000_pch2lan) {
 		if (ifp->if_mtu > ETHERMTU)
 			e1000_lv_jumbo_workaround_ich8lan(&adapter->hw, TRUE);
 		else
@@ -3402,11 +3411,12 @@ em_rxeof(struct adapter *adapter, int count)
 			last_byte = *(mtod(mp, caddr_t) + desc_len - 1);
 			if (TBI_ACCEPT(&adapter->hw, status,
 			    current_desc->errors, pkt_len, last_byte,
-			    adapter->min_frame_size, adapter->max_frame_size)) {
+			    adapter->min_frame_size,
+			    adapter->hw.mac.max_frame_size)) {
 				e1000_tbi_adjust_stats_82543(&adapter->hw,
 				    &adapter->stats, pkt_len,
 				    adapter->hw.mac.addr,
-				    adapter->max_frame_size);
+				    adapter->hw.mac.max_frame_size);
 				if (len > 0)
 					len--;
 			} else {
@@ -3475,7 +3485,8 @@ discard:
 			mp->m_len = mp->m_pkthdr.len = MCLBYTES;
 			mp->m_data = mp->m_ext.ext_buf;
 			mp->m_next = NULL;
-			if (adapter->max_frame_size <= (MCLBYTES - ETHER_ALIGN))
+			if (adapter->hw.mac.max_frame_size <=
+			    (MCLBYTES - ETHER_ALIGN))
 				m_adj(mp, ETHER_ALIGN);
 #endif
 			if (adapter->fmp != NULL) {
