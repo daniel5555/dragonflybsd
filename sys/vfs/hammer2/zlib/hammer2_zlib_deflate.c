@@ -420,31 +420,31 @@ deflate (z_streamp strm, int flush)
     s->last_flush = flush;
 
     /* Write the header */
-        uInt header = (Z_DEFLATED + ((s->w_bits-8)<<4)) << 8;
-        uInt level_flags;
+    uInt header = (Z_DEFLATED + ((s->w_bits-8)<<4)) << 8;
+    uInt level_flags;
 
-        if (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2)
-            level_flags = 0;
-        else if (s->level < 6)
-            level_flags = 1;
-        else if (s->level == 6)
-            level_flags = 2;
-        else
-            level_flags = 3;
-        header |= (level_flags << 6);
-        if (s->strstart != 0) header |= PRESET_DICT;
-        header += 31 - (header % 31);
+    if (s->strategy >= Z_HUFFMAN_ONLY || s->level < 2)
+        level_flags = 0;
+    else if (s->level < 6)
+        level_flags = 1;
+    else if (s->level == 6)
+        level_flags = 2;
+    else
+        level_flags = 3;
+    header |= (level_flags << 6);
+    if (s->strstart != 0) header |= PRESET_DICT;
+    header += 31 - (header % 31);
 
-        s->status = BUSY_STATE;
-        putShortMSB(s, header);
+    s->status = BUSY_STATE;
+    putShortMSB(s, header);
 
-        /* Save the adler32 of the preset dictionary: */
-        if (s->strstart != 0) {
-            putShortMSB(s, (uInt)(strm->adler >> 16));
-            putShortMSB(s, (uInt)(strm->adler & 0xffff));
-        }
-        strm->adler = adler32(0L, Z_NULL, 0);
+    /* Save the adler32 of the preset dictionary: */
+    if (s->strstart != 0) {
+        putShortMSB(s, (uInt)(strm->adler >> 16));
+        putShortMSB(s, (uInt)(strm->adler & 0xffff));
     }
+    strm->adler = adler32(0L, Z_NULL, 0);
+        
     /* Flush as much pending output as possible */
     if (s->pending != 0) {
         flush_pending(strm);
