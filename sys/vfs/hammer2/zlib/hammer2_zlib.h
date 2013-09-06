@@ -32,6 +32,7 @@
 #define ZLIB_H
 
 //#include "zconf.h"
+
 #include "hammer2_zlib_zconf.h"
 
 #ifdef __cplusplus
