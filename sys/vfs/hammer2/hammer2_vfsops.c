@@ -916,46 +916,40 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 
 	if (test_block_not_zeros_t(bp->b_data, pblksize)) {
 		int compressed_size = 0;
-		int compressed_block_size = pblksize;
-			
+		int compressed_block_size;
 		char *compressed_buffer = NULL; //to avoid a compiler warning
-		char objcache_present = 0;
 
 		KKASSERT(pblksize / 2 - sizeof(int) <= 32768);
 		
-		if (ipdata->reserved85 < 8 || ipdata->reserved85%8 == 0) {
+		if (ipdata->reserved85 < 8 || (ipdata->reserved85 & 7) == 0) {
 			if (comp_method == HAMMER2_COMP_LZ4) {
 				//kprintf("LZ4 compression activated.\n");
-				int *c_size;
 				compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
-				objcache_present = 1;
 				compressed_size = LZ4_compress_limitedOutput(bp->b_data,
 				    &compressed_buffer[sizeof(int)], pblksize,
-				    pblksize/2 - sizeof(int));
-				c_size = (int*)compressed_buffer;
-				*c_size = compressed_size;
+				    pblksize / 2 - sizeof(int));
+				*(int *)compressed_buffer = compressed_size;
+				if (compressed_size)
+					compressed_size += sizeof(int);	/* our added overhead */
 				//kprintf("Compressed size = %d.\n", compressed_size);
-			}
-			else if (comp_method == HAMMER2_COMP_ZLIB) {
+			} else if (comp_method == HAMMER2_COMP_ZLIB) {
 				//kprintf("ZLIB compression activated.\n");
 				z_stream strm_compress;
 				int ret;
 
-				ret = deflateInit(&strm_compress, 9);
+				ret = deflateInit(&strm_compress, 8);
 				if (ret != Z_OK)
 					kprintf("HAMMER2 ZLIB: fatal error on deflateInit.\n");
 				
 				compressed_buffer = objcache_get(cache_buffer_write, M_INTWAIT);
-				objcache_present = 1;
 				strm_compress.next_in = bp->b_data;
 				strm_compress.avail_in = pblksize;
 				strm_compress.next_out = compressed_buffer;
-				strm_compress.avail_out = pblksize/2;
+				strm_compress.avail_out = pblksize / 2;
 				ret = deflate(&strm_compress, Z_FINISH);
 				if (ret == Z_STREAM_END) {
-					compressed_size = pblksize/2 - strm_compress.avail_out;
-				}
-				else {
+					compressed_size = pblksize / 2 - strm_compress.avail_out;
+				} else {
 					compressed_size = 0;
 				}
 				ret = deflateEnd(&strm_compress);
@@ -968,32 +962,28 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			}
 		}
 		if (compressed_size == 0) { //compression failed or turned off
-			compressed_size = pblksize;
+			compressed_block_size = pblksize;	/* safety */
 			++(ipdata->reserved85);
-			if (ipdata->reserved85 == 16384) //protection against overflows
+			if (ipdata->reserved85 == 255) { //protection against overflows
 				ipdata->reserved85 = 8; //not sure if makes sense
+			}
 		} else {
 			ipdata->reserved85 = 0;
-			if (compressed_size <= 1024 - sizeof(int)) {
+			if (compressed_size <= 1024) {
 				compressed_block_size = 1024;
-			}
-			else if (compressed_size <= 2048 - sizeof(int)) {
+			} else if (compressed_size <= 2048) {
 				compressed_block_size = 2048;
-			}
-			else if (compressed_size <= 4096 - sizeof(int)) {
+			} else if (compressed_size <= 4096) {
 				compressed_block_size = 4096;
-			}
-			else if (compressed_size <= 8192 - sizeof(int)) {
+			} else if (compressed_size <= 8192) {
 				compressed_block_size = 8192;
-			}
-			else if (compressed_size <= 16384 - sizeof(int)) {
+			} else if (compressed_size <= 16384) {
 				compressed_block_size = 16384;
-			}
-			else if (compressed_size <= 32768 - sizeof(int)) {
+			} else if (compressed_size <= 32768) {
 				compressed_block_size = 32768;
-			}
-			else {
+			} else {
 				panic("Weird compressed_size value.\n");
+				compressed_block_size = pblksize;	/* NOT REACHED */
 			}
 		}
 
@@ -1005,8 +995,6 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 		if (*errorp) {
 			kprintf("WRITE PATH: An error occurred while "
 				"assigning physical space.\n");
-			if (objcache_present)
-				objcache_put(cache_buffer_write, compressed_buffer);
 			KKASSERT(chain == NULL);
 		} else {
 			/* Get device offset */
@@ -1015,11 +1003,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			hammer2_off_t peof;
 			size_t boff;
 			size_t psize;
-			
-			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
-			
-			/* Obtain the related device buffer cache. */
-			struct buf *dbp; //create physical buffer
+			struct buf *dbp;
 			
 			KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
 			
@@ -1038,10 +1022,12 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
 				peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
 				int temp_check = HAMMER2_DEC_CHECK(chain->bref.methods);
-				
-				if (psize == compressed_block_size) { //use the size that fits compressed info
-					dbp = getblk(chain->hmp->devvp, pbase,
-						psize, 0, 0);
+
+				/*
+				 * Optimize out the read-before-write if possible.
+				 */
+				if (compressed_block_size == psize) {
+					dbp = getblk(chain->hmp->devvp, pbase, psize, 0, 0);
 				} else {
 					*errorp = bread(chain->hmp->devvp, pbase, psize, &dbp);
 					if (*errorp) {
@@ -1049,15 +1035,24 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 						break;
 					}
 				}
-				if (compressed_size < pblksize) {
-					chain->bref.methods = HAMMER2_ENC_COMP(comp_method)
-						+ HAMMER2_ENC_CHECK(temp_check);
+
+				/*
+				 * When loading the block make sure we don't leave garbage
+				 * after the compressed data.
+				 */
+				if (compressed_size) {
+					chain->bref.methods = HAMMER2_ENC_COMP(comp_method) +
+							      HAMMER2_ENC_CHECK(temp_check);
 					bcopy(compressed_buffer, dbp->b_data + boff,
-						compressed_block_size); //need to copy the whole block
+					      compressed_size);
+					if (compressed_size != compressed_block_size) {
+						bzero(dbp->b_data + boff + compressed_size,
+						      compressed_block_size - compressed_size);
+					}
 				} else {
-					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE)
-						+ HAMMER2_ENC_CHECK(temp_check);
-					bcopy(bp->b_data, dbp->b_data + boff, compressed_size);
+					chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) +
+							      HAMMER2_ENC_CHECK(temp_check);
+					bcopy(bp->b_data, dbp->b_data + boff, pblksize);
 				}
 
 				/*
@@ -1092,10 +1087,10 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				break;
 			}
 			
-			if (objcache_present)
-				objcache_put(cache_buffer_write, compressed_buffer);
 			hammer2_chain_unlock(chain);
 		}
+		if (compressed_buffer)
+			objcache_put(cache_buffer_write, compressed_buffer);
 	} else {
 		zero_write_t(bp, trans, ip, ipdata, parentp, lbase);
 	}
