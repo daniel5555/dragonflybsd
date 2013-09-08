@@ -122,11 +122,6 @@
 #  define z_const
 #endif
 
-/* Some Mac compilers merge all .h files incorrectly: */
-//#if defined(__MWERKS__)||defined(applec)||defined(THINK_C)||defined(__SC__)
-//#  define NO_DUMMY_DECL
-//#endif
-
 /* Maximum value for memLevel in deflateInit2 */
 #ifndef MAX_MEM_LEVEL
 #  ifdef MAXSEG_64K
@@ -271,11 +266,7 @@ typedef uLong FAR uLongf;
 #if !defined(_WIN32) && defined(Z_LARGE64)
 #  define z_off64_t off64_t
 #else
-//#  if defined(_WIN32) && !defined(__GNUC__)
-//#    define z_off64_t __int64
-//#  else
 #    define z_off64_t z_off_t
-//#  endif
 #endif
 
 /* MVS linker does not support external names larger than 8 bytes */
