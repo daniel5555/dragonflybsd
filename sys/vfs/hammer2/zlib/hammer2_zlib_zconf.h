@@ -209,7 +209,7 @@ typedef uLong FAR uLongf;
    typedef Byte       *voidp;
 #endif
 
-#if !defined(Z_U4) /*&& !defined(Z_SOLO)*/ && defined(STDC)
+#if !defined(Z_U4) && defined(STDC)
 #  include <limits.h>
 #  if (UINT_MAX == 0xffffffffUL)
 #    define Z_U4 unsigned
@@ -235,9 +235,7 @@ typedef uLong FAR uLongf;
 #endif
 
 #if defined(STDC) || defined(Z_HAVE_STDARG_H)
-//#  ifndef Z_SOLO
 #    include <stdarg.h>         /* for va_list */
-//#  endif
 #endif
 
 /* a little trick to accommodate both "#define _LARGEFILE64_SOURCE" and
@@ -266,12 +264,6 @@ typedef uLong FAR uLongf;
 #  define Z_WANT64
 #endif
 
-//#if !defined(SEEK_SET) && !defined(Z_SOLO)
-//#  define SEEK_SET        0       /* Seek from beginning of file.  */
-//#  define SEEK_CUR        1       /* Seek from current position.  */
-//#  define SEEK_END        2       /* Set file pointer to EOF plus "offset" */
-//#endif
-
 #ifndef z_off_t
 #  define z_off_t long
 #endif
@@ -279,7 +271,7 @@ typedef uLong FAR uLongf;
 #if !defined(_WIN32) && defined(Z_LARGE64)
 #  define z_off64_t off64_t
 #else
-#  if defined(_WIN32) && !defined(__GNUC__)/* && !defined(Z_SOLO)*/
+#  if defined(_WIN32) && !defined(__GNUC__)
 #    define z_off64_t __int64
 #  else
 #    define z_off64_t z_off_t
