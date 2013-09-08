@@ -68,38 +68,6 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 
         /* target dependencies */
 
-//#ifdef AMIGA
-//#  define OS_CODE  0x01
-//#endif
-
-//#if defined(VAXC) || defined(VMS)
-//#  define OS_CODE  0x02
-//#  define F_OPEN(name, mode) \
-     //fopen((name), (mode), "mbc=60", "ctx=stm", "rfm=fix", "mrs=512")
-//#endif
-
-//#if defined(ATARI) || defined(atarist)
-//#  define OS_CODE  0x05
-//#endif
-
-//#ifdef TOPS20
-//#  define OS_CODE  0x0a
-//#endif
-
-//#ifdef WIN32
-//#  ifndef __CYGWIN__  /* Cygwin is Unix, not Win32 */
-//#    define OS_CODE  0x0b
-//#  endif
-//#endif
-
-//#ifdef __50SERIES /* Prime/PRIMOS */
-//#  define OS_CODE  0x0f
-//#endif
-
-//#if defined(_BEOS_) || defined(RISCOS)
-//#  define fdopen(fd,mode) NULL /* No fdopen() */
-//#endif
-
 #if (defined(_MSC_VER) && (_MSC_VER > 600)) && !defined __INTERIX
 #  if defined(_WIN32_WCE)
 #    define fdopen(fd,mode) NULL /* No fdopen() */
