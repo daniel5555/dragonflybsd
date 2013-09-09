@@ -1275,9 +1275,10 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	 * to synchronize against HAMMER2_CHAIN_MODIFIED_AUX.
 	 */
 	hammer2_voldata_lock(hmp);
-	if (hmp->vchain.flags & (HAMMER2_CHAIN_MODIFIED |
+	if ((hmp->vchain.flags | hmp->fchain.flags) & (HAMMER2_CHAIN_MODIFIED |
 				 HAMMER2_CHAIN_SUBMODIFIED)) {
 		hammer2_voldata_unlock(hmp, 0);
+		hammer2_vfs_sync(mp, MNT_WAIT);
 		hammer2_vfs_sync(mp, MNT_WAIT);
 	} else {
 		hammer2_voldata_unlock(hmp, 0);
