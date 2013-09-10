@@ -497,6 +497,7 @@ hammer2_vop_setattr(struct vop_setattr_args *ap)
 	if (ip->pmp->ronly)
 		return(EROFS);
 
+	hammer2_chain_memory_wait(ip->pmp);
 	hammer2_trans_init(&trans, ip->pmp, 0);
 	chain = hammer2_inode_lock_ex(ip);
 	ipdata = &chain->data->ipdata;
@@ -1351,6 +1352,7 @@ hammer2_vop_nmkdir(struct vop_nmkdir_args *ap)
 	name = ncp->nc_name;
 	name_len = ncp->nc_nlen;
 
+	hammer2_chain_memory_wait(dip->pmp);
 	hammer2_trans_init(&trans, dip->pmp, 0);
 	nip = hammer2_inode_create(&trans, dip, ap->a_vap, ap->a_cred,
 				   name, name_len, &chain, &error);
@@ -1548,6 +1550,7 @@ hammer2_vop_nlink(struct vop_nlink_args *ap)
 	 * returned chain is locked.
 	 */
 	ip = VTOI(ap->a_vp);
+	hammer2_chain_memory_wait(ip->pmp);
 	hammer2_trans_init(&trans, ip->pmp, 0);
 
 	chain = hammer2_inode_lock_ex(ip);
@@ -1604,6 +1607,7 @@ hammer2_vop_ncreate(struct vop_ncreate_args *ap)
 	ncp = ap->a_nch->ncp;
 	name = ncp->nc_name;
 	name_len = ncp->nc_nlen;
+	hammer2_chain_memory_wait(dip->pmp);
 	hammer2_trans_init(&trans, dip->pmp, 0);
 
 	nip = hammer2_inode_create(&trans, dip, ap->a_vap, ap->a_cred,
@@ -1647,6 +1651,7 @@ hammer2_vop_nsymlink(struct vop_nsymlink_args *ap)
 	ncp = ap->a_nch->ncp;
 	name = ncp->nc_name;
 	name_len = ncp->nc_nlen;
+	hammer2_chain_memory_wait(dip->pmp);
 	hammer2_trans_init(&trans, dip->pmp, 0);
 
 	ap->a_vap->va_type = VLNK;	/* enforce type */
@@ -1734,6 +1739,7 @@ hammer2_vop_nremove(struct vop_nremove_args *ap)
 	ncp = ap->a_nch->ncp;
 	name = ncp->nc_name;
 	name_len = ncp->nc_nlen;
+	hammer2_chain_memory_wait(dip->pmp);
 	hammer2_trans_init(&trans, dip->pmp, 0);
 	error = hammer2_unlink_file(&trans, dip, name, name_len, 0, NULL);
 	hammer2_trans_done(&trans);
@@ -1765,6 +1771,7 @@ hammer2_vop_nrmdir(struct vop_nrmdir_args *ap)
 	name = ncp->nc_name;
 	name_len = ncp->nc_nlen;
 
+	hammer2_chain_memory_wait(dip->pmp);
 	hammer2_trans_init(&trans, dip->pmp, 0);
 	error = hammer2_unlink_file(&trans, dip, name, name_len, 1, NULL);
 	hammer2_trans_done(&trans);
@@ -1814,6 +1821,7 @@ hammer2_vop_nrename(struct vop_nrename_args *ap)
 	tname = tncp->nc_name;
 	tname_len = tncp->nc_nlen;
 
+	hammer2_chain_memory_wait(tdip->pmp);
 	hammer2_trans_init(&trans, tdip->pmp, 0);
 
 	/*

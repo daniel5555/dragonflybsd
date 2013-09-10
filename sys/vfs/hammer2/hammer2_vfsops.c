@@ -567,7 +567,7 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	ccms_domain_init(&pmp->ccms_dom);
 	++hmp->pmp_count;
 	lockmgr(&hammer2_mntlk, LK_RELEASE);
-	kprintf("hammer2_mount hmp=%p pmpcnt=%d\n", hmp, hmp->pmp_count);
+	kprintf("hammer2_mount hmp=%p pmp=%p pmpcnt=%d\n", hmp, pmp, hmp->pmp_count);
 
 	mp->mnt_flag = MNT_LOCAL;
 	mp->mnt_kern_flag |= MNTK_ALL_MPSAFE;	/* all entry pts are SMP */
@@ -633,6 +633,11 @@ hammer2_vfs_mount(struct mount *mp, char *path, caddr_t data,
 	pmp->mount_cluster->rchain = rchain;	/* left held & unlocked */
 	pmp->iroot = hammer2_inode_get(pmp, NULL, rchain);
 	hammer2_inode_ref(pmp->iroot);		/* ref for pmp->iroot */
+
+	KKASSERT(rchain->pmp == NULL);		/* bootstrap the tracking pmp for rchain */
+	rchain->pmp = pmp;
+	atomic_add_long(&pmp->inmem_chains, 1);
+
 	hammer2_inode_unlock_ex(pmp->iroot, rchain);
 
 	kprintf("iroot %p\n", pmp->iroot);
@@ -1275,8 +1280,8 @@ hammer2_vfs_unmount(struct mount *mp, int mntflags)
 	 * to synchronize against HAMMER2_CHAIN_MODIFIED_AUX.
 	 */
 	hammer2_voldata_lock(hmp);
-	if ((hmp->vchain.flags | hmp->fchain.flags) & (HAMMER2_CHAIN_MODIFIED |
-				 HAMMER2_CHAIN_SUBMODIFIED)) {
+	if ((hmp->vchain.flags | hmp->fchain.flags) &
+	    (HAMMER2_CHAIN_MODIFIED | HAMMER2_CHAIN_SUBMODIFIED)) {
 		hammer2_voldata_unlock(hmp, 0);
 		hammer2_vfs_sync(mp, MNT_WAIT);
 		hammer2_vfs_sync(mp, MNT_WAIT);
@@ -1521,7 +1526,15 @@ hammer2_vfs_sync(struct mount *mp, int waitfor)
 
 	pmp = MPTOPMP(mp);
 
-	flags = VMSC_GETVP;
+	/*
+	 * We can't acquire locks on existing vnodes while in a transaction
+	 * without risking a deadlock.  This assumes that vfsync() can be
+	 * called without the vnode locked (which it can in DragonFly).
+	 * Otherwise we'd have to implement a multi-pass or flag the lock
+	 * failures and retry.
+	 */
+	/*flags = VMSC_GETVP;*/
+	flags = 0;
 	if (waitfor & MNT_LAZY)
 		flags |= VMSC_ONEPASS;
 

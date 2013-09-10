@@ -72,6 +72,7 @@ static int hammer2_indirect_optimize;	/* XXX SYSCTL */
 static hammer2_chain_t *hammer2_chain_create_indirect(
 		hammer2_trans_t *trans, hammer2_chain_t *parent,
 		hammer2_key_t key, int keybits, int for_type, int *errorp);
+static void hammer2_chain_drop_data(hammer2_chain_t *chain, int lastdrop);
 static void adjreadcounter(hammer2_blockref_t *bref, size_t bytes);
 
 /*
@@ -164,8 +165,8 @@ hammer2_chain_setsubmod(hammer2_trans_t *trans, hammer2_chain_t *chain)
  * NOTE: Returns a referenced but unlocked (because there is no core) chain.
  */
 hammer2_chain_t *
-hammer2_chain_alloc(hammer2_mount_t *hmp, hammer2_trans_t *trans,
-		    hammer2_blockref_t *bref)
+hammer2_chain_alloc(hammer2_mount_t *hmp, hammer2_pfsmount_t *pmp,
+		    hammer2_trans_t *trans, hammer2_blockref_t *bref)
 {
 	hammer2_chain_t *chain;
 	u_int bytes = 1U << (int)(bref->data_off & HAMMER2_OFF_MASK_RADIX);
@@ -179,7 +180,16 @@ hammer2_chain_alloc(hammer2_mount_t *hmp, hammer2_trans_t *trans,
 	case HAMMER2_BREF_TYPE_FREEMAP_NODE:
 	case HAMMER2_BREF_TYPE_DATA:
 	case HAMMER2_BREF_TYPE_FREEMAP_LEAF:
+		/*
+		 * Chain's are really only associated with the hmp but we maintain
+		 * a pmp association for per-mount memory tracking purposes.  The
+		 * pmp can be NULL.
+		 */
 		chain = kmalloc(sizeof(*chain), hmp->mchain, M_WAITOK | M_ZERO);
+		if (pmp) {
+			chain->pmp = pmp;
+			atomic_add_long(&pmp->inmem_chains, 1);
+		}
 		break;
 	case HAMMER2_BREF_TYPE_VOLUME:
 	case HAMMER2_BREF_TYPE_FREEMAP:
@@ -303,6 +313,7 @@ static
 hammer2_chain_t *
 hammer2_chain_lastdrop(hammer2_chain_t *chain)
 {
+	hammer2_pfsmount_t *pmp;
 	hammer2_mount_t *hmp;
 	hammer2_chain_core_t *above;
 	hammer2_chain_core_t *core;
@@ -329,6 +340,7 @@ hammer2_chain_lastdrop(hammer2_chain_t *chain)
 	}
 
 	hmp = chain->hmp;
+	pmp = chain->pmp;	/* can be NULL */
 	rdrop1 = NULL;
 	rdrop2 = NULL;
 
@@ -433,10 +445,41 @@ hammer2_chain_lastdrop(hammer2_chain_t *chain)
 	KKASSERT((chain->flags & (HAMMER2_CHAIN_MOVED |
 				  HAMMER2_CHAIN_MODIFIED)) == 0);
 
+	hammer2_chain_drop_data(chain, 1);
+
+	KKASSERT(chain->bp == NULL);
+	chain->hmp = NULL;
+
+	if (chain->flags & HAMMER2_CHAIN_ALLOCATED) {
+		chain->flags &= ~HAMMER2_CHAIN_ALLOCATED;
+		kfree(chain, hmp->mchain);
+		if (pmp) {
+			atomic_add_long(&pmp->inmem_chains, -1);
+			hammer2_chain_memory_wakeup(pmp);
+		}
+	}
+	if (rdrop1 && rdrop2) {
+		hammer2_chain_drop(rdrop1);
+		return(rdrop2);
+	} else if (rdrop1)
+		return(rdrop1);
+	else
+		return(rdrop2);
+}
+
+/*
+ * On either last lock release or last drop
+ */
+static void
+hammer2_chain_drop_data(hammer2_chain_t *chain, int lastdrop)
+{
+	hammer2_mount_t *hmp = chain->hmp;
+
 	switch(chain->bref.type) {
 	case HAMMER2_BREF_TYPE_VOLUME:
 	case HAMMER2_BREF_TYPE_FREEMAP:
-		chain->data = NULL;
+		if (lastdrop)
+			chain->data = NULL;
 		break;
 	case HAMMER2_BREF_TYPE_INODE:
 		if (chain->data) {
@@ -454,22 +497,8 @@ hammer2_chain_lastdrop(hammer2_chain_t *chain)
 		KKASSERT(chain->data == NULL);
 		break;
 	}
-
-	KKASSERT(chain->bp == NULL);
-	chain->hmp = NULL;
-
-	if (chain->flags & HAMMER2_CHAIN_ALLOCATED) {
-		chain->flags &= ~HAMMER2_CHAIN_ALLOCATED;
-		kfree(chain, hmp->mchain);
-	}
-	if (rdrop1 && rdrop2) {
-		hammer2_chain_drop(rdrop1);
-		return(rdrop2);
-	} else if (rdrop1)
-		return(rdrop1);
-	else
-		return(rdrop2);
 }
+
 
 /*
  * Ref and lock a chain element, acquiring its data with I/O if necessary,
@@ -915,6 +944,8 @@ hammer2_chain_unlock(hammer2_chain_t *chain)
 	 */
 	if (chain->bp == NULL) {
 		atomic_clear_int(&chain->flags, HAMMER2_CHAIN_DIRTYBP);
+		if ((chain->flags & HAMMER2_CHAIN_MODIFIED) == 0)
+			hammer2_chain_drop_data(chain, 0);
 		ccms_thread_unlock_upgraded(&core->cst, ostate);
 		hammer2_chain_drop(chain);
 		return;
@@ -1632,7 +1663,7 @@ retry:
 	 *
 	 * The locking operation we do later will issue I/O to read it.
 	 */
-	chain = hammer2_chain_alloc(hmp, NULL, bref);
+	chain = hammer2_chain_alloc(hmp, parent->pmp, NULL, bref);
 	hammer2_chain_core_alloc(chain, NULL);	/* ref'd chain returned */
 
 	/*
@@ -2336,7 +2367,7 @@ hammer2_chain_create(hammer2_trans_t *trans, hammer2_chain_t **parentp,
 		dummy.keybits = keybits;
 		dummy.data_off = hammer2_getradix(bytes);
 		dummy.methods = parent->bref.methods;
-		chain = hammer2_chain_alloc(hmp, trans, &dummy);
+		chain = hammer2_chain_alloc(hmp, parent->pmp, trans, &dummy);
 		hammer2_chain_core_alloc(chain, NULL);
 
 		atomic_set_int(&chain->flags, HAMMER2_CHAIN_INITIAL);
@@ -2615,7 +2646,7 @@ hammer2_chain_duplicate(hammer2_trans_t *trans, hammer2_chain_t *parent, int i,
 	hmp = ochain->hmp;
 	if (bref == NULL)
 		bref = &ochain->bref;
-	nchain = hammer2_chain_alloc(hmp, trans, bref);
+	nchain = hammer2_chain_alloc(hmp, ochain->pmp, trans, bref);
 	hammer2_chain_core_alloc(nchain, ochain->core);
 	bytes = (hammer2_off_t)1 <<
 		(int)(bref->data_off & HAMMER2_OFF_MASK_RADIX);
@@ -2806,7 +2837,7 @@ hammer2_chain_delete_duplicate(hammer2_trans_t *trans, hammer2_chain_t **chainp,
 	/*
 	 * First create a duplicate of the chain structure
 	 */
-	nchain = hammer2_chain_alloc(hmp, trans, &ochain->bref);    /* 1 ref */
+	nchain = hammer2_chain_alloc(hmp, ochain->pmp, trans, &ochain->bref);    /* 1 ref */
 	if (flags & HAMMER2_DELDUP_RECORE)
 		hammer2_chain_core_alloc(nchain, NULL);
 	else
@@ -3266,7 +3297,7 @@ hammer2_chain_create_indirect(hammer2_trans_t *trans, hammer2_chain_t *parent,
 	dummy.bref.data_off = hammer2_getradix(nbytes);
 	dummy.bref.methods = parent->bref.methods;
 
-	ichain = hammer2_chain_alloc(hmp, trans, &dummy.bref);
+	ichain = hammer2_chain_alloc(hmp, parent->pmp, trans, &dummy.bref);
 	atomic_set_int(&ichain->flags, HAMMER2_CHAIN_INITIAL);
 	hammer2_chain_core_alloc(ichain, NULL);
 	icore = ichain->core;
@@ -3712,6 +3743,42 @@ void
 hammer2_chain_wait(hammer2_chain_t *chain)
 {
 	tsleep(chain, 0, "chnflw", 1);
+}
+
+/*
+ * Manage excessive memory resource use for chain and related
+ * structures.
+ */
+void
+hammer2_chain_memory_wait(hammer2_pfsmount_t *pmp)
+{
+#if 0
+	while (pmp->inmem_chains > desiredvnodes / 10 &&
+	       pmp->inmem_chains > pmp->mp->mnt_nvnodelistsize * 2) {
+		kprintf("w");
+		speedup_syncer();
+		pmp->inmem_waiting = 1;
+		tsleep(&pmp->inmem_waiting, 0, "chnmem", hz);
+	}
+#endif
+#if 0
+	if (pmp->inmem_chains > desiredvnodes / 10 &&
+	    pmp->inmem_chains > pmp->mp->mnt_nvnodelistsize * 7 / 4) {
+		speedup_syncer();
+	}
+#endif
+}
+
+void
+hammer2_chain_memory_wakeup(hammer2_pfsmount_t *pmp)
+{
+	if (pmp->inmem_waiting &&
+	    (pmp->inmem_chains <= desiredvnodes / 10 ||
+	     pmp->inmem_chains <= pmp->mp->mnt_nvnodelistsize * 2)) {
+		kprintf("s");
+		pmp->inmem_waiting = 0;
+		wakeup(&pmp->inmem_waiting);
+	}
 }
 
 static

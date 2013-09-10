@@ -146,6 +146,7 @@ struct hammer2_chain {
 	struct hammer2_chain	*next_parent;
 	struct hammer2_state	*state;		/* if active cache msg */
 	struct hammer2_mount	*hmp;
+	struct hammer2_pfsmount	*pmp;		/* can be NULL */
 
 	hammer2_tid_t	modify_tid;		/* snapshot/flush filter */
 	hammer2_tid_t	delete_tid;
@@ -195,6 +196,7 @@ RB_PROTOTYPE(hammer2_chain_tree, hammer2_chain, rbnode, hammer2_chain_cmp);
 #define HAMMER2_CHAIN_ONRBTREE		0x00004000	/* on parent RB tree */
 #define HAMMER2_CHAIN_SNAPSHOT		0x00008000	/* snapshot special */
 #define HAMMER2_CHAIN_EMBEDDED		0x00010000	/* embedded data */
+#define HAMMER2_CHAIN_HARDLINK		0x00020000	/* converted to hardlink */
 
 /*
  * Flags passed to hammer2_chain_lookup() and hammer2_chain_next()
@@ -458,6 +460,9 @@ struct hammer2_pfsmount {
 	kdmsg_iocom_t		iocom;
 	struct spinlock		inum_spin;	/* inumber lookup */
 	struct hammer2_inode_tree inum_tree;
+	long			inmem_inodes;
+	long			inmem_chains;
+	int			inmem_waiting;
 };
 
 typedef struct hammer2_pfsmount hammer2_pfsmount_t;
@@ -545,7 +550,7 @@ hammer2_chain_refactor_test(hammer2_chain_t *chain, int traverse_hlink)
 	}
 	if (traverse_hlink &&
 	    chain->bref.type == HAMMER2_BREF_TYPE_INODE &&
-	    chain->data->ipdata.type == HAMMER2_OBJTYPE_HARDLINK &&
+	    (chain->flags & HAMMER2_CHAIN_HARDLINK) &&
 	    chain->next_parent &&
 	    (chain->next_parent->flags & HAMMER2_CHAIN_SNAPSHOT) == 0) {
 		return(1);
@@ -671,9 +676,8 @@ int hammer2_hardlink_find(hammer2_inode_t *dip,
  * hammer2_chain.c
  */
 void hammer2_modify_volume(hammer2_mount_t *hmp);
-hammer2_chain_t *hammer2_chain_alloc(hammer2_mount_t *hmp,
-				hammer2_trans_t *trans,
-				hammer2_blockref_t *bref);
+hammer2_chain_t *hammer2_chain_alloc(hammer2_mount_t *hmp, hammer2_pfsmount_t *pmp,
+				hammer2_trans_t *trans, hammer2_blockref_t *bref);
 void hammer2_chain_core_alloc(hammer2_chain_t *chain,
 				hammer2_chain_core_t *core);
 void hammer2_chain_ref(hammer2_chain_t *chain);
@@ -731,6 +735,9 @@ void hammer2_chain_delete_duplicate(hammer2_trans_t *trans,
 void hammer2_chain_flush(hammer2_trans_t *trans, hammer2_chain_t *chain);
 void hammer2_chain_commit(hammer2_trans_t *trans, hammer2_chain_t *chain);
 void hammer2_chain_setsubmod(hammer2_trans_t *trans, hammer2_chain_t *chain);
+
+void hammer2_chain_memory_wait(hammer2_pfsmount_t *pmp);
+void hammer2_chain_memory_wakeup(hammer2_pfsmount_t *pmp);
 
 /*
  * hammer2_trans.c

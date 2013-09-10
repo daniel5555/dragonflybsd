@@ -83,8 +83,8 @@ hammer2_inode_lock_ex(hammer2_inode_t *ip)
 	 */
 again:
 	chain = ip->chain;
+	spin_lock(&chain->core->cst.spin);
 	if (hammer2_chain_refactor_test(chain, 1)) {
-		spin_lock(&chain->core->cst.spin);
 		while (hammer2_chain_refactor_test(chain, 1))
 			chain = chain->next_parent;
 		if (ip->chain != chain) {
@@ -95,6 +95,8 @@ again:
 		} else {
 			spin_unlock(&chain->core->cst.spin);
 		}
+	} else {
+		spin_unlock(&chain->core->cst.spin);
 	}
 
 	KKASSERT(chain != NULL);	/* for now */
@@ -277,6 +279,7 @@ hammer2_inode_drop(hammer2_inode_t *ip)
 					KKASSERT((ip->flags &
 						  HAMMER2_INODE_SROOT) == 0);
 					kfree(ip, pmp->minode);
+					atomic_add_long(&pmp->inmem_inodes, -1);
 				} else {
 					KKASSERT(ip->flags &
 						 HAMMER2_INODE_SROOT);
@@ -482,6 +485,8 @@ again:
 	 */
 	if (pmp) {
 		nip = kmalloc(sizeof(*nip), pmp->minode, M_WAITOK | M_ZERO);
+		atomic_add_long(&pmp->inmem_inodes, 1);
+		hammer2_chain_memory_wakeup(pmp);
 	} else {
 		nip = kmalloc(sizeof(*nip), M_HAMMER2, M_WAITOK | M_ZERO);
 		nip->flags = HAMMER2_INODE_SROOT;
@@ -962,6 +967,7 @@ hammer2_inode_connect(hammer2_trans_t *trans, int hlink,
 				     HAMMER2_MODIFY_ASSERTNOCOPY);
 		KKASSERT(name_len < HAMMER2_INODE_MAXNAME);
 		ipdata = &nchain->data->ipdata;
+		atomic_set_int(&nchain->flags, HAMMER2_CHAIN_HARDLINK);
 		bcopy(name, ipdata->filename, name_len);
 		ipdata->name_key = lhc;
 		ipdata->name_len = name_len;
@@ -1043,6 +1049,12 @@ hammer2_inode_repoint(hammer2_inode_t *ip, hammer2_inode_t *pip,
 		hammer2_chain_ref(nchain);
 	if (ochain)
 		hammer2_chain_drop(ochain);
+
+	/*
+	 * Flag the chain for the refactor test
+	 */
+	if (nchain && nchain->data && nchain->data->ipdata.type == HAMMER2_OBJTYPE_HARDLINK)
+		atomic_set_int(&nchain->flags, HAMMER2_CHAIN_HARDLINK);
 
 	/*
 	 * Repoint ip->pip if requested (non-NULL pip).
@@ -1326,6 +1338,7 @@ hammer2_hardlink_consolidate(hammer2_trans_t *trans, hammer2_inode_t *ip,
 			hammer2_chain_modify(trans, &chain, 0);
 			hammer2_chain_delete_duplicate(trans, &chain,
 						       HAMMER2_DELDUP_RECORE);
+			atomic_set_int(&chain->flags, HAMMER2_CHAIN_HARDLINK);
 			ipdata = &chain->data->ipdata;
 			ipdata->target_type = ipdata->type;
 			ipdata->type = HAMMER2_OBJTYPE_HARDLINK;
