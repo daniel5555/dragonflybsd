@@ -96,6 +96,8 @@ Note : this source file requires "lz4_encoder.h"
 //// Little Endian assumed. PDP Endian and other very rare endian format are unsupported.
 //#endif
 
+#include <endian.h>
+
 // Unaligned memory access is automatically enabled for "common" CPU,
 // such as x86.
 // For others CPU, the compiler will be more cautious, and insert extra 
