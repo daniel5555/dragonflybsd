@@ -68,10 +68,10 @@ Note : this source file requires "lz4_encoder.h"
 // CPU Feature Detection
 //**************************************
 // 32 or 64 bits ?
-#if (defined(__x86_64__) /*|| defined(_M_X64) || defined(_WIN64) \
+#if (defined(__x86_64__) || defined(_M_X64) || defined(_WIN64) \
   || defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) \
   || defined(__64BIT__) || defined(_LP64) || defined(__LP64__) \
-  || defined(__ia64) || defined(__itanium__) || defined(_M_IA64)*/ )   // Detects 64 bits mode
+  || defined(__ia64) || defined(__itanium__) || defined(_M_IA64))   // Detects 64 bits mode
 #  define LZ4_ARCH64 1
 #else
 #  define LZ4_ARCH64 0
@@ -143,8 +143,6 @@ Note : this source file requires "lz4_encoder.h"
 #else
 #  define lz4_bswap16(x) ((unsigned short int) ((((x) >> 8) & 0xffu) | (((x) & 0xffu) << 8)))
 #endif
-
-//#define lz4_bswap16(x) ((unsigned short int) ((((x) >> 8) & 0xffu) | (((x) & 0xffu) << 8)))
 
 #if (GCC_VERSION >= 302) || (__INTEL_COMPILER >= 800) || defined(__clang__)
 #  define expect(expr,value)    (__builtin_expect ((expr),(value)) )
