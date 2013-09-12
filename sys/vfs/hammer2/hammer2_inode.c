@@ -590,16 +590,11 @@ retry:
 		chain = NULL;
 		++lhc;
 	}
-	if (error == 0) {
-		int temp_check = HAMMER2_DEC_CHECK(parent->bref.methods);
-		int temp_comp = HAMMER2_DEC_COMP(parent->bref.methods);
-		parent->bref.methods = HAMMER2_ENC_COMP(dipdata->comp_algo) + HAMMER2_ENC_CHECK(temp_check);
+	if (error == 0)
 		error = hammer2_chain_create(trans, &parent, &chain, //sets chain's brefs to parent's brefs
 					     lhc, 0,
 					     HAMMER2_BREF_TYPE_INODE,
 					     HAMMER2_INODE_BYTES);
-		parent->bref.methods = HAMMER2_ENC_COMP(temp_comp) + HAMMER2_ENC_CHECK(temp_check);
-	}
 
 	/*
 	 * Cleanup and handle retries.
