@@ -919,7 +919,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 		int compressed_block_size;
 		char *compressed_buffer = NULL; //to avoid a compiler warning
 
-		KKASSERT(pblksize / 2 - sizeof(int) <= 32768);
+		KKASSERT(pblksize / 2 <= 32768);
 		
 		if (ipdata->reserved85 < 8 || (ipdata->reserved85 & 7) == 0) {
 			if (comp_method == HAMMER2_COMP_LZ4) {
@@ -1166,6 +1166,7 @@ hammer2_write_bp_t(hammer2_chain_t *chain, struct buf *bp, int ioflag,
 	size_t boff;
 	size_t psize;
 	int error;
+	int temp_check = HAMMER2_DEC_CHECK(chain->bref.methods);
 
 	KKASSERT(chain->flags & HAMMER2_CHAIN_MODIFIED);
 
@@ -1183,7 +1184,7 @@ hammer2_write_bp_t(hammer2_chain_t *chain, struct buf *bp, int ioflag,
 		pbase = chain->bref.data_off & ~pmask;
 		boff = chain->bref.data_off & (HAMMER2_OFF_MASK & pmask);
 		peof = (pbase + HAMMER2_SEGMASK64) & ~HAMMER2_SEGMASK64;
-		
+
 		if (psize == pblksize) {
 			dbp = getblk(chain->hmp->devvp, pbase,
 				psize, 0, 0);
@@ -1195,6 +1196,8 @@ hammer2_write_bp_t(hammer2_chain_t *chain, struct buf *bp, int ioflag,
 			}
 		}
 
+		chain->bref.methods = HAMMER2_ENC_COMP(HAMMER2_COMP_NONE) +
+				      HAMMER2_ENC_CHECK(temp_check);
 		bcopy(bp->b_data, dbp->b_data + boff, chain->bytes);
 		
 		/*

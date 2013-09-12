@@ -208,7 +208,7 @@ hammer2_decompress_ZLIB_callback(struct bio *bio)
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
 		//KKASSERT((unsigned int)*compressed_size <= 65536);
 		strm_decompress.next_in = buffer;
-		strm_decompress.avail_in = 65536; //bp->b_bufsize?
+		strm_decompress.avail_in = bp->b_bufsize - loff; //bp->b_bufsize?
 		strm_decompress.next_out = compressed_buffer;
 		strm_decompress.avail_out = obp->b_bufsize;
 		
