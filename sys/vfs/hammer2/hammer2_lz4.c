@@ -68,7 +68,7 @@ Note : this source file requires "lz4_encoder.h"
 // CPU Feature Detection
 //**************************************
 // 32 or 64 bits ?
-#if (defined(__x86_64__) /*|| defined(_M_X64) || defined(_WIN64) \
+#if /*(*/defined(__x86_64__) /*|| defined(_M_X64) || defined(_WIN64) \
   || defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) \
   || defined(__64BIT__) || defined(_LP64) || defined(__LP64__) \
   || defined(__ia64) || defined(__itanium__) || defined(_M_IA64) )*/   // Detects 64 bits mode
