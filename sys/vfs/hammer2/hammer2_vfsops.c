@@ -936,7 +936,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				int comp_level = comp_method >> 2;
 				z_stream strm_compress;
 				int ret;
-				kprintf("ZLIB compression activated, level %d.\n", comp_level);
+			    //kprintf("ZLIB compression activated, level %d.\n", comp_level);
 
 				ret = deflateInit(&strm_compress, comp_level);
 				if (ret != Z_OK)
@@ -954,7 +954,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 					compressed_size = 0;
 				}
 				ret = deflateEnd(&strm_compress);
-				kprintf("Compressed size = %d.\n", compressed_size);
+				//kprintf("Compressed size = %d.\n", compressed_size);
 			}
 			else {
 				kprintf("Error: Unknown compression method.\n");
