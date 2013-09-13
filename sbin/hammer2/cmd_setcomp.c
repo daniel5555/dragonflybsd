@@ -46,9 +46,23 @@ cmd_setcomp(char* comp_string, char* file_string)
 	} else if (strcmp(comp_string, "2") == 0) {
 		printf("Will set LZ4 compression on directory/file %s.\n", file_string);
 		comp_method = HAMMER2_COMP_LZ4;
-	}else if (strcmp(comp_string, "3") == 0) {
-		printf("Will set ZLIB (slowest) compression on directory/file %s.\n", file_string);
-		comp_method = HAMMER2_COMP_ZLIB;
+	} else if (strcmp(comp_string, "3:6") == 0) {
+		printf("Will set ZLIB level 6 compression on directory/file %s.\n", file_string);
+		comp_method = 6 << 2;
+		comp_method += HAMMER2_COMP_ZLIB;
+	} else if (strcmp(comp_string, "3") == 0 || strcmp(comp_string, "3:7") == 0) {
+		printf("Will set ZLIB level 7 (default) compression on directory/file %s.\n", file_string);
+		comp_method = 7 << 2;
+		comp_method += HAMMER2_COMP_ZLIB;
+	} else if (strcmp(comp_string, "3:8") == 0) {
+		printf("Will set ZLIB level 8 compression on directory/file %s.\n", file_string);
+		comp_method = 8 << 2;
+		comp_method += HAMMER2_COMP_ZLIB;
+	} else if (strcmp(comp_string, "3:9") == 0) {
+		printf("Will set ZLIB level 9 compression on directory/file %s.\n", file_string);
+		printf("CAUTION: May be extremely slow on big amount of data.\n");
+		comp_method = 9 << 2;
+		comp_method += HAMMER2_COMP_ZLIB;
 	}
 	else {
 		printf("ERROR: Unknown compression method.\n");
