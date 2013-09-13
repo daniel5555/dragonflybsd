@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  */
 
-#include "../hammer2.h"
+#include "hammer2.h"
  
 int
 cmd_setcomp(char* comp_string, char* file_string)
