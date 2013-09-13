@@ -68,6 +68,7 @@ cmd_setcomp(char* comp_string, char* file_string)
 				strcmp(comp_string, "3:1") == 0) {
 		printf("ZLIB compression levels below 6 are not supported,\n");
 		printf("please use LZ4 (setcomp 2) for fast compression instead.\n");
+		return 1;
 	}
 	else {
 		printf("ERROR: Unknown compression method.\n");
