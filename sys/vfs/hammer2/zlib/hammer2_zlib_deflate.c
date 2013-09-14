@@ -131,12 +131,12 @@ typedef struct config_s {
    compress_func func;
 } config;
 
-#ifdef FASTEST
-local const config configuration_table[2] = {
-/*      good lazy nice chain */
-/* 0 */ {0,    0,  0,    0, deflate_stored},  /* store only */
-/* 1 */ {4,    4,  8,    4, deflate_fast}}; /* max speed, no lazy matches */
-#else
+//#ifdef FASTEST
+//local const config configuration_table[2] = {
+///*      good lazy nice chain */
+///* 0 */ {0,    0,  0,    0, deflate_stored},  /* store only */
+///* 1 */ {4,    4,  8,    4, deflate_fast}}; /* max speed, no lazy matches */
+//#else
 local const config configuration_table[10] = {
 /*      good lazy nice chain */
 /* 0 */ {0,    0,  0,    0, deflate_slow/*deflate_stored*/},  /* store only */
@@ -150,7 +150,7 @@ local const config configuration_table[10] = {
 /* 7 */ {8,   32, 128, 256, deflate_slow},
 /* 8 */ {32, 128, 258, 1024, deflate_slow},
 /* 9 */ {32, 258, 258, 4096, deflate_slow}}; /* max compression */
-#endif
+//#endif
 
 /* Note: the deflate() code requires max_lazy >= MIN_MATCH and max_chain >= 4
  * For deflate_fast() (levels <= 3) good is ignored and lazy has a different
@@ -186,17 +186,17 @@ struct static_tree_desc_s {int dummy;}; /* for buggy compilers */
  *    input characters and the first MIN_MATCH bytes of str are valid
  *    (except for the last MIN_MATCH-1 bytes of the input file).
  */
-#ifdef FASTEST
-#define INSERT_STRING(s, str, match_head) \
-   (UPDATE_HASH(s, s->ins_h, s->window[(str) + (MIN_MATCH-1)]), \
-    match_head = s->head[s->ins_h], \
-    s->head[s->ins_h] = (Pos)(str))
-#else
+//#ifdef FASTEST
+//#define INSERT_STRING(s, str, match_head) \
+   //(UPDATE_HASH(s, s->ins_h, s->window[(str) + (MIN_MATCH-1)]), \
+    //match_head = s->head[s->ins_h], \
+    //s->head[s->ins_h] = (Pos)(str))
+//#else
 #define INSERT_STRING(s, str, match_head) \
    (UPDATE_HASH(s, s->ins_h, s->window[(str) + (MIN_MATCH-1)]), \
     match_head = s->prev[(str) & s->w_mask] = s->head[s->ins_h], \
     s->head[s->ins_h] = (Pos)(str))
-#endif
+//#endif
 
 /* ===========================================================================
  * Initialize the hash table (avoiding 64K overflow for 16 bit systems).
@@ -237,11 +237,11 @@ deflateInit2_(z_streamp strm, int level, int method, int windowBits,
 
     strm->msg = Z_NULL;
 
-#ifdef FASTEST
-    if (level != 0) level = 1;
-#else
+//#ifdef FASTEST
+    //if (level != 0) level = 1;
+//#else
     if (level == Z_DEFAULT_COMPRESSION) level = 6;
-#endif
+//#endif
 
     if (windowBits < 0) { /* suppress zlib wrapper */
         wrap = 0;
@@ -781,58 +781,58 @@ longest_match(deflate_state *s, IPos cur_match) /* cur_match = current match */
 /* ---------------------------------------------------------------------------
  * Optimized version for FASTEST only
  */
-local
-uInt
-longest_match(deflate_state *s, IPos cur_match)  /* cur_match = current match */
-{
-    register Bytef *scan = s->window + s->strstart; /* current string */
-    register Bytef *match;                       /* matched string */
-    register int len;                           /* length of current match */
-    register Bytef *strend = s->window + s->strstart + MAX_MATCH;
+//local
+//uInt
+//longest_match(deflate_state *s, IPos cur_match)  /* cur_match = current match */
+//{
+    //register Bytef *scan = s->window + s->strstart; /* current string */
+    //register Bytef *match;                       /* matched string */
+    //register int len;                           /* length of current match */
+    //register Bytef *strend = s->window + s->strstart + MAX_MATCH;
 
-    /* The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of 16.
-     * It is easy to get rid of this optimization if necessary.
-     */
-    Assert(s->hash_bits >= 8 && MAX_MATCH == 258, "Code too clever");
+    ///* The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of 16.
+     //* It is easy to get rid of this optimization if necessary.
+     //*/
+    //Assert(s->hash_bits >= 8 && MAX_MATCH == 258, "Code too clever");
 
-    Assert((ulg)s->strstart <= s->window_size-MIN_LOOKAHEAD, "need lookahead");
+    //Assert((ulg)s->strstart <= s->window_size-MIN_LOOKAHEAD, "need lookahead");
 
-    Assert(cur_match < s->strstart, "no future");
+    //Assert(cur_match < s->strstart, "no future");
 
-    match = s->window + cur_match;
+    //match = s->window + cur_match;
 
-    /* Return failure if the match length is less than 2:
-     */
-    if (match[0] != scan[0] || match[1] != scan[1]) return MIN_MATCH-1;
+    ///* Return failure if the match length is less than 2:
+     //*/
+    //if (match[0] != scan[0] || match[1] != scan[1]) return MIN_MATCH-1;
 
-    /* The check at best_len-1 can be removed because it will be made
-     * again later. (This heuristic is not always a win.)
-     * It is not necessary to compare scan[2] and match[2] since they
-     * are always equal when the other bytes match, given that
-     * the hash keys are equal and that HASH_BITS >= 8.
-     */
-    scan += 2, match += 2;
-    Assert(*scan == *match, "match[2]?");
+    ///* The check at best_len-1 can be removed because it will be made
+     //* again later. (This heuristic is not always a win.)
+     //* It is not necessary to compare scan[2] and match[2] since they
+     //* are always equal when the other bytes match, given that
+     //* the hash keys are equal and that HASH_BITS >= 8.
+     //*/
+    //scan += 2, match += 2;
+    //Assert(*scan == *match, "match[2]?");
 
-    /* We check for insufficient lookahead only every 8th comparison;
-     * the 256th check will be made at strstart+258.
-     */
-    do {
-    } while (*++scan == *++match && *++scan == *++match &&
-             *++scan == *++match && *++scan == *++match &&
-             *++scan == *++match && *++scan == *++match &&
-             *++scan == *++match && *++scan == *++match &&
-             scan < strend);
+    ///* We check for insufficient lookahead only every 8th comparison;
+     //* the 256th check will be made at strstart+258.
+     //*/
+    //do {
+    //} while (*++scan == *++match && *++scan == *++match &&
+             //*++scan == *++match && *++scan == *++match &&
+             //*++scan == *++match && *++scan == *++match &&
+             //*++scan == *++match && *++scan == *++match &&
+             //scan < strend);
 
-    Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
+    //Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
 
-    len = MAX_MATCH - (int)(strend - scan);
+    //len = MAX_MATCH - (int)(strend - scan);
 
-    if (len < MIN_MATCH) return MIN_MATCH - 1;
+    //if (len < MIN_MATCH) return MIN_MATCH - 1;
 
-    s->match_start = cur_match;
-    return (uInt)len <= s->lookahead ? (uInt)len : s->lookahead;
-}
+    //s->match_start = cur_match;
+    //return (uInt)len <= s->lookahead ? (uInt)len : s->lookahead;
+//}
 
 #endif /* FASTEST */
 
