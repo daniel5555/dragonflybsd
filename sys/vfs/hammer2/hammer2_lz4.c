@@ -68,51 +68,18 @@ Note : this source file requires "lz4_encoder.h"
 // CPU Feature Detection
 //**************************************
 // 32 or 64 bits ?
-#if (defined(__x86_64__) || defined(_M_X64) /*|| defined(_WIN64) \
-  || defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) \
-  || defined(__64BIT__) || defined(_LP64) || defined(__LP64__) \
-  || defined(__ia64) || defined(__itanium__) || defined(_M_IA64)*/)   // Detects 64 bits mode
+#if (defined(__x86_64__) || defined(_M_X64))   // Detects 64 bits mode
 #  define LZ4_ARCH64 1
 #else
 #  define LZ4_ARCH64 0
 #endif
 
-// Little Endian or Big Endian ?
-// Overwrite the #define below if you know your architecture endianess
-//#if defined (__GLIBC__)
-//#  include <endian.h>
-//#  if (__BYTE_ORDER == __BIG_ENDIAN)
-//#     define LZ4_BIG_ENDIAN 1
-//#  endif
-//#elif (defined(__BIG_ENDIAN__) || defined(__BIG_ENDIAN) || defined(_BIG_ENDIAN)) 
-//&& !(defined(__LITTLE_ENDIAN__) || defined(__LITTLE_ENDIAN) || defined(_LITTLE_ENDIAN))
-//#  define LZ4_BIG_ENDIAN 1
-//#elif defined(__sparc) || defined(__sparc__) \
-   //|| defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) \
-   //|| defined(__hpux)  || defined(__hppa) \
-   //|| defined(_MIPSEB) || defined(__s390__)
-//#  define LZ4_BIG_ENDIAN 1
-//#else
-//// Little Endian assumed. PDP Endian and other very rare endian format are unsupported.
-//#endif
-
-// Unaligned memory access is automatically enabled for "common" CPU,
-// such as x86.
-// For others CPU, the compiler will be more cautious, and insert extra 
-// code to ensure aligned access is respected
-// If you know your target CPU supports unaligned memory access, you 
-// want to force this option manually to improve performance
-//#if defined(__ARM_FEATURE_UNALIGNED)
-//#  define LZ4_FORCE_UNALIGNED_ACCESS 1
-//#endif
-
-// Define this parameter if your target system or compiler does not 
-// support hardware bit count
-//#if defined(_MSC_VER) && defined(_WIN32_WCE)            
-//// Visual Studio for Windows CE does not support Hardware bit count
-//#  define LZ4_FORCE_SW_BITCOUNT
-//#endif
-
+//This reduced library code is only Little Endian compatible,
+//if the need arises, please look for the appropriate defines in the
+//original complete LZ4 library.
+//Same is true for unaligned memory access which is enabled by default,
+//hardware bit count, also enabled by default, and Microsoft/Visual
+//Studio compilers.
 
 //**************************************
 // Compiler Options
@@ -124,25 +91,6 @@ Note : this source file requires "lz4_encoder.h"
 #endif
 
 #define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
-
-//#ifdef _MSC_VER    // Visual Studio
-//#  include <intrin.h>   // For Visual 2005
-//#  if LZ4_ARCH64   // 64-bit
-//#    pragma intrinsic(_BitScanForward64) // For Visual 2005
-//#    pragma intrinsic(_BitScanReverse64) // For Visual 2005
-//#  else
-//#    pragma intrinsic(_BitScanForward)   // For Visual 2005
-//#    pragma intrinsic(_BitScanReverse)   // For Visual 2005
-//#  endif
-//#  pragma warning(disable : 4127)        // disable: C4127: 
-										 //// conditional expression is constant
-//#endif
-
-//#ifdef _MSC_VER
-//#  define lz4_bswap16(x) _byteswap_ushort(x)
-//#else
-//#  define lz4_bswap16(x) ((unsigned short int) ((((x) >> 8) & 0xffu) | (((x) & 0xffu) << 8)))
-//#endif
 
 #if (GCC_VERSION >= 302) || (__INTEL_COMPILER >= 800) || defined(__clang__)
 #  define expect(expr,value)    (__builtin_expect ((expr),(value)) )

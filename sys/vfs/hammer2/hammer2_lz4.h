@@ -41,10 +41,10 @@ extern "C" {
 //**************************************
 // Compiler Options
 //**************************************
-#if defined(_MSC_VER) && !defined(__cplusplus)   // Visual Studio
-#  define inline __forceinline           // Visual C is not C99, but supports some kind of inline.
-										 // Note : we *do* want to force inline
-#endif
+//#if defined(_MSC_VER) && !defined(__cplusplus)   // Visual Studio
+//#  define inline __forceinline           // Visual C is not C99, but supports some kind of inline.
+										 //// Note : we *do* want to force inline
+//#endif
 
 
 //****************************
