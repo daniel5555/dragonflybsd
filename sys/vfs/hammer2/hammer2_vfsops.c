@@ -936,7 +936,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 				int comp_level = comp_method >> 4;
 				z_stream strm_compress;
 				int ret;
-			    //kprintf("ZLIB compression activated, level %d.\n", comp_level);
+			    kprintf("ZLIB compression activated, level %d.\n", comp_level);
 
 				ret = deflateInit(&strm_compress, comp_level);
 				if (ret != Z_OK)
