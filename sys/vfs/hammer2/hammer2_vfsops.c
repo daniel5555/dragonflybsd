@@ -933,7 +933,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 					compressed_size += sizeof(int);	/* our added overhead */
 				//kprintf("Compressed size = %d.\n", compressed_size);
 			} else if ((comp_method & 0x0F) == HAMMER2_COMP_ZLIB) {
-				int comp_level = comp_method >> 4;
+				int comp_level = (comp_method >> 4) & 0x0F;
 				z_stream strm_compress;
 				int ret;
 			    //kprintf("ZLIB compression activated, level %d.\n", comp_level);

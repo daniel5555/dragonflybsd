@@ -82,7 +82,7 @@ cmd_setcomp(char* comp_string, char* file_string)
 			strerror(errno));
 		return 3;
 	}
-	inode.ip_data.comp_algo = comp_method;
+	inode.ip_data.comp_algo = comp_method & 0x0FF;
 	res = ioctl(fd, HAMMER2IOC_INODE_SET, &inode);
 	if (res < 0) {
 		if (errno != EINVAL) {
