@@ -370,14 +370,6 @@ updatewindow(z_streamp strm, const Bytef *end, unsigned copy)
 
     state = (struct inflate_state FAR *)strm->state;
 
-    /* if it hasn't been done already, allocate space for the window */
-    //if (state->window == Z_NULL) {
-        //state->window = (unsigned char FAR *)
-                        //ZALLOC(strm, 1U << state->wbits,
-                               //sizeof(unsigned char));
-        //if (state->window == Z_NULL) return 1;
-    //}
-
     /* if window not in use yet, initialize */
     if (state->wsize == 0) {
         state->wsize = 1U << state->wbits;
