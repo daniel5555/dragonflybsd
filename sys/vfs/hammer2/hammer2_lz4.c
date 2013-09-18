@@ -32,7 +32,7 @@
 */
 
 /*
-Note : this source file requires "lz4_encoder.h"
+Note : this source file requires "hammer2_lz4_encoder.h"
 */
 
 //**************************************
