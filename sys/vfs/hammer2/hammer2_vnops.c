@@ -74,7 +74,7 @@ struct objcache *cache_buffer_read;
 struct objcache *cache_buffer_write;
 
 /* 
- * Callback used in read path in case that a block is compressed.
+ * Callback used in read path in case that a block is compressed with LZ4.
  */
 static
 void
@@ -148,6 +148,11 @@ hammer2_decompress_LZ4_callback(struct bio *bio)
 	bqrelse(bp);
 }
 
+/*
+ * Callback used in read path in case that a block is compressed with ZLIB.
+ * It is almost identical to LZ4 callback, so in theory they can be unified,
+ * but we didn't want to make changes in bio structure for that.
+ */
 static
 void
 hammer2_decompress_ZLIB_callback(struct bio *bio)
@@ -207,7 +212,6 @@ hammer2_decompress_ZLIB_callback(struct bio *bio)
 		
 		buffer = bp->b_data + loff;
 		compressed_buffer = objcache_get(cache_buffer_read, M_INTWAIT);
-		//KKASSERT((unsigned int)*compressed_size <= 65536);
 		strm_decompress.next_in = buffer;
 		strm_decompress.avail_in = bp->b_bufsize - loff; //bp->b_bufsize?
 		strm_decompress.next_out = compressed_buffer;
@@ -2005,6 +2009,9 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 		 * XXX direct-IO shortcut could go here XXX.
 		 */
 		if (HAMMER2_DEC_COMP(chain->bref.methods) == HAMMER2_COMP_LZ4) {
+			/*
+			 * Block compression is determined by bref.methods value.
+			 */
 			hammer2_blockref_t *bref;
 			hammer2_off_t pbase;
 			hammer2_off_t pmask;
@@ -2052,6 +2059,9 @@ hammer2_strategy_read(struct vop_strategy_args *ap)
 	return (0);
 }
 
+/*
+ * Read callback for block that is not compressed.
+ */
 static
 void
 hammer2_strategy_read_callback(hammer2_chain_t *chain, struct buf *dbp,

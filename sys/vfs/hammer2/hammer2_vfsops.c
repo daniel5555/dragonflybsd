@@ -773,7 +773,10 @@ hammer2_write_thread(void *arg)
 	mtx_unlock(&hmp->wthread_mtx);
 }
 
-/* From hammer2_vnops.c. */
+/* 
+ * From hammer2_vnops.c. 
+ * Physical block assignement function.
+ */
 static
 hammer2_chain_t *
 hammer2_assign_physical(hammer2_trans_t *trans,
@@ -867,7 +870,11 @@ retry:
 	return (chain);
 }
 
-/* From hammer2_vnops.c. */
+/* 
+ * From hammer2_vnops.c.
+ * The core write function which determines which path to take
+ * depending on compression settings.
+ */
 static
 void
 hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
@@ -905,6 +912,12 @@ hammer2_write_file_core_t(struct buf *bp, hammer2_trans_t *trans,
 	ipdata = &ip->chain->data->ipdata;	/* reload */
 }
 
+/*
+ * From hammer2_vnops.c
+ * Generic function that will perform the compression in compression
+ * write path. The compression algorithm is determined by the settings
+ * obtained from inode.
+ */
 static
 void
 hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
@@ -967,7 +980,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			compressed_block_size = pblksize;	/* safety */
 			++(ipdata->reserved85);
 			if (ipdata->reserved85 == 255) { //protection against overflows
-				ipdata->reserved85 = 8; //not sure if makes sense
+				ipdata->reserved85 = 8;
 			}
 		} else {
 			ipdata->reserved85 = 0;
@@ -984,7 +997,7 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 			} else if (compressed_size <= 32768) {
 				compressed_block_size = 32768;
 			} else {
-				panic("Weird compressed_size value.\n");
+				panic("WRITE PATH: Weird compressed_size value.\n");
 				compressed_block_size = pblksize;	/* NOT REACHED */
 			}
 		}
@@ -1098,6 +1111,10 @@ hammer2_compress_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 	}
 }
 
+/*
+ * Function that performs zero-checking and writing without compression,
+ * it corresponds to default zero-checking path.
+ */
 static
 void
 hammer2_zero_check_and_write_t(struct buf *bp, hammer2_trans_t *trans,
@@ -1118,6 +1135,10 @@ hammer2_zero_check_and_write_t(struct buf *bp, hammer2_trans_t *trans,
 	}
 }
 
+/*
+ * A function to test whether a block of data contains only zeros,
+ * returns 0 in that case or returns 1 otherwise.
+ */
 static
 int
 test_block_not_zeros_t(char *buf, size_t bytes)
@@ -1131,6 +1152,9 @@ test_block_not_zeros_t(char *buf, size_t bytes)
 	return (0);
 }
 
+/*
+ * Function to "write" a block that contains only zeros.
+ */
 static
 void
 zero_write_t(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
@@ -1156,6 +1180,11 @@ zero_write_t(struct buf *bp, hammer2_trans_t *trans, hammer2_inode_t *ip,
 	hammer2_chain_lookup_done(parent);
 }
 
+/*
+ * Function to write the data as it is, without performing any sort of
+ * compression. This function is used in path without compression and
+ * default zero-checking path.
+ */
 static
 void
 hammer2_write_bp_t(hammer2_chain_t *chain, struct buf *bp, int ioflag,
